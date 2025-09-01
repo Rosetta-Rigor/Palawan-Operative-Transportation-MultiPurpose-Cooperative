@@ -28,6 +28,11 @@ def member_add(request):
         member_form = MemberForm(request.POST)
         if member_form.is_valid():
             member = member_form.save()
+            # Assign selected vehicle
+            vehicle = member_form.cleaned_data.get('vehicle')
+            if vehicle:
+                vehicle.member = member
+                vehicle.save()
             formset = VehicleFormSet(request.POST, instance=member)
             if formset.is_valid():
                 formset.save()
@@ -47,6 +52,11 @@ def member_edit(request, pk):
         formset = VehicleFormSet(request.POST, instance=member)
         if member_form.is_valid() and formset.is_valid():
             member_form.save()
+            # Assign selected vehicle
+            vehicle = member_form.cleaned_data.get('vehicle')
+            if vehicle:
+                vehicle.member = member
+                vehicle.save()
             formset.save()
             return redirect("member-list")
     else:
@@ -141,3 +151,24 @@ class VehicleDeleteView(DeleteView):
     model = Vehicle
     template_name = "vehicle_confirm_delete.html"
     success_url = reverse_lazy("vehicle-list")
+
+# ==== AJAX Views ====
+def get_vehicle_data(request):
+    vehicle_id = request.GET.get('vehicle_id')
+    data = {}
+    if vehicle_id:
+        try:
+            vehicle = Vehicle.objects.get(pk=vehicle_id)
+            data = {
+                'plate_number': vehicle.plate_number,
+                'engine_number': vehicle.engine_number,
+                'chassis_number': vehicle.chassis_number,
+                'make_brand': vehicle.make_brand,
+                'body_type': vehicle.body_type,
+                'year_model': vehicle.year_model,
+                'series': vehicle.series,
+                'color': vehicle.color,
+            }
+        except Vehicle.DoesNotExist:
+            pass
+    return JsonResponse(data)

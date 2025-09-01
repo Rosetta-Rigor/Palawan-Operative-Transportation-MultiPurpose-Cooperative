@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+<style>
+label[for$="-DELETE"], input[name$="-DELETE"] {
+    display: none !important;
+}
+</style>
 <div class="content">
     <div class="container-fluid">
         <h4 class="page-title">Add Member</h4>
