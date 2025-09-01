@@ -27,6 +27,7 @@ class Vehicle(models.Model):
     body_type = models.CharField(max_length=50, blank=True, null=True)
     year_model = models.PositiveIntegerField(blank=True, null=True)
     series = models.CharField(max_length=50, blank=True, null=True)
+    color = models.CharField(max_length=30, blank=True, null=True)
 
     # Make member optional
     member = models.OneToOneField(
