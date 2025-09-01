@@ -99,13 +99,28 @@ class VehicleListView(ListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        q = self.request.GET.get("q")
+        q = self.request.GET.get("q", "")
         if q:
             queryset = queryset.filter(
                 Q(plate_number__icontains=q) |
+                Q(engine_number__icontains=q) |
+                Q(chassis_number__icontains=q) |
+                Q(make_brand__icontains=q) |
+                Q(body_type__icontains=q) |
+                Q(year_model__icontains=q) |
+                Q(series__icontains=q) |
+                Q(color__icontains=q) |
                 Q(member__name__icontains=q)
             )
         return queryset
+
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            html = render_to_string(
+                "includes/vehicle_table_rows.html", context, request=self.request
+            )
+            return JsonResponse({'html': html})
+        return super().render_to_response(context, **response_kwargs)
 
 @method_decorator(login_required, name='dispatch')
 class VehicleCreateView(CreateView):

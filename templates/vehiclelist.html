@@ -16,7 +16,7 @@
                         <div class="col-md-6">
                             <form class="navbar-left navbar-form nav-search mr-md-3" action="{% url 'vehicle-list' %}">
                                 <div class="input-group">
-                                    <input type="text" placeholder="Search ..." class="form-control" name="q" />
+                                    <input type="text" id="vehicle-search" placeholder="Search ..." class="form-control" name="q" autocomplete="off" />
                                     <div class="input-group-append">
                                         <span class="input-group-text">
                                             <i class="la la-search search-icon"></i>
@@ -32,58 +32,76 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <table class="table table-striped mt-3">
-                            <thead>
-                                <tr>
-                                    <th>Plate Number</th>
-                                    <th>Engine Number</th>
-                                    <th>Chassis Number</th>
-                                    <th>Make/Brand</th>
-                                    <th>Body Type</th>
-                                    <th>Year Model</th>
-                                    <th>Series</th>
-                                    <th>Color</th>
-                                    <th>Owner</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for vehicle in object_list %}
-                                <tr>
-                                    <td>{{ vehicle.plate_number }}</td>
-                                    <td>{{ vehicle.engine_number }}</td>
-                                    <td>{{ vehicle.chassis_number }}</td>
-                                    <td>{{ vehicle.make_brand }}</td>
-                                    <td>{{ vehicle.body_type }}</td>
-                                    <td>{{ vehicle.year_model }}</td>
-                                    <td>{{ vehicle.series }}</td>
-                                    <td>{{ vehicle.color }}</td>
-                                    <td>
-                                        {% if vehicle.member %}
-                                            {{ vehicle.member.name }}
-                                        {% else %}
-                                            N/A
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'vehicle-edit' vehicle.pk %}" class="btn btn-sm btn-primary">Edit</a>
-                                        <a href="{% url 'vehicle-delete' vehicle.pk %}" class="btn btn-sm btn-danger">Delete</a>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="10" style="text-align: center;">
-                                        <p class="text-sm font-weight-bold mb-0">No Records Found</p>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        {% include 'includes/pagination.html' %}
+                        <div id="vehicle-table-container">
+                            <table class="table table-striped mt-3">
+                                <thead>
+                                    <tr>
+                                        <th>Plate Number</th>
+                                        <th>Engine Number</th>
+                                        <th>Chassis Number</th>
+                                        <th>Make/Brand</th>
+                                        <th>Body Type</th>
+                                        <th>Year Model</th>
+                                        <th>Series</th>
+                                        <th>Color</th>
+                                        <th>Owner</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for vehicle in object_list %}
+                                    <tr>
+                                        <td>{{ vehicle.plate_number }}</td>
+                                        <td>{{ vehicle.engine_number }}</td>
+                                        <td>{{ vehicle.chassis_number }}</td>
+                                        <td>{{ vehicle.make_brand }}</td>
+                                        <td>{{ vehicle.body_type }}</td>
+                                        <td>{{ vehicle.year_model }}</td>
+                                        <td>{{ vehicle.series }}</td>
+                                        <td>{{ vehicle.color }}</td>
+                                        <td>
+                                            {% if vehicle.member %}
+                                                {{ vehicle.member.name }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'vehicle-edit' vehicle.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                                            <a href="{% url 'vehicle-delete' vehicle.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="10" style="text-align: center;">
+                                            <p class="text-sm font-weight-bold mb-0">No Records Found</p>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% include 'includes/pagination.html' %}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<script>
+$(function() {
+    $('#vehicle-search').on('input', function() {
+        var query = $(this).val();
+        $.ajax({
+            url: "{% url 'vehicle-list' %}",
+            data: { q: query },
+            dataType: 'json',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            success: function(data) {
+                $('#vehicle-table-container').html(data.html);
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

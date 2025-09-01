@@ -2,10 +2,16 @@
 <tr>
     <td>{{ member.name }}</td>
     <td>{{ member.gmail }}</td>
-    <td>{{ member.batch }}</td>
+    <td>{{ member.batch.number }}</td>
     <td>{{ member.file_number }}</td>
     <td>{{ member.renewal_date }}</td>
-    <td>{{ member.vehicle_plate }}</td>
+    <td>
+        {% if member.vehicle %}
+            {{ member.vehicle.plate_number }}
+        {% else %}
+            N/A
+        {% endif %}
+    </td>
     <td>
         <a href="{% url 'member-edit' member.pk %}" class="btn btn-sm btn-primary">Edit</a>
         <a href="{% url 'member-delete' member.pk %}" class="btn btn-sm btn-danger">Delete</a>

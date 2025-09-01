@@ -1,0 +1,27 @@
+{% for vehicle in object_list %}
+<tr>
+    <td>{{ vehicle.plate_number }}</td>
+    <td>{{ vehicle.engine_number }}</td>
+    <td>{{ vehicle.chassis_number }}</td>
+    <td>{{ vehicle.make_brand }}</td>
+    <td>{{ vehicle.body_type }}</td>
+    <td>{{ vehicle.year_model }}</td>
+    <td>{{ vehicle.series }}</td>
+    <td>{{ vehicle.color }}</td>
+    <td>
+        {% if vehicle.member %}
+            {{ vehicle.member.name }}
+        {% else %}
+            N/A
+        {% endif %}
+    </td>
+    <td>
+        <a href="{% url 'vehicle-edit' vehicle.pk %}" class="btn btn-sm btn-primary">Edit</a>
+        <a href="{% url 'vehicle-delete' vehicle.pk %}" class="btn btn-sm btn-danger">Delete</a>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="10">No vehicles found.</td>
+</tr>
+{% endfor %}
