@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="content">
+    <div class="container-fluid">
+        <h4 class="page-title">Add Vehicle</h4>
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Vehicle Information</div>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="id_plate_number">Plate Number</label>
+                                {{ form.plate_number }}
+                            </div>
+                            <div class="form-group">
+                                <label for="id_model">Model</label>
+                                {{ form.model }}
+                            </div>
+                            <div class="form-group">
+                                <label for="id_owner">Owner</label>
+                                {{ form.owner }}
+                            </div>
+                            <div class="form-group">
+                                <label for="id_color">Color</label>
+                                {{ form.color }}
+                            </div>
+                            <div class="form-group">
+                                <label for="id_year">Year</label>
+                                {{ form.year }}
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-success btn-rounded">Save</button>
+                                <a href="{% url 'vehicle-list' %}" class="btn btn-secondary btn-rounded">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

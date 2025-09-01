@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="content">
+    <div class="container-fluid">
+        <h4 class="page-title">Members</h4>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">List of Members</div>
+                        <div class="card-category">Page Subtitle</div>
+                    </div>
+                    <br />
+                    <div class="col-md-12 row">
+                        <div class="col-md-6">
+                            <form class="navbar-left navbar-form nav-search mr-md-3" action="{% url 'member-list' %}">
+                                <div class="input-group">
+                                    <input type="text" id="member-search" placeholder="Search ..." class="form-control" name="q" autocomplete="off" />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="la la-search search-icon"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="pull-right">
+                                <a href="{% url 'member-add' %}" class="btn btn-success btn-rounded"> Add Member</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Gmail</th>
+                                    <th>Batch</th>
+                                    <th>File Number</th>
+                                    <th>Renewal Date</th>
+                                    <th>Vehicle Plate</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="member-table-body">
+                                {% for member in object_list %}
+                                <tr>
+                                    <td>{{ member.name }}</td>
+                                    <td>{{ member.gmail }}</td>
+                                    <td>{{ member.batch.number }}</td>
+                                    <td>{{ member.file_number }}</td>
+                                    <td>{{ member.renewal_date }}</td>
+                                    <td>
+                                        {% if member.vehicle %}
+                                            {{ member.vehicle.plate_number }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'member-edit' member.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                                        <a href="{% url 'member-delete' member.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7">No members found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(function() {
+    $('#member-search').on('input', function() {
+        var query = $(this).val();
+        $.ajax({
+            url: "{% url 'member-list' %}",
+            data: { q: query },
+            dataType: 'json',
+            success: function(data) {
+                $('#member-table-body').html(data.html);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

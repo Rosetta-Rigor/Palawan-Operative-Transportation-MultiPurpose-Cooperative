@@ -1,0 +1,130 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+	<title>{% block title %}Coop Management{% endblock %}</title>
+	<meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
+	<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900">
+	<link rel="stylesheet" href="{% static 'css/ready.css' %}">
+    <link rel="stylesheet" href="{% static 'css/demo.css' %}">
+</head>
+<body>
+	{% if messages %}
+	  <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+				z-index: 99999; width: auto; max-width: 90%; text-align: center; pointer-events: none;">
+		{% for message in messages %}
+		  <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-lg"
+			   role="alert"
+			   style="display: inline-block; pointer-events: auto; max-width: 90%; margin: 10px auto; border-radius: 8px; padding: 15px; background-color: #f8f9fa; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);">
+			<div style="font-size: 1rem; color: #333;">
+			  {{ message }}
+			</div>
+			<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+			  <span aria-hidden="true" style="font-weight: bold;">&times;</span>
+			</button>
+		  </div>
+		{% endfor %}
+	  </div>
+	{% endif %}
+
+	<div class="wrapper">
+		<!-- HEADER -->
+		<div class="main-header">
+			<div class="logo-header">
+				<a href="{% url 'home' %}" class="logo">
+					Coop Management
+				</a>
+				<button class="navbar-toggler sidenav-toggler ml-auto" type="button" data-toggle="collapse" data-target="collapse" aria-controls="sidebar" aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<button class="topbar-toggler more"><i class="la la-ellipsis-v"></i></button>
+			</div>
+		</div>
+
+		<!-- SIDEBAR -->
+		<div class="sidebar">
+			<div class="scrollbar-inner sidebar-wrapper">
+				<div class="user">
+					<div class="photo">
+						<img src="{% static 'img/boss.jpg' %}" alt="Img Profile">
+					</div>
+					<div class="info">
+						<a data-toggle="collapse" href="#userMenu" aria-expanded="true">
+							<span>
+								Admin
+								<span class="user-level">Administrator</span>
+								<span class="caret"></span>
+							</span>
+						</a>
+						<div class="collapse in" id="userMenu" aria-expanded="true">
+							<ul class="nav">
+								<li><a href="#"><span class="link-collapse">My Profile</span></a></li>
+								<li><a href="#"><span class="link-collapse">Settings</span></a></li>
+								<li>
+									<a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+										<i class="fa fa-power-off"></i> Logout
+									</a>
+									<form id="logout-form" action="{% url 'logout' %}" method="post" style="display:none;">
+										{% csrf_token %}
+									</form>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+
+				<ul class="nav">
+					<li class="nav-item">
+						<a href="{% url 'home' %}">
+							<i class="la la-dashboard"></i>
+							<p>Dashboard</p>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a href="{% url 'member-list' %}">
+							<i class="la la-users"></i>
+							<p>Members</p>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a href="{% url 'vehicle-list' %}">
+							<i class="la la-car"></i>
+							<p>Vehicles</p>
+						</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+
+		<!-- MAIN PANEL -->
+		<div class="main-panel">
+			{% block content %}{% endblock %}
+			
+			<footer class="footer">
+				<div class="container-fluid">
+					<div class="copyright ml-auto">
+						2025, Coop Management
+					</div>
+				</div>
+			</footer>
+		</div>
+	</div>
+
+	<!-- JS -->
+	<script src="{% static 'js/core/jquery.3.2.1.min.js' %}"></script>
+	<script src="{% static 'js/core/popper.min.js' %}"></script>
+	<script src="{% static 'js/core/bootstrap.min.js' %}"></script>
+	<script src="{% static 'js/plugin/jquery-ui-1.12.1.custom/jquery-ui.min.js' %}"></script>
+	<script src="{% static 'js/plugin/chartist/chartist.min.js' %}"></script>
+	<script src="{% static 'js/plugin/chartist/plugin/chartist-plugin-tooltip.min.js' %}"></script>
+	<script src="{% static 'js/plugin/bootstrap-notify/bootstrap-notify.min.js' %}"></script>
+	<script src="{% static 'js/plugin/bootstrap-toggle/bootstrap-toggle.min.js' %}"></script>
+	<script src="{% static 'js/plugin/jquery-mapael/jquery.mapael.min.js' %}"></script>
+	<script src="{% static 'js/plugin/jquery-mapael/maps/world_countries.min.js' %}"></script>
+	<script src="{% static 'js/plugin/chart-circle/circles.min.js' %}"></script>
+	<script src="{% static 'js/plugin/jquery-scrollbar/jquery.scrollbar.min.js' %}"></script>
+	<script src="{% static 'js/ready.min.js' %}"></script>
+</body>
+</html>
