@@ -9,8 +9,8 @@ from django.template.loader import render_to_string
 from django.db.models import Q
 from django.forms import inlineformset_factory
 
-from .models import Member, Vehicle
-from .forms import MemberForm, VehicleForm
+from .models import Member, Vehicle, Document
+from .forms import MemberForm, VehicleForm, DocumentForm
 
 # ==== Inline Formset for Member-Vehicle ====
 # This formset allows you to manage Vehicle objects related to a Member
@@ -213,6 +213,35 @@ class VehicleDeleteView(DeleteView):
     model = Vehicle
     template_name = "vehicle_confirm_delete.html"
     success_url = reverse_lazy("vehicle-list")
+
+# ==== Class-based Views: Document ====
+
+@method_decorator(login_required, name='dispatch')
+class DocumentListView(ListView):
+    """
+    Displays a paginated list of documents.
+    Shows vehicle, member, renewal date, and links to OR/CR images.
+    """
+    model = Document
+    template_name = "documentlist.html"
+    context_object_name = "object_list"
+    paginate_by = 10
+
+    def get_queryset(self):
+        # Optionally add search/filter logic here
+        return super().get_queryset().select_related('vehicle__member')
+
+@method_decorator(login_required, name='dispatch')
+class DocumentCreateView(CreateView):
+    """
+    Handles creation of a new Document.
+    - Uses DocumentForm for input.
+    - Redirects to document list after creation.
+    """
+    model = Document
+    form_class = DocumentForm
+    template_name = "document_add.html"
+    success_url = reverse_lazy("document-list")
 
 # ==== AJAX Views ====
 

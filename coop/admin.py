@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Batch, Member, Vehicle
+from .models import Batch, Member, Vehicle, Document
 
 
 @admin.register(Batch)
@@ -38,3 +38,10 @@ class VehicleAdmin(admin.ModelAdmin):
         "color",
     ]
     list_filter = ["make_brand", "body_type", "year_model"]
+
+
+@admin.register(Document)
+class DocumentAdmin(admin.ModelAdmin):
+    list_display = ["vehicle", "official_receipt", "certificate_of_registration"]
+    search_fields = ["vehicle__plate_number"]
+    list_filter = ["vehicle__member__renewal_date"]

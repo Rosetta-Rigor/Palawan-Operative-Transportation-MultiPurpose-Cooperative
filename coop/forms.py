@@ -1,5 +1,5 @@
 from django import forms
-from .models import Member, Vehicle
+from .models import Member, Vehicle, Document
 
 class MemberForm(forms.ModelForm):
     vehicle = forms.ModelChoiceField(
@@ -38,8 +38,17 @@ class VehicleForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Only show members without a vehicle, or the currently assigned member (for edit)
         qs = Member.objects.filter(vehicle__isnull=True)
         if self.instance and self.instance.member:
             qs = Member.objects.filter(vehicle__isnull=True) | Member.objects.filter(pk=self.instance.member.pk)
         self.fields['member'].queryset = qs.distinct()
+
+class DocumentForm(forms.ModelForm):
+    class Meta:
+        model = Document
+        fields = ['vehicle', 'official_receipt', 'certificate_of_registration']
+        widgets = {
+            'vehicle': forms.Select(attrs={'class': 'form-control select2'}),
+            'official_receipt': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'certificate_of_registration': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }

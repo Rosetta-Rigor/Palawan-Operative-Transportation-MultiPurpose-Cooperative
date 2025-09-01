@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="content">
+    <div class="container-fluid">
+        <h4 class="page-title">Documents</h4>
+        <div class="row">
+            {% include 'includes/document_sidebar.html' %}
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">List of Documents</div>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped mt-3">
+                            <thead>
+                                <tr>
+                                    <th>Plate Number</th>
+                                    <th>Member</th>
+                                    <th>Renewal Date</th>
+                                    <th>Official Receipt (OR)</th>
+                                    <th>Certificate of Registration (CR)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in object_list %}
+                                <tr>
+                                    <td>{{ doc.vehicle.plate_number }}</td>
+                                    <td>{{ doc.vehicle.member.name }}</td>
+                                    <td>{{ doc.vehicle.member.renewal_date }}</td>
+                                    <td>
+                                        {% if doc.official_receipt %}
+                                            <a href="{{ doc.official_receipt.url }}" target="_blank">View OR</a>
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if doc.certificate_of_registration %}
+                                            <a href="{{ doc.certificate_of_registration.url }}" target="_blank">View CR</a>
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5">No documents found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% if is_paginated %}
+                        <nav>
+                            <ul class="pagination">
+                                {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                </li>
+                                {% endif %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_obj.number }}</span>
+                                </li>
+                                {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

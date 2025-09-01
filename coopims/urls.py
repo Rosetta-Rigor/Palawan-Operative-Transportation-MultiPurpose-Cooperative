@@ -4,6 +4,8 @@ from django.urls import path, include
 from coop import views 
 from django.urls import path, re_path
 from django.contrib.auth import views as auth_views
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -19,4 +21,9 @@ urlpatterns = [
     path("members/<int:pk>/delete/", views.MemberDeleteView.as_view(), name="member-delete"),
     path("vehicles/<int:pk>/edit/", views.VehicleUpdateView.as_view(), name="vehicle-edit"),
     path("vehicles/<int:pk>/delete/", views.VehicleDeleteView.as_view(), name="vehicle-delete"),
+    path("documents/", views.DocumentListView.as_view(), name="document-list"),
+    path("documents/add/", views.DocumentCreateView.as_view(), name="document-add"),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
