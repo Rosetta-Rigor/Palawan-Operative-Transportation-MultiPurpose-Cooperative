@@ -10,7 +10,6 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">List of Documents</div>
-                        <h4>EXPERIMENTAL STAGE MEDYO NALUKO PA ITO NGAYON</h4>
                     </div>
                     <div class="card-body">
                         <table class="table table-striped mt-3">
@@ -28,7 +27,7 @@
                                 <tr>
                                     <td>{{ doc.vehicle.plate_number }}</td>
                                     <td>{{ doc.vehicle.member.name }}</td>
-                                    <td>{{ doc.vehicle.member.renewal_date }}</td>
+                                    <td>{{ doc.renewal_date }}</td> <!-- Show the document's renewal date -->
                                     <td>
                                         {% if doc.official_receipt %}
                                             <a href="{{ doc.official_receipt.url }}" target="_blank">View OR</a>

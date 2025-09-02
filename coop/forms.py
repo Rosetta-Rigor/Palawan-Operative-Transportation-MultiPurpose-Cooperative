@@ -46,9 +46,10 @@ class VehicleForm(forms.ModelForm):
 class DocumentForm(forms.ModelForm):
     class Meta:
         model = Document
-        fields = ['vehicle', 'official_receipt', 'certificate_of_registration']
+        fields = ['vehicle', 'renewal_date', 'official_receipt', 'certificate_of_registration']
         widgets = {
             'vehicle': forms.Select(attrs={'class': 'form-control select2'}),
+            'renewal_date': forms.DateInput(attrs={'class': 'form-control select2', 'type': 'date'}),
             'official_receipt': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'certificate_of_registration': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }

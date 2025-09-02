@@ -23,6 +23,8 @@ urlpatterns = [
     path("vehicles/<int:pk>/delete/", views.VehicleDeleteView.as_view(), name="vehicle-delete"),
     path("documents/", views.DocumentListView.as_view(), name="document-list"),
     path("documents/add/", views.DocumentCreateView.as_view(), name="document-add"),
+    path('members/<int:pk>/renew/', views.member_renewal_update, name='member-renewal-update'),
+    path('documents/add/<int:vehicle_id>/<str:renewal_date>/', views.document_add_renewal, name='document-add-renewal'),
 ]
 
 if settings.DEBUG:

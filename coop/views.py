@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.db.models import Q
 from django.forms import inlineformset_factory
+from django.utils import timezone
 
 from .models import Member, Vehicle, Document
 from .forms import MemberForm, VehicleForm, DocumentForm
@@ -88,6 +89,40 @@ def member_edit(request, pk):
         member_form = MemberForm(instance=member)
         formset = VehicleFormSet(instance=member)
     return render(request, "member_add.html", {"form": member_form, "formset": formset})
+
+@login_required
+def member_renewal_update(request, pk):
+    """
+    Updates the member's renewal date by +1 year and redirects to add a new document for their vehicle.
+    """
+    member = get_object_or_404(Member, pk=pk)
+    old_date = member.renewal_date
+    new_date = old_date.replace(year=old_date.year + 1)
+    member.renewal_date = new_date
+    member.save()
+    # Redirect to add document for this vehicle, pre-filling renewal_date
+    vehicle = getattr(member, 'vehicle', None)
+    if vehicle:
+        return redirect('document-add-renewal', vehicle_id=vehicle.id, renewal_date=new_date)
+    return redirect('member-list')
+
+@login_required
+def document_add_renewal(request, vehicle_id, renewal_date):
+    """
+    Add a new document for a vehicle for a specific renewal date.
+    """
+    vehicle = get_object_or_404(Vehicle, pk=vehicle_id)
+    if request.method == "POST":
+        form = DocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            doc = form.save(commit=False)
+            doc.vehicle = vehicle
+            doc.renewal_date = renewal_date
+            doc.save()
+            return redirect('document-list')
+    else:
+        form = DocumentForm(initial={'vehicle': vehicle, 'renewal_date': renewal_date})
+    return render(request, "document_add.html", {"form": form, "vehicle": vehicle, "renewal_date": renewal_date})
 
 # ==== Class-based Views: Member ====
 
