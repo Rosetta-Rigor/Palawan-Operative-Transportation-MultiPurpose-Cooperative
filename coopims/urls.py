@@ -1,4 +1,4 @@
-# coop/urls.py
+
 from django.contrib import admin
 from django.urls import path, include
 from coop import views 
@@ -6,7 +6,7 @@ from django.urls import path, re_path
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
-
+# ...existing code...
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", views.home, name="home"),
@@ -14,8 +14,12 @@ urlpatterns = [
     path("members/add/", views.member_add, name="member-add"),
     path("vehicles/", views.VehicleListView.as_view(), name="vehicle-list"),
     path("vehicles/add/", views.VehicleCreateView.as_view(), name="vehicle-add"),
+    path("user_home/", views.user_home, name="user_home"),
+    path('user/profile/', views.user_profile, name='user_profile'),
+    path('user/vehicles/', views.user_vehicles, name='user_vehicles'),
+    path('user/documents/', views.user_documents, name='user_documents'),
 
-    re_path(r'^login/$', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
+    path('login/', views.custom_login, name='login'),
     re_path(r'^logout/$', auth_views.LogoutView.as_view(), name='logout'),
     path("members/<int:pk>/edit/", views.member_edit, name="member-edit"),
     path("members/<int:pk>/delete/", views.MemberDeleteView.as_view(), name="member-delete"),

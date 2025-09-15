@@ -1,0 +1,75 @@
+/* user_navbar.css - Custom styles for user navbar and notification bell */
+
+
+.logo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    background: #fff;
+    min-height: 60px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    z-index: 10;
+    padding: 0 24px;
+}
+.logo-header .d-flex {
+    display: flex !important;
+    align-items: center;
+}
+.logo-header .dropdown {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 60px;
+}
+.logo-header .dropdown-toggle {
+    position: relative;
+    padding: 0 10px;
+    color: #333;
+    outline: none;
+    height: 60px;
+    display: flex;
+    align-items: center;
+}
+.logo-header .la-bell {
+    vertical-align: middle;
+    color: #6B2F13;
+}
+.logo-header .badge-danger {
+    position: absolute;
+    top: 10px;
+    right: 0px;
+    background: #dc3545;
+    color: #fff;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+.logo-header .dropdown-menu {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    border-radius: 8px;
+    border: none;
+    margin-top: 10px;
+    font-size: 0.98rem;
+    left: auto !important;
+    right: 0 !important;
+    min-width: 300px;
+}
+.logo-header .dropdown-header {
+    font-weight: bold;
+    color: #6B2F13;
+    background: #FFD43B;
+    border-bottom: 1px solid #f3e7b3;
+}
+.logo-header .dropdown-item {
+    padding: 10px 18px;
+    border-bottom: 1px solid #f3e7b3;
+    color: #333;
+}
+.logo-header .dropdown-item:last-child {
+    border-bottom: none;
+}
+.logo-header .dropdown-item strong {
+    color: #3A7A3A;
+}

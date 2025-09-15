@@ -1,50 +1,52 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <title>{% block title %}POTMPC{% endblock %}</title>
-        <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no" name="viewport" />
-
-        <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" />
-        <link rel="stylesheet" href="{% static 'css/ready.css' %}" />
-        <link rel="stylesheet" href="{% static 'css/demo.css' %}" />
-    </head>
-
-    <body class="text-center">
-        <br />
-        <div class="wrapper">
-            <div class="container">
-                <div class="row justify-content-center align-items-center">
-                    <div class="col-md-4 text-center">
-                        <form role="post" method="post">
-                            {% csrf_token %}
-                            <img class="mb-4" src="{% static 'img/boss.jpg' %}" alt="" width="90" height="80" />
-                            <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
-                            <label for="inputEmail" class="sr-only">Username</label>
-                            <input type="text" name="username" class="form-control" placeholder="Username" required autofocus />
-        
-                            <label for="inputPassword" class="sr-only">Password</label>
-                            <input type="password" name="password" class="form-control" placeholder="Password" required />
-                        
-                            {% if form.non_field_errors %}
-                                <div class="alert alert-danger" role="alert">
-                                    {% for error in form.non_field_errors %}
-                                        <p{% if forloop.last %} class="mb-0"{% endif %}>{{ error }}</p>
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        
-                            <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
-                            <p class="mt-5 mb-3 text-muted">&copy; 2025</p>
-                        </form>
-                    </div>
-                </div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" />
+    <link rel="stylesheet" href="{% static 'css/ready.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/demo.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/login_custom.css' %}" />
+</head>
+<body>
+    <div class="overlay"></div>
+    <div class="login-card">
+        <img src="{% static 'img/home.png' %}" onerror="this.style.display='none'">
+        <div class="login-title">POTMPC</div>
+        <div class="login-subtitle">Palawan Operative Transportation Multi-Purpose Cooperative</div>
+        <form method="post" class="login-form">
+            {% csrf_token %}
+            <div class="input-group">
+                <span class="icon">&#128100;</span>
+                <input type="text" name="username" placeholder="USER" required>
             </div>
-        </div>
-    </body>
+            <div class="input-group">
+                <span class="icon">&#128274;</span>
+                <input type="password" name="password" placeholder="PASSWORD" id="password" required>
+                <span class="toggle-password" onclick="togglePassword()">&#128065;</span>
+            </div>
+            <div class="options">
+                <label><input type="checkbox" name="remember"> Remember Username</label>
+                <a href="#">Forgot Password</a>
+            </div>
+            <button type="submit" class="login-btn">Sign In</button>
+        </form>
+    </div>
+    <script>
+        function togglePassword() {
+            var pwd = document.getElementById('password');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+            } else {
+                pwd.type = 'password';
+            }
+        }
+    </script>
+</body>
+</html>
                         
         <script src="{% static 'js/core/jquery.3.2.1.min.js' %}"></script>
         <script src="{% static 'js/plugin/jquery-ui-1.12.1.custom/jquery-ui.min.js' %}"></script>

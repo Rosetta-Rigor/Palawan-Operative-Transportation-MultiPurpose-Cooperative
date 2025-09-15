@@ -1,0 +1,40 @@
+{% extends 'user_base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/user_home.css' %}">
+{% endblock %}
+{% block title %}User Home - POTMPC{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg user-home-card">
+                <div class="card-body text-center">
+                    <img src="{% static 'img/.png' %}" alt="POTMPC Logo" class="user-home-logo">
+                    <h2 class="mb-2 user-home-title">Palawan Operator's Tourist Transport Multi-Purpose Cooperative</h2>
+                    <h5 class="mb-4 user-home-subtitle">Welcome to the User Portal</h5>
+                    <p class="lead mb-4">Your cooperative dashboard. Use the navigation to access features and manage your account.</p>
+                    <div class="row mt-4">
+                        <div class="col-md-6 mb-3">
+                            <div class="p-3 rounded user-home-feature">
+                                <strong>Features will appear here</strong>
+                                <p class="mb-0">Let us know what you want to see on your dashboard.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="p-3 rounded user-home-feature">
+                                <strong>Quick Links</strong>
+                                <ul class="list-unstyled mb-0">
+                                    <li>Members</li>
+                                    <li>Vehicles</li>
+                                    <li>Documents</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,3 +1,5 @@
+
+
 # ==== Imports ====
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
@@ -61,6 +63,42 @@ def member_add(request):
         member_form = MemberForm()
         formset = VehicleFormSet()
     return render(request, "member_add.html", {"form": member_form, "formset": formset})
+
+# ==== User Views ====
+
+@login_required
+def user_home(request):
+    """
+    Renders the home page for logged-in users (user side).
+    """
+    return render(request, "user_home.html")
+
+# ==== User-Side Views ====
+
+@login_required
+def user_profile(request):
+    """
+    Display the logged-in user's profile information.
+    """
+    user = request.user
+    return render(request, "user_profile.html", {"user": user})
+
+@login_required
+def user_vehicles(request):
+    """
+    List vehicles associated with the logged-in user.
+    """
+    vehicles = Vehicle.objects.filter(member__user=request.user)
+    return render(request, "user_vehicles.html", {"vehicles": vehicles})
+
+@login_required
+def user_documents(request):
+    """
+    List documents associated with the logged-in user's vehicles.
+    """
+    documents = Document.objects.filter(vehicle__member__user=request.user)
+    return render(request, "user_documents.html", {"documents": documents})
+
 
 @login_required
 def member_edit(request, pk):
@@ -304,3 +342,21 @@ def get_vehicle_data(request):
         except Vehicle.DoesNotExist:
             pass
     return JsonResponse(data)
+from django.contrib.auth import authenticate, login as auth_login
+from django.contrib import messages
+
+# ==== Custom Login View ====
+def custom_login(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            auth_login(request, user)
+            if user.is_staff:
+                return redirect("home")
+            else:
+                return redirect("user_home")
+        else:
+            messages.error(request, "Invalid username or password.")
+    return render(request, "login.html")
