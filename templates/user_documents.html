@@ -1,0 +1,172 @@
+{% extends 'user_base.html' %}
+{% load static %}
+{% block title %}My Documents - Coop Management{% endblock %}
+{% block content %}
+<br><br>
+<link rel="stylesheet" href="{% static 'css/user_documents.css' %}">
+
+<h1 style="color:#1976d2; font-size:2.2rem; font-weight:700; margin-left:32px; margin-top:32px;">Document Tracking</h1>
+<div class="user-dashboard-cards">
+    <!-- Example cards for multiple vehicles or document sets -->
+    <div class="user-dashboard-card">
+        <h2>2025 Documents</h2>
+        <button class="dropdown-toggle" type="button" data-toggle="dropdown">Qiyana - 2025 Documents</button>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href="#">OR - 2025-08-15 Processed</a>
+            <a class="dropdown-item" href="#">CR - 2025-08-15 Pending</a>
+        </div>
+        <div class="doc-imgs">
+            <img src="/media/documents/Qiyana/2025-08-15/or/OR.jfif" alt="Qiyana OR">
+            <img src="/media/documents/Qiyana/2025-08-15/cr/CR.jfif" alt="Qiyana CR">
+        </div>
+        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#timeline2025" aria-expanded="false" aria-controls="timeline2025">Show Renewal Timeline</button>
+        <div class="collapse" id="timeline2025">
+            <div class="timeline">
+                <div class="timeline-event processed">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">08/15/2025 17:39 <span class="event-status" style="color:#4CAF50;">Processed</span></div>
+                    <div class="event-desc">OR document processed and approved.</div>
+                </div>
+                <div class="timeline-event pending">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">08/15/2025 16:00 <span class="event-status" style="color:#FFA726;">Pending</span></div>
+                    <div class="event-desc">CR document submitted, awaiting approval.</div>
+                </div>
+                <div class="timeline-event">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">08/10/2025 09:00</div>
+                    <div class="event-desc">Renewal request created.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="user-dashboard-card">
+        <h2>2024 Documents</h2>
+        <button class="dropdown-toggle" type="button" data-toggle="dropdown">Qiyana - 2024 Documents</button>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href="#">OR - 2024-12-20 Processed</a>
+            <a class="dropdown-item" href="#">CR - 2024-12-20 Processed</a>
+        </div>
+        <div class="doc-imgs">
+            <img src="/media/documents/Qiyana/2024-12-20/or/OR.jfif" alt="Qiyana OR">
+            <img src="/media/documents/Qiyana/2024-12-20/cr/CR.jfif" alt="Qiyana CR">
+        </div>
+        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#timeline2024" aria-expanded="false" aria-controls="timeline2024">Show Renewal Timeline</button>
+        <div class="collapse" id="timeline2024">
+            <div class="timeline">
+                <div class="timeline-event processed">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">12/20/2024 17:39 <span class="event-status" style="color:#4CAF50;">Processed</span></div>
+                    <div class="event-desc">OR document processed and approved.</div>
+                </div>
+                <div class="timeline-event processed">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">12/20/2024 16:00 <span class="event-status" style="color:#4CAF50;">Processed</span></div>
+                    <div class="event-desc">CR document processed and approved.</div>
+                </div>
+                <div class="timeline-event">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">12/15/2024 09:00</div>
+                    <div class="event-desc">Renewal request created.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="user-dashboard-card">
+        <h2>2023 Documents</h2>
+        <button class="dropdown-toggle" type="button" data-toggle="dropdown">Qiyana - 2023 Documents</button>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href="#">OR - 2023-07-10 Processed</a>
+            <a class="dropdown-item" href="#">CR - 2023-07-10 Processed</a>
+        </div>
+        <div class="doc-imgs">
+            <img src="/media/documents/Qiyana/2023-07-10/or/OR.jfif" alt="Qiyana OR">
+            <img src="/media/documents/Qiyana/2023-07-10/cr/CR.jfif" alt="Qiyana CR">
+        </div>
+        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#timeline2023" aria-expanded="false" aria-controls="timeline2023">Show Renewal Timeline</button>
+        <div class="collapse" id="timeline2023">
+            <div class="timeline">
+                <div class="timeline-event processed">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">07/10/2023 17:39 <span class="event-status" style="color:#4CAF50;">Processed</span></div>
+                    <div class="event-desc">OR document processed and approved.</div>
+                </div>
+                <div class="timeline-event processed">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">07/10/2023 16:00 <span class="event-status" style="color:#4CAF50;">Processed</span></div>
+                    <div class="event-desc">CR document processed and approved.</div>
+                </div>
+                <div class="timeline-event">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">07/05/2023 09:00</div>
+                    <div class="event-desc">Renewal request created.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="user-dashboard-card">
+        <h2>2022 Documents</h2>
+        <button class="dropdown-toggle" type="button" data-toggle="dropdown">Qiyana - 2022 Documents</button>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href="#">OR - 2022-06-05 Processed</a>
+            <a class="dropdown-item" href="#">CR - 2022-06-05 Processed</a>
+        </div>
+        <div class="doc-imgs">
+            <img src="/media/documents/Qiyana/2022-06-05/or/OR.jfif" alt="Qiyana OR">
+            <img src="/media/documents/Qiyana/2022-06-05/cr/CR.jfif" alt="Qiyana CR">
+        </div>
+        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#timeline2022" aria-expanded="false" aria-controls="timeline2022">Show Renewal Timeline</button>
+        <div class="collapse" id="timeline2022">
+            <div class="timeline">
+                <div class="timeline-event processed">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">06/05/2022 17:39 <span class="event-status" style="color:#4CAF50;">Processed</span></div>
+                    <div class="event-desc">OR document processed and approved.</div>
+                </div>
+                <div class="timeline-event processed">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">06/05/2022 16:00 <span class="event-status" style="color:#4CAF50;">Processed</span></div>
+                    <div class="event-desc">CR document processed and approved.</div>
+                </div>
+                <div class="timeline-event">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">06/01/2022 09:00</div>
+                    <div class="event-desc">Renewal request created.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="user-dashboard-card">
+        <h2>2021 Documents</h2>
+        <button class="dropdown-toggle" type="button" data-toggle="dropdown">Qiyana - 2021 Documents</button>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href="#">OR - 2021-05-01 Processed</a>
+            <a class="dropdown-item" href="#">CR - 2021-05-01 Processed</a>
+        </div>
+        <div class="doc-imgs">
+            <img src="/media/documents/Qiyana/2021-05-01/or/OR.jfif" alt="Qiyana OR">
+            <img src="/media/documents/Qiyana/2021-05-01/cr/CR.jfif" alt="Qiyana CR">
+        </div>
+        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#timeline2021" aria-expanded="false" aria-controls="timeline2021">Show Renewal Timeline</button>
+        <div class="collapse" id="timeline2021">
+            <div class="timeline">
+                <div class="timeline-event processed">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">05/01/2021 17:39 <span class="event-status" style="color:#4CAF50;">Processed</span></div>
+                    <div class="event-desc">OR document processed and approved.</div>
+                </div>
+                <div class="timeline-event processed">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">05/01/2021 16:00 <span class="event-status" style="color:#4CAF50;">Processed</span></div>
+                    <div class="event-desc">CR document processed and approved.</div>
+                </div>
+                <div class="timeline-event">
+                    <span class="timeline-dot"></span>
+                    <div class="event-title">04/28/2021 09:00</div>
+                    <div class="event-desc">Renewal request created.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

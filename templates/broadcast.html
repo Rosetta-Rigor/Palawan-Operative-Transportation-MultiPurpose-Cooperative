@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Broadcast Announcements{% endblock %}
+{% block content %}
+<div class="user-dashboard-card" style="max-width:700px; margin:32px auto;">
+    <h2>Broadcast Announcements & Notifications</h2>
+    <form method="post" action="{% url 'broadcast' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="announcement_title">Title</label>
+            <input type="text" class="form-control" id="announcement_title" name="announcement_title" required>
+        </div>
+        <div class="form-group">
+            <label for="announcement_message">Message</label>
+            <textarea class="form-control" id="announcement_message" name="announcement_message" rows="4" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="notification_type">Type</label>
+            <select class="form-control" id="notification_type" name="notification_type">
+                <option value="announcement">Announcement</option>
+                <option value="notification">Notification</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Broadcast</button>
+    </form>
+    <hr>
+    <h4>Recent Broadcasts</h4>
+    <ul>
+        {% for item in broadcasts %}
+            <li><strong>{{ item.title }}</strong>: {{ item.message }} <span style="color:#888;">({{ item.type }})</span></li>
+        {% empty %}
+            <li>No broadcasts yet.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

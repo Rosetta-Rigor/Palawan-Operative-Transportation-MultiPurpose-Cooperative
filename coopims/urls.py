@@ -8,7 +8,13 @@ from django.conf import settings
 from django.conf.urls.static import static
 # ...existing code...
 urlpatterns = [
+    # Removed old admin_approve_documents and admin_approve_document patterns
+    path("user/documents/upload/", views.user_upload_document, name="user_upload_document"),
+    path("documents/approve/", views.approve_documents, name="approve_documents"),
+    path("documents/approve/<int:doc_id>/", views.approve_document, name="approve_document"),
+    path("broadcast/", views.broadcast, name="broadcast"),
     path("admin/", admin.site.urls),
+    # Removed old admin_broadcast pattern
     path("", views.home, name="home"),
     path("members/", views.MemberListView.as_view(), name="member-list"),
     path("members/add/", views.member_add, name="member-add"),
@@ -16,7 +22,7 @@ urlpatterns = [
     path("vehicles/add/", views.VehicleCreateView.as_view(), name="vehicle-add"),
     path("user_home/", views.user_home, name="user_home"),
     path('user/profile/', views.user_profile, name='user_profile'),
-    path('user/vehicles/', views.user_vehicles, name='user_vehicles'),
+    path('user/announcements/', views.user_announcements, name='user_announcements'),
     path('user/documents/', views.user_documents, name='user_documents'),
 
     path('login/', views.custom_login, name='login'),

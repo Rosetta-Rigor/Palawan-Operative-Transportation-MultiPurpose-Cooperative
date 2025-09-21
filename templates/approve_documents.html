@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Check & Approve Documents{% endblock %}
+{% block content %}
+<div class="user-dashboard-card" style="max-width:700px; margin:32px auto;">
+    <h2>Check & Approve Documents</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Document</th>
+                <th>User</th>
+                <th>Date Uploaded</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in documents %}
+            <tr>
+                <td>{{ doc.name }}</td>
+                <td>{{ doc.user }}</td>
+                <td>{{ doc.date_uploaded }}</td>
+                <td>{{ doc.status }}</td>
+                <td>
+                    {% if doc.status == 'Pending' %}
+                    <form method="post" action="{% url 'approve_document' doc.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                    </form>
+                    {% else %}
+                    <span class="text-success">Approved</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No documents to approve.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

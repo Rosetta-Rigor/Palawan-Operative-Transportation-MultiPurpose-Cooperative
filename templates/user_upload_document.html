@@ -1,0 +1,20 @@
+{% extends 'user_base.html' %}
+{% block title %}Upload Document - User{% endblock %}
+{% block content %}
+<br><br>
+<div class="user-dashboard-card" style="max-width:700px; margin:32px auto;">
+    <h2>Upload Document</h2>
+    <form method="post" enctype="multipart/form-data" action="{% url 'user_upload_document' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="doc_name">Document Name</label>
+            <input type="text" class="form-control" id="doc_name" name="doc_name" required>
+        </div>
+        <div class="form-group">
+            <label for="doc_file">File</label>
+            <input type="file" class="form-control" id="doc_file" name="doc_file" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Upload</button>
+    </form>
+</div>
+{% endblock %}

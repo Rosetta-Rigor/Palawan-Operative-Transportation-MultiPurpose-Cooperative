@@ -1,5 +1,4 @@
 
-
 # ==== Imports ====
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
@@ -11,7 +10,6 @@ from django.template.loader import render_to_string
 from django.db.models import Q
 from django.forms import inlineformset_factory
 from django.utils import timezone
-
 from .models import Member, Vehicle, Document
 from .forms import MemberForm, VehicleForm, DocumentForm
 
@@ -84,20 +82,18 @@ def user_profile(request):
     return render(request, "user_profile.html", {"user": user})
 
 @login_required
-def user_vehicles(request):
+def user_announcements(request):
     """
-    List vehicles associated with the logged-in user.
+    Display announcements for the user side (placeholder content).
     """
-    vehicles = Vehicle.objects.filter(member__user=request.user)
-    return render(request, "user_vehicles.html", {"vehicles": vehicles})
+    return render(request, "user_announcements.html")
 
 @login_required
 def user_documents(request):
     """
-    List documents associated with the logged-in user's vehicles.
+    Display documents for the user side (placeholder content).
     """
-    documents = Document.objects.filter(vehicle__member__user=request.user)
-    return render(request, "user_documents.html", {"documents": documents})
+    return render(request, "user_documents.html")
 
 
 @login_required
@@ -161,6 +157,64 @@ def document_add_renewal(request, vehicle_id, renewal_date):
     else:
         form = DocumentForm(initial={'vehicle': vehicle, 'renewal_date': renewal_date})
     return render(request, "document_add.html", {"form": form, "vehicle": vehicle, "renewal_date": renewal_date})
+
+
+# ==== Approve Documents ====
+from django.contrib.admin.views.decorators import staff_member_required
+
+@staff_member_required
+def approve_documents(request):
+    """
+    View to list and approve user-uploaded documents.
+    Placeholder: shows sample documents for now.
+    """
+    documents = [
+        {'id': 1, 'name': 'OR 2025', 'user': 'Qiyana', 'date_uploaded': '2025-09-16', 'status': 'Pending'},
+        {'id': 2, 'name': 'CR 2025', 'user': 'Qiyana', 'date_uploaded': '2025-09-16', 'status': 'Approved'},
+    ]
+    return render(request, "approve_documents.html", {"documents": documents})
+
+@staff_member_required
+def approve_document(request, doc_id):
+    """
+    POST endpoint to approve a document (placeholder logic).
+    """
+    # In real app, update document status in DB
+    return redirect('approve_documents')
+
+# ==== User: Upload Document ====
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def user_upload_document(request):
+    """
+    User view to upload a document (placeholder logic).
+    """
+    if request.method == "POST":
+        # In real app, save uploaded file and details
+        pass
+    return render(request, "user_upload_document.html")
+
+# ==== Broadcast View ====
+from django.contrib.admin.views.decorators import staff_member_required
+
+@staff_member_required
+def broadcast(request):
+    """
+    View to broadcast announcements and notifications to users.
+    Handles GET (show form and recent broadcasts) and POST (save new broadcast).
+    """
+    if 'broadcasts' not in request.session:
+        request.session['broadcasts'] = []
+    broadcasts = request.session['broadcasts']
+    if request.method == "POST":
+        title = request.POST.get('announcement_title')
+        message = request.POST.get('announcement_message')
+        ntype = request.POST.get('notification_type')
+        broadcasts.append({'title': title, 'message': message, 'type': ntype})
+        request.session['broadcasts'] = broadcasts
+    return render(request, "broadcast.html", {"broadcasts": broadcasts})
+
 
 # ==== Class-based Views: Member ====
 

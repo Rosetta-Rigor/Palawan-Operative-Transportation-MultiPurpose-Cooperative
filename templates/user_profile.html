@@ -1,0 +1,12 @@
+{% extends 'user_base.html' %}
+{% block title %}User Profile - Coop Management{% endblock %}
+{% block content %}
+<br><br>
+<div class="user-dashboard-card">
+    <h2>My Profile</h2>
+    <div class="feature-card">Name: <span class="placeholder">{{ user.get_full_name }}</span></div>
+    <div class="feature-card">Email: <span class="placeholder">{{ user.email }}</span></div>
+    <div class="feature-card">Member Since: <span class="placeholder">2024</span></div>
+    <div class="feature-card">Status: <span class="placeholder">Active</span></div>
+</div>
+{% endblock %}
