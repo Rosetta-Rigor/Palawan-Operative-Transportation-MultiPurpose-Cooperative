@@ -1,3 +1,15 @@
+# ==== Member Dormant/Activate Toggle ====
+from django.contrib.admin.views.decorators import staff_member_required
+
+@staff_member_required
+def member_dormant_toggle(request, pk):
+    """
+    Toggle dormant/activate status for a member (listview action button).
+    """
+    member = get_object_or_404(Member, pk=pk)
+    member.is_dormant = not member.is_dormant
+    member.save()
+    return redirect('member-list')
 
 # ==== Imports ====
 from django.shortcuts import render, redirect, get_object_or_404
@@ -40,24 +52,16 @@ def member_add(request):
     """
     if request.method == "POST":
         member_form = MemberForm(request.POST)
-        # Validate member form first
         if member_form.is_valid():
             member = member_form.save()
-            # Assign selected vehicle to this member if chosen
-            vehicle = member_form.cleaned_data.get('vehicle')
-            if vehicle:
-                vehicle.member = member
-                vehicle.save()
             # Handle new vehicle creation via formset
             formset = VehicleFormSet(request.POST, instance=member)
             if formset.is_valid():
                 formset.save()
                 return redirect("member-list")
         else:
-            # If member form is invalid, still bind formset for error display
             formset = VehicleFormSet(request.POST)
     else:
-        # GET request: show empty forms
         member_form = MemberForm()
         formset = VehicleFormSet()
     return render(request, "member_add.html", {"form": member_form, "formset": formset})
@@ -111,15 +115,9 @@ def member_edit(request, pk):
         formset = VehicleFormSet(request.POST, instance=member)
         if member_form.is_valid() and formset.is_valid():
             member_form.save()
-            # Assign selected vehicle to this member if chosen
-            vehicle = member_form.cleaned_data.get('vehicle')
-            if vehicle:
-                vehicle.member = member
-                vehicle.save()
             formset.save()
             return redirect("member-list")
     else:
-        # GET request: show forms pre-filled with member and their vehicles
         member_form = MemberForm(instance=member)
         formset = VehicleFormSet(instance=member)
     return render(request, "member_add.html", {"form": member_form, "formset": formset})
@@ -231,18 +229,18 @@ class MemberListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        # Filter queryset based on search query
-        queryset = super().get_queryset()
+        # Filter queryset based on search query, matching new Member model fields
+        queryset = super().get_queryset().select_related('batch').prefetch_related('vehicles')
         q = self.request.GET.get("q", "")
         if q:
             queryset = queryset.filter(
-                Q(name__icontains=q) |
-                Q(gmail__icontains=q) |
-                Q(batch__number__icontains=q) |
-                Q(file_number__icontains=q) |
-                Q(renewal_date__icontains=q) |
-                Q(vehicle__plate_number__icontains=q)
-            )
+                Q(full_name__icontains=q) |
+                Q(phone_number__icontains=q) |
+                Q(email__icontains=q) |
+                Q(batch__name__icontains=q) |
+                Q(batch_monitoring_number__icontains=q) |
+                Q(vehicles__plate_number__icontains=q)
+            ).distinct()
         return queryset
 
     def render_to_response(self, context, **response_kwargs):

@@ -16,8 +16,8 @@
         {% endif %}
     </td>
     <td>
-        <a href="{% url 'vehicle-edit' vehicle.pk %}" class="btn btn-sm btn-primary">Edit</a>
-        <a href="{% url 'vehicle-delete' vehicle.pk %}" class="btn btn-sm btn-danger">Delete</a>
+    <a href="{% url 'vehicle_edit' vehicle.pk %}" class="btn btn-sm btn-primary">Edit</a>
+    <a href="{% url 'vehicle_delete' vehicle.pk %}" class="btn btn-sm btn-danger">Delete</a>
     </td>
 </tr>
 {% empty %}

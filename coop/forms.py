@@ -1,5 +1,5 @@
 from django import forms
-from .models import Member, Vehicle, Document
+from .models import Member, Vehicle, Document, DocumentEntry, Batch
 
 class MemberForm(forms.ModelForm):
     vehicle = forms.ModelChoiceField(
@@ -11,25 +11,30 @@ class MemberForm(forms.ModelForm):
 
     class Meta:
         model = Member
-        fields = ['name', 'gmail', 'batch', 'file_number', 'renewal_date']
+        fields = [
+            'full_name', 'phone_number', 'email', 'batch', 'batch_monitoring_number', 'is_dormant'
+        ]
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control select2'}),
-            'gmail': forms.EmailInput(attrs={'class': 'form-control select2'}),
+            'full_name': forms.TextInput(attrs={'class': 'form-control select2'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control select2'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control select2'}),
             'batch': forms.Select(attrs={'class': 'form-control select2'}),
-            'file_number': forms.TextInput(attrs={'class': 'form-control select2'}),
-            'renewal_date': forms.DateInput(attrs={'class': 'form-control select2', 'type': 'date'}),
+            'batch_monitoring_number': forms.NumberInput(attrs={'class': 'form-control select2'}),
+            'is_dormant': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
 class VehicleForm(forms.ModelForm):
     class Meta:
         model = Vehicle
-        fields = "__all__"
+        fields = [
+            'plate_number', 'engine_number', 'chassis_number', 'make_brand',
+            'year_model', 'series', 'color', 'member'
+        ]
         widgets = {
             'plate_number': forms.TextInput(attrs={'class': 'form-control select2'}),
             'engine_number': forms.TextInput(attrs={'class': 'form-control select2'}),
             'chassis_number': forms.TextInput(attrs={'class': 'form-control select2'}),
             'make_brand': forms.TextInput(attrs={'class': 'form-control select2'}),
-            'body_type': forms.TextInput(attrs={'class': 'form-control select2'}),
             'year_model': forms.NumberInput(attrs={'class': 'form-control select2'}),
             'series': forms.TextInput(attrs={'class': 'form-control select2'}),
             'color': forms.TextInput(attrs={'class': 'form-control select2'}),
@@ -38,18 +43,35 @@ class VehicleForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        qs = Member.objects.filter(vehicle__isnull=True)
+        qs = Member.objects.filter(vehicles__isnull=True)
         if self.instance and self.instance.member:
-            qs = Member.objects.filter(vehicle__isnull=True) | Member.objects.filter(pk=self.instance.member.pk)
+            qs = Member.objects.filter(vehicles__isnull=True) | Member.objects.filter(pk=self.instance.member.pk)
         self.fields['member'].queryset = qs.distinct()
 
 class DocumentForm(forms.ModelForm):
     class Meta:
         model = Document
-        fields = ['vehicle', 'renewal_date', 'official_receipt', 'certificate_of_registration']
+        fields = ['tin', 'vehicle']
         widgets = {
+            'tin': forms.TextInput(attrs={'class': 'form-control select2'}),
             'vehicle': forms.Select(attrs={'class': 'form-control select2'}),
+        }
+
+class DocumentEntryForm(forms.ModelForm):
+    class Meta:
+        model = DocumentEntry
+        fields = ['document', 'renewal_date', 'official_receipt', 'certificate_of_registration']
+        widgets = {
+            'document': forms.Select(attrs={'class': 'form-control select2'}),
             'renewal_date': forms.DateInput(attrs={'class': 'form-control select2', 'type': 'date'}),
             'official_receipt': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'certificate_of_registration': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }
+
+class BatchForm(forms.ModelForm):
+    class Meta:
+        model = Batch
+        fields = ['number']
+        widgets = {
+            'number': forms.TextInput(attrs={'class': 'form-control select2'}),
         }

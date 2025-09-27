@@ -14,7 +14,7 @@
                     <br />
                     <div class="col-md-12 row">
                         <div class="col-md-6">
-                            <form class="navbar-left navbar-form nav-search mr-md-3" action="{% url 'member-list' %}">
+                            <form class="navbar-left navbar-form nav-search mr-md-3" action="{% url 'member_list' %}">
                                 <div class="input-group">
                                     <input type="text" id="member-search" placeholder="Search ..." class="form-control" name="q" autocomplete="off" />
                                     <div class="input-group-append">
@@ -27,7 +27,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="pull-right">
-                                <a href="{% url 'member-add' %}" class="btn btn-success btn-rounded"> Add Member</a>
+                                <a href="{% url 'member_add' %}" class="btn btn-success btn-rounded"> Add Member</a>
                             </div>
                         </div>
                     </div>
@@ -35,39 +35,46 @@
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Gmail</th>
+                                    <th>Full Name</th>
+                                    <th>Phone Number</th>
+                                    <th>Email</th>
                                     <th>Batch</th>
-                                    <th>File Number</th>
-                                    <th>Renewal Date</th>
+                                    <th>Batch Monitoring #</th>
+                                    <th>Dormant</th>
                                     <th>Vehicle Plate</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="member-table-body">
                                 {% for member in object_list %}
-                                <tr>
-                                    <td>{{ member.name }}</td>
-                                    <td>{{ member.gmail }}</td>
+                                <tr {% if member.is_dormant %}class="table-dark"{% endif %}>
+                                    <td>{{ member.full_name }}</td>
+                                    <td>{{ member.phone_number }}</td>
+                                    <td>{{ member.email }}</td>
                                     <td>{{ member.batch.number }}</td>
-                                    <td>{{ member.file_number }}</td>
-                                    <td>{{ member.renewal_date }}</td>
+                                    <td>{{ member.batch_monitoring_number }}</td>
+                                    <td>{% if member.is_dormant %}Dormant{% else %}Active{% endif %}</td>
                                     <td>
-                                        {% if member.vehicle %}
-                                            {{ member.vehicle.plate_number }}
+                                        {% if member.vehicles.first %}
+                                            {{ member.vehicles.first.plate_number }}
                                         {% else %}
                                             N/A
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'member-edit' member.pk %}" class="btn btn-sm btn-primary">Edit</a>
-                                        <a href="{% url 'member-delete' member.pk %}" class="btn btn-sm btn-danger">Delete</a>
-                                        <a href="{% url 'member-renewal-update' member.pk %}" class="btn btn-warning btn-sm">Update Renewal</a>
+                                        <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                                        <a href="{% url 'member_confirm_delete' member.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                                        <a href="{% url 'member_renewal_update' member.pk %}" class="btn btn-warning btn-sm">Renew</a>
+                                        {% if member.is_dormant %}
+                                            <a href="{% url 'member_activate' member.pk %}" class="btn btn-success btn-sm">Activate</a>
+                                        {% else %}
+                                            <a href="{% url 'member_dormant_toggle' member.pk %}" class="btn btn-dark btn-sm">Dormant</a>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="7">No members found.</td>
+                                    <td colspan="8">No members found.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -84,7 +91,7 @@ $(function() {
     $('#member-search').on('input', function() {
         var query = $(this).val();
         $.ajax({
-            url: "{% url 'member-list' %}",
+            url: "{% url 'member_list' %}",
             data: { q: query },
             dataType: 'json',
             success: function(data) {
