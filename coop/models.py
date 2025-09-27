@@ -1,5 +1,19 @@
+
 from django.db import models
 import datetime
+
+class DocumentUpdateRequest(models.Model):
+    member = models.ForeignKey('Member', on_delete=models.CASCADE)
+    vehicle = models.ForeignKey('Vehicle', on_delete=models.CASCADE)
+    tin = models.CharField(max_length=32)
+    requested_at = models.DateTimeField(auto_now_add=True)
+    official_receipt = models.FileField(upload_to='requests/or/')
+    certificate_of_registration = models.FileField(upload_to='requests/cr/')
+    status = models.CharField(max_length=16, choices=[('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected')], default='pending')
+    notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Request by {self.member.name} for {self.vehicle.plate_number} ({self.status})"
 
 def document_upload_path(instance, filename, doc_type):
     """
@@ -53,6 +67,9 @@ class Vehicle(models.Model):
         null=True,
         blank=True
     )
+    renewal_date = models.DateField(default="2024-01-01")
+    # Buffer zone flag for renewal workflow
+    pending_document_update = models.BooleanField(default=False)
     # Vehicle can have many documents (one per renewal)
     def __str__(self):
         return self.plate_number

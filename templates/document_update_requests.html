@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Document Update Requests{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Document Update Requests</h2>
+    <div class="card mt-3">
+        <div class="card-body">
+            {% if requests %}
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>User Full Name</th>
+                        <th>Vehicle Plate</th>
+                        <th>TIN</th>
+                        <th>Requested At</th>
+                        <th>Files Uploaded</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                    <tr>
+                        <td>{{ req.member.name }}</td>
+                        <td>{{ req.vehicle.plate_number }}</td>
+                        <td>{{ req.tin }}</td>
+                        <td>{{ req.requested_at }}</td>
+                        <td>
+                            <a href="{{ req.official_receipt.url }}" target="_blank">OR</a> |
+                            <a href="{{ req.certificate_of_registration.url }}" target="_blank">CR</a>
+                        </td>
+                        <td>
+                            {% if req.status == 'pending' %}
+                                <span class="badge badge-warning">Pending</span>
+                            {% elif req.status == 'accepted' %}
+                                <span class="badge badge-success">Accepted</span>
+                            {% else %}
+                                <span class="badge badge-danger">Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if req.status == 'pending' %}
+                            <form method="post" action="{% url 'process-document-update-request' req.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" name="action" value="accept" class="btn btn-success btn-sm">Accept</button>
+                            </form>
+                            <form method="post" action="{% url 'process-document-update-request' req.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="text" name="notes" placeholder="Reason for rejection" class="form-control form-control-sm mb-1" style="width:140px;display:inline-block;">
+                                <button type="submit" name="action" value="reject" class="btn btn-danger btn-sm">Reject</button>
+                            </form>
+                            {% else %}
+                                <em>No actions available</em>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-info">No document update requests at this time.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

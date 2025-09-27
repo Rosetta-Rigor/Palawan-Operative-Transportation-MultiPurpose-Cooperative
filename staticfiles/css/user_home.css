@@ -1,0 +1,33 @@
+body {
+    background: url('../img/bg.jpg') no-repeat center center fixed;
+    background-size: cover;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+.user-home-card {
+    background: #FFD43B;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(107,47,19,0.15);
+}
+.user-home-logo {
+    width: 120px;
+    margin-bottom: 16px;
+}
+.user-home-title {
+    color: #6B2F13;
+    font-weight: bold;
+}
+.user-home-subtitle {
+    color: #222;
+}
+.user-home-feature {
+    background: #fffbe6;
+    border: 1px solid #6B2F13;
+    color: #222;
+}
+.user-home-feature strong {
+    color: #6B2F13;
+}
+.user-home-feature ul {
+    color: #222;
+}

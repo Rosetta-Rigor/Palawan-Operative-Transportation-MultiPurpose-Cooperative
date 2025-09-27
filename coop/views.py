@@ -1,4 +1,47 @@
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.template.loader import render_to_string
+from django.db.models import Q
+from django.forms import inlineformset_factory
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+from .models import Member, Vehicle, Document, DocumentUpdateRequest
+from .forms import MemberForm, VehicleForm, DocumentForm
+
+@login_required
+def document_update_requests(request):
+    """
+    Dashboard view for manager to see and process document update requests.
+    """
+    requests_qs = DocumentUpdateRequest.objects.select_related('member', 'vehicle').order_by('-requested_at')
+    return render(request, "document_update_requests.html", {"requests": requests_qs})
+
+@login_required
+@require_POST
+def process_document_update_request(request, request_id):
+    """
+    Accept or reject a document update request. If accepted, update vehicle/document renewal date.
+    """
+    action = request.POST.get("action")
+    req = DocumentUpdateRequest.objects.get(pk=request_id)
+    if action == "accept":
+        # Update vehicle renewal date (+1 year)
+        v = req.vehicle
+        v.renewal_date = v.renewal_date.replace(year=v.renewal_date.year + 1)
+        v.save()
+        req.status = "accepted"
+        req.save()
+    elif action == "reject":
+        req.status = "rejected"
+        req.notes = request.POST.get("notes", "")
+        req.save()
+    return redirect("document-update-requests")
+
 # ==== Imports ====
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
@@ -26,8 +69,25 @@ VehicleFormSet = inlineformset_factory(
 def home(request):
     """
     Renders the home page for logged-in users.
+    Provides vehicles pending renewal and pending document update for dashboard workflow.
     """
-    return render(request, "home.html")
+    # Vehicles eligible for renewal (renewal date within 2 months)
+    from datetime import date, timedelta
+    today = date.today()
+    soon = today + timedelta(days=60)
+    vehicles_for_renewal = Vehicle.objects.filter(renewal_date__lte=soon, renewal_date__gte=today)
+    # Vehicles in buffer zone (pending document update)
+    buffer_vehicles = Vehicle.objects.filter(pending_document_update=True)
+    total_buffer = buffer_vehicles.count()
+    to_update = buffer_vehicles.filter(pending_document_update=True).count()
+    percent_complete = int(((total_buffer - to_update) / total_buffer) * 100) if total_buffer > 0 else 100
+    return render(request, "home.html", {
+        "vehicles_for_renewal": vehicles_for_renewal,
+        "buffer_vehicles": buffer_vehicles,
+        "total_buffer": total_buffer,
+        "to_update": to_update,
+        "percent_complete": percent_complete,
+    })
 
 @login_required
 def member_add(request):
@@ -134,9 +194,11 @@ def member_renewal_update(request, pk):
     new_date = old_date.replace(year=old_date.year + 1)
     member.renewal_date = new_date
     member.save()
-    # Redirect to add document for this vehicle, pre-filling renewal_date
+    # Set buffer zone flag for vehicle
     vehicle = getattr(member, 'vehicle', None)
     if vehicle:
+        vehicle.pending_document_update = True
+        vehicle.save()
         return redirect('document-add-renewal', vehicle_id=vehicle.id, renewal_date=new_date)
     return redirect('member-list')
 
@@ -153,6 +215,9 @@ def document_add_renewal(request, vehicle_id, renewal_date):
             doc.vehicle = vehicle
             doc.renewal_date = renewal_date
             doc.save()
+            # Remove from buffer zone after document update
+            vehicle.pending_document_update = False
+            vehicle.save()
             return redirect('document-list')
     else:
         form = DocumentForm(initial={'vehicle': vehicle, 'renewal_date': renewal_date})

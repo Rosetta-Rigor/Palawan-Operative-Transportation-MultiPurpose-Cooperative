@@ -13,6 +13,8 @@ urlpatterns = [
     path("documents/approve/", views.approve_documents, name="approve_documents"),
     path("documents/approve/<int:doc_id>/", views.approve_document, name="approve_document"),
     path("broadcast/", views.broadcast, name="broadcast"),
+    path("requests/", views.document_update_requests, name="document-update-requests"),
+    path("requests/process/<int:request_id>/", views.process_document_update_request, name="process-document-update-request"),
     path("admin/", admin.site.urls),
     # Removed old admin_broadcast pattern
     path("", views.home, name="home"),

@@ -1,5 +1,13 @@
 from django.contrib import admin
-from .models import Batch, Member, Vehicle, Document
+
+from .models import Batch, Member, Vehicle, Document, DocumentUpdateRequest
+
+
+@admin.register(DocumentUpdateRequest)
+class DocumentUpdateRequestAdmin(admin.ModelAdmin):
+    list_display = ("member", "vehicle", "tin", "requested_at", "status")
+    list_filter = ("status", "requested_at")
+    search_fields = ("member__name", "vehicle__plate_number", "tin")
 
 
 @admin.register(Batch)

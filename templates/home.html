@@ -1,10 +1,134 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Home - Coop Management{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/dashboard_notifications.css' %}">
 <div class="content">
     <div class="container-fluid">
-        <h2>Welcome to Coop Management System</h2>
-        <p>Use the sidebar to navigate members and vehicles.</p>
+        <h2>Palawan Operators Transport Multi-Purpose Cooperative</h2>
+
+        <!-- Notification Card Top Right -->
+        <div id="dashboard-notif-card">
+            <div class="notif-header">
+                <span>Notifications</span>
+                <button class="notif-toggle" id="notif-toggle-btn" title="Minimize/Maximize">&#x25B2;</button>
+            </div>
+            <div id="dashboard-notif-list"></div>
+        </div>
+        <link rel="stylesheet" href="{% static 'css/dashboard_widgets.css' %}">
+    
+        <div class="row mt-2">
+            <div class="col-12 mb-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between">
+                    <div>
+                        <label for="batch-sort" class="mr-2 font-weight-bold">Sort by:</label>
+                        <select id="batch-sort" class="form-control d-inline-block" style="width:160px;">
+                            <option value="urgency">Urgency</option>
+                            <option value="renewal_date">Renewal Date</option>
+                            <option value="members">Members</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="batch-filter" class="mr-2 font-weight-bold">Filter:</label>
+                        <input type="month" id="batch-filter" class="form-control d-inline-block" style="width:160px;" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" id="batch-cards-row">
+            <!-- Dynamic batch containers will be loaded here -->
+        </div>
+
+        <!-- Requests Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body d-flex align-items-center justify-content-between">
+                        <div>
+                            <h4 class="mb-1">Requests</h4>
+                            <p class="mb-0">Review and approve document update requests from client members.</p>
+                        </div>
+                        <a href="{% url 'document-update-requests' %}" class="btn btn-info">View Requests</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Renewal Feature Modal/Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <h4>Renewal Feature</h4>
+                <div class="d-flex flex-wrap gap-4">
+                    <!-- Box 1: Members tied to vehicles, eligible for renewal -->
+                    <div class="card p-3" style="min-width:340px; flex:1;">
+                        <h5>Eligible for Renewal</h5>
+                        <input type="text" class="form-control mb-2" id="renewal-search" placeholder="Search members...">
+                        <ul class="list-group" id="renewal-member-list">
+                            {% for v in vehicles_for_renewal %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    {{ v.member.name }}<br>
+                                    <small>Plate: {{ v.plate_number }}</small><br>
+                                    <small>Renewal: {{ v.renewal_date }}</small>
+                                </span>
+                                <button class="btn btn-success btn-sm" onclick="addToRenewed('{{ v.id }}')">+</button>
+                            </li>
+                            {% empty %}
+                            <li class="list-group-item">No members eligible for renewal.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <!-- Box 2: Renewed members -->
+                    <div class="card p-3" style="min-width:340px; flex:1;">
+                        <h5>Renewed</h5>
+                        <ul class="list-group" id="renewed-member-list">
+                            <!-- JS will populate this -->
+                        </ul>
+                        <button class="btn btn-primary mt-3" id="confirm-renewal-btn" onclick="confirmRenewal()">Confirm Renewal</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buffer Zone: Newly Renewed Members Pending Document Update -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <h4>Buffer Zone: Pending Document Update</h4>
+                <ul class="list-group" id="buffer-member-list">
+                    {% for v in buffer_vehicles %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            {{ v.member.name }}<br>
+                            <small>Plate: {{ v.plate_number }}</small><br>
+                            <small>Renewal: {{ v.renewal_date }}</small>
+                        </span>
+                        <button class="btn btn-warning btn-sm" onclick="showUpdateDocumentModal('{{ v.id }}')">Update</button>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item">No members pending document update.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+                <!-- Completion Tracker for Buffer Zone -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <h4>Completion Tracker</h4>
+                {% if total_buffer > 0 %}
+                    <div class="progress" style="height: 32px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ percent_complete }}%;" aria-valuenow="{{ percent_complete }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ to_update }} to update ({{ percent_complete }}% complete)
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-success">All renewed members have updated documents!</div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
+
+
+<script src="{% static 'js/dashboard_notifications.js' %}"></script>
+<script src="{% static 'js/renewal_reminders.js' %}"></script>
 {% endblock %}

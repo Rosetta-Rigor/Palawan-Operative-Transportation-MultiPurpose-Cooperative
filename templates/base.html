@@ -83,22 +83,23 @@
 						</a>
 					</li>
 					<li class="nav-item">
-						<a href="{% url 'member-list' %}">
+						<a href="{% url 'document-update-requests' %}">
+							<i class="la la-file-upload"></i>
+							<p>Document Update Requests</p>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="d-inline-flex align-items-center rounded border-0" data-toggle="collapse" href="#membersMenu" role="button" aria-expanded="false" aria-controls="membersMenu" style="color:#a67c52;background:none;width:100%;text-align:left;">
 							<i class="la la-users"></i>
-							<p>Members</p>
+							<span>Members</span>
 						</a>
-					</li>
-					<li class="nav-item">
-						<a href="{% url 'vehicle-list' %}">
-							<i class="la la-car"></i>
-							<p>Vehicles</p>
-						</a>
-					</li>
-					<li class="nav-item">
-						<a href="{% url 'document-list' %}">
-							<i class="la la-file"></i>
-							<p>Documents</p>
-						</a>
+						<div class="collapse" id="membersMenu">
+							<ul class="list-unstyled fw-normal pb-1 small">
+								<li><a href="{% url 'member-list' %}" style="margin-left: 20px;" class="d-inline-flex text-decoration-none rounded"><i class="la la-user"></i> Members List</a></li>
+								<li><a href="{% url 'vehicle-list' %}" style="margin-left: 20px;" class="d-inline-flex text-decoration-none rounded"><i class="la la-car"></i> Vehicles</a></li>
+								<li><a href="{% url 'document-list' %}" style="margin-left: 20px;" class="d-inline-flex text-decoration-none rounded"><i class="la la-file"></i> Documents</a></li>
+							</ul>
+						</div>
 					</li>
 					<li class="nav-item">
 						<a href="{% url 'approve_documents' %}">
