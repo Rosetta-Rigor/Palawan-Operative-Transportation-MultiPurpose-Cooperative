@@ -13,8 +13,8 @@
         {% endif %}
     </td>
     <td>
-    <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm btn-primary">Edit</a>
-    <a href="{% url 'member_confirm_delete' member.pk %}" class="btn btn-sm btn-danger">Delete</a>
+        <a href="{% url 'member-edit' member.pk %}" class="btn btn-sm btn-primary">Edit</a>
+        <a href="{% url 'member-delete' member.pk %}" class="btn btn-sm btn-danger">Delete</a>
     </td>
 </tr>
 {% empty %}

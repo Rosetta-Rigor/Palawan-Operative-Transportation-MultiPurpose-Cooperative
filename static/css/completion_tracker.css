@@ -1,0 +1,6 @@
+/* Completion Tracker Styles */
+.completion-progress-bar {
+    height: 30px;
+    font-size: 1.2rem;
+    border-radius: 8px;
+}

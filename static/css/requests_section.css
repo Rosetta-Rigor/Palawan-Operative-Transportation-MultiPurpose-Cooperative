@@ -1,0 +1,5 @@
+/* Requests Section Styles */
+.requests-table th, .requests-table td {
+    vertical-align: middle;
+    text-align: center;
+}

@@ -1,10 +1,176 @@
 {% extends 'base.html' %}
-{% block title %}Home - Coop Management{% endblock %}
+{% load static %}
+{% block title %}Dashboard - Coop Management{% endblock %}
 {% block content %}
 <div class="content">
     <div class="container-fluid">
-        <h2>Welcome to Coop Management System</h2>
-        <p>Use the sidebar to navigate members and vehicles.</p>
+        <!-- Dashboard Widgets -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary shadow-lg">
+                    <div class="card-body text-center">
+                        <h4 class="card-title">Total Members</h4>
+                        <div style="font-size:2.5rem; font-weight:bold;">{{ total_members|default:123 }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success shadow-lg">
+                    <div class="card-body text-center">
+                        <h4 class="card-title">Active Vehicles</h4>
+                        <div style="font-size:2.5rem; font-weight:bold;">{{ total_vehicles|default:45 }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning shadow-lg">
+                    <div class="card-body text-center">
+                        <h4 class="card-title">Pending Renewals</h4>
+                        <div style="font-size:2.5rem; font-weight:bold;">{{ pending_renewals|default:7 }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-danger shadow-lg">
+                    <div class="card-body text-center">
+                        <h4 class="card-title">Expiring Soon</h4>
+                        <div style="font-size:2.5rem; font-weight:bold;">{{ expiring_soon|default:3 }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Batch Cards & Sorting -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Batch Overview</h4>
+                <div>
+                    <label for="batch-sort" class="mr-2">Sort by:</label>
+                    <select id="batch-sort" class="form-control d-inline-block w-auto mr-2">
+                        <option value="urgency">Urgency</option>
+                        <option value="renewal_date">Renewal Date</option>
+                        <option value="members">Members</option>
+                    </select>
+                    <label for="batch-filter" class="mr-2">Filter by Month:</label>
+                    <input type="month" id="batch-filter" class="form-control d-inline-block w-auto">
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row" id="batch-cards-row">
+                    <!-- Batch cards rendered by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="card mb-4" id="dashboard-notif-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Notifications</h4>
+                <button id="notif-toggle-btn" class="btn btn-sm btn-outline-secondary" title="Toggle notifications">&#x25B2;</button>
+            </div>
+            <div class="card-body" id="dashboard-notif-list" style="max-height:180px; overflow-y:auto;">
+                <!-- Notifications rendered by JS -->
+            </div>
+        </div>
+
+        <!-- Renewal Modal (buffer zone) -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Renewal Buffer Zone</h4>
+                <input type="text" id="renewal-search" class="form-control w-25" placeholder="Search members...">
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Eligible for Renewal</h5>
+                        <ul id="renewal-member-list" class="list-group mb-3">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Ezreal (Batch 1)</span>
+                                <button class="btn btn-sm btn-success" onclick="addToRenewed('veh123')">Renew</button>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>Diana (Batch 2)</span>
+                                <button class="btn btn-sm btn-success" onclick="addToRenewed('veh456')">Renew</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Renewed This Session</h5>
+                        <ul id="renewed-member-list" class="list-group mb-3">
+                            <!-- Populated by JS -->
+                        </ul>
+                        <button class="btn btn-primary" onclick="confirmRenewal()">Confirm Renewal</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completion Tracker -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">Completion Tracker</h4>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-2" style="height: 30px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 80%; font-size:1.2rem;" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100">80% Complete</div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Documents Uploaded: 80/100</span>
+                    <span>Pending: 20</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Requests Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">Requests</h4>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>User</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Document Update</td>
+                            <td>Qiyana</td>
+                            <td>2025-09-16</td>
+                            <td><span class="badge badge-warning">Pending</span></td>
+                            <td><a href="/document_update_requests/" class="btn btn-sm btn-info">Review</a></td>
+                        </tr>
+                        <tr>
+                            <td>Renewal</td>
+                            <td>Diana</td>
+                            <td>2025-09-10</td>
+                            <td><span class="badge badge-success">Accepted</span></td>
+                            <td><a href="#" class="btn btn-sm btn-secondary disabled">View</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
+<!-- Feature-specific CSS -->
+<link rel="stylesheet" href="{% static 'css/dashboard_widgets.css' %}">
+<link rel="stylesheet" href="{% static 'css/batch_cards.css' %}">
+<link rel="stylesheet" href="{% static 'css/dashboard_notifications.css' %}">
+<link rel="stylesheet" href="{% static 'css/renewal_buffer_zone.css' %}">
+<link rel="stylesheet" href="{% static 'css/completion_tracker.css' %}">
+<link rel="stylesheet" href="{% static 'css/requests_section.css' %}">
+
+<!-- Feature-specific JS -->
+<script src="{% static 'js/dashboard_widgets.js' %}"></script>
+<script src="{% static 'js/batch_cards.js' %}"></script>
+<script src="{% static 'js/dashboard_notifications.js' %}"></script>
+<script src="{% static 'js/renewal_buffer_zone.js' %}"></script>
+<script src="{% static 'js/completion_tracker.js' %}"></script>
+<script src="{% static 'js/requests_section.js' %}"></script>
 {% endblock %}

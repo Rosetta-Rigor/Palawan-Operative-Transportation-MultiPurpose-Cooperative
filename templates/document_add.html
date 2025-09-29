@@ -6,7 +6,28 @@
         <h4 class="page-title">Add Document for {{ vehicle.plate_number }} (Renewal: {{ renewal_date }})</h4>
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
-            {{ form.as_p }}
+            <div class="form-group">
+                <label for="id_tin">TIN</label>
+                {{ form.tin }}
+            </div>
+            <div class="form-group">
+                <label for="id_vehicle">Vehicle</label>
+                {{ form.vehicle }}
+            </div>
+            {% if entry_form %}
+            <div class="form-group">
+                <label for="id_renewal_date">Renewal Date</label>
+                {{ entry_form.renewal_date }}
+            </div>
+            <div class="form-group">
+                <label for="id_official_receipt">Official Receipt (OR)</label>
+                {{ entry_form.official_receipt }}
+            </div>
+            <div class="form-group">
+                <label for="id_certificate_of_registration">Certificate of Registration (CR)</label>
+                {{ entry_form.certificate_of_registration }}
+            </div>
+            {% endif %}
             <button type="submit" class="btn btn-primary">Save</button>
         </form>
     </div>

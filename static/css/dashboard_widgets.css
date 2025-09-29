@@ -1,0 +1,43 @@
+/* dashboard_widgets.css */
+.dashboard-widget-row {
+    display: flex;
+    gap: 32px;
+    margin-top: 32px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.dashboard-widget {
+    flex: 1 1 220px;
+    min-width: 220px;
+    max-width: 320px;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    padding: 28px 24px 20px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: box-shadow 0.2s, transform 0.2s;
+    position: relative;
+}
+.dashboard-widget:hover {
+    box-shadow: 0 8px 32px rgba(25,118,210,0.12);
+    transform: translateY(-2px) scale(1.03);
+}
+.dashboard-widget .widget-icon {
+    font-size: 2.6rem;
+    margin-bottom: 10px;
+}
+.dashboard-widget .widget-value {
+    font-size: 2.4rem;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+.dashboard-widget .widget-label {
+    font-size: 1.08rem;
+    color: #555;
+    margin-bottom: 6px;
+}
+.dashboard-widget .widget-actions a {
+    margin: 0 4px;
+}

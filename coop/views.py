@@ -9,7 +9,7 @@ def member_dormant_toggle(request, pk):
     member = get_object_or_404(Member, pk=pk)
     member.is_dormant = not member.is_dormant
     member.save()
-    return redirect('member-list')
+    return redirect('member_list')
 
 # ==== Imports ====
 from django.shortcuts import render, redirect, get_object_or_404
@@ -58,7 +58,7 @@ def member_add(request):
             formset = VehicleFormSet(request.POST, instance=member)
             if formset.is_valid():
                 formset.save()
-                return redirect("member-list")
+                return redirect("member_list")
         else:
             formset = VehicleFormSet(request.POST)
     else:
@@ -116,7 +116,7 @@ def member_edit(request, pk):
         if member_form.is_valid() and formset.is_valid():
             member_form.save()
             formset.save()
-            return redirect("member-list")
+            return redirect("member_list")
     else:
         member_form = MemberForm(instance=member)
         formset = VehicleFormSet(instance=member)
@@ -136,7 +136,7 @@ def member_renewal_update(request, pk):
     vehicle = getattr(member, 'vehicle', None)
     if vehicle:
         return redirect('document-add-renewal', vehicle_id=vehicle.id, renewal_date=new_date)
-    return redirect('member-list')
+    return redirect('member_list')
 
 @login_required
 def document_add_renewal(request, vehicle_id, renewal_date):

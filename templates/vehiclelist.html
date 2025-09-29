@@ -45,11 +45,29 @@
                                         <th>Series</th>
                                         <th>Color</th>
                                         <th>Owner</th>
-                                        <th>Action</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="vehicle-table-body">
-                                    {% include "includes/vehicle_table_rows.html" %}
+                                    {% for vehicle in object_list %}
+                                    <tr>
+                                        <td>{{ vehicle.plate_number }}</td>
+                                        <td>{{ vehicle.engine_number }}</td>
+                                        <td>{{ vehicle.chassis_number }}</td>
+                                        <td>{{ vehicle.make_brand }}</td>
+                                        <td>{{ vehicle.body_type }}</td>
+                                        <td>{{ vehicle.year_model }}</td>
+                                        <td>{{ vehicle.series }}</td>
+                                        <td>{{ vehicle.color }}</td>
+                                        <td>{% if vehicle.member %}{{ vehicle.member.full_name }}{% else %}N/A{% endif %}</td>
+                                        <td>
+                                            <a href="{% url 'vehicle_edit' vehicle.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                                            <a href="{% url 'vehicle_delete' vehicle.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr><td colspan="10">No vehicles found.</td></tr>
+                                    {% endfor %}
                                 </tbody>
                             </table>
                             {% include 'includes/pagination.html' %}

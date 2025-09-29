@@ -35,28 +35,26 @@
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>Full Name</th>
-                                    <th>Phone Number</th>
+                                    <th>Name</th>
                                     <th>Email</th>
                                     <th>Batch</th>
                                     <th>Batch Monitoring #</th>
-                                    <th>Dormant</th>
-                                    <th>Vehicle Plate</th>
+                                    <th>Vehicles</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="member-table-body">
                                 {% for member in object_list %}
-                                <tr {% if member.is_dormant %}class="table-dark"{% endif %}>
+                                <tr>
                                     <td>{{ member.full_name }}</td>
-                                    <td>{{ member.phone_number }}</td>
                                     <td>{{ member.email }}</td>
                                     <td>{{ member.batch.number }}</td>
                                     <td>{{ member.batch_monitoring_number }}</td>
-                                    <td>{% if member.is_dormant %}Dormant{% else %}Active{% endif %}</td>
                                     <td>
-                                        {% if member.vehicles.first %}
-                                            {{ member.vehicles.first.plate_number }}
+                                        {% if member.vehicles.all %}
+                                            {% for v in member.vehicles.all %}
+                                                {{ v.plate_number }}{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}
                                         {% else %}
                                             N/A
                                         {% endif %}
@@ -64,17 +62,11 @@
                                     <td>
                                         <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm btn-primary">Edit</a>
                                         <a href="{% url 'member_confirm_delete' member.pk %}" class="btn btn-sm btn-danger">Delete</a>
-                                        <a href="{% url 'member_renewal_update' member.pk %}" class="btn btn-warning btn-sm">Renew</a>
-                                        {% if member.is_dormant %}
-                                            <a href="{% url 'member_activate' member.pk %}" class="btn btn-success btn-sm">Activate</a>
-                                        {% else %}
-                                            <a href="{% url 'member_dormant_toggle' member.pk %}" class="btn btn-dark btn-sm">Dormant</a>
-                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="8">No members found.</td>
+                                    <td colspan="7">No members found.</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

@@ -1,21 +1,97 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
-<div class="container mt-4">
-    <h4 class="mb-4">Add Member</h4>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
+<style>
+label[for$="-DELETE"], input[name$="-DELETE"] {
+    display: none !important;
+}
+</style>
+<div class="content">
+    <div class="container-fluid">
+        <h4 class="page-title">Add Member</h4>
         <div class="row">
-            <div class="col-md-6 mb-3">{{ form.full_name.label_tag }}{{ form.full_name }}</div>
-            <div class="col-md-6 mb-3">{{ form.phone_number.label_tag }}{{ form.phone_number }}</div>
-            <div class="col-md-6 mb-3">{{ form.email.label_tag }}{{ form.email }}</div>
-            <div class="col-md-6 mb-3">{{ form.batch.label_tag }}{{ form.batch }}</div>
-            <div class="col-md-6 mb-3">{{ form.batch_monitoring_number.label_tag }}{{ form.batch_monitoring_number }}</div>
-            <div class="col-md-6 mb-3">{{ form.vehicle.label_tag }}{{ form.vehicle }}</div>
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Member Information</div>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="id_full_name">Full Name</label>
+                                {{ form.full_name }}
+                            </div>
+                            <div class="form-group">
+                                <label for="id_phone_number">Phone Number</label>
+                                {{ form.phone_number }}
+                            </div>
+                            <div class="form-group">
+                                <label for="id_email">Email</label>
+                                {{ form.email }}
+                            </div>
+                            <div class="form-group">
+                                <label for="id_batch">Batch</label>
+                                {{ form.batch }}
+                            </div>
+                            <div class="form-group">
+                                <label for="id_batch_monitoring_number">Batch Monitoring Number</label>
+                                {{ form.batch_monitoring_number }}
+                            </div>
+                            {% if form.user_account %}
+                            <div class="form-group">
+                                <label for="id_user_account">User Account</label>
+                                {{ form.user_account }}
+                            </div>
+                            {% endif %}
+                            <h5>Vehicle Information (optional)</h5>
+                            {{ formset.management_form }}
+                            {% for vehicle_form in formset %}
+                                <div class="card mb-2 p-2 bg-light">
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label>Plate Number</label>
+                                            {{ vehicle_form.plate_number }}
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label>Engine Number</label>
+                                            {{ vehicle_form.engine_number }}
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label>Chassis Number</label>
+                                            {{ vehicle_form.chassis_number }}
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label>Make/Brand</label>
+                                            {{ vehicle_form.make_brand }}
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label>Year Model</label>
+                                            {{ vehicle_form.year_model }}
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label>Series</label>
+                                            {{ vehicle_form.series }}
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label>Color</label>
+                                            {{ vehicle_form.color }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-        <button type="submit" class="btn btn-primary">Save</button>
-    <a href="{% url 'member_list' %}" class="btn btn-secondary">Cancel</a>
-    </form>
+    </div>
 </div>
 {% endblock %}
