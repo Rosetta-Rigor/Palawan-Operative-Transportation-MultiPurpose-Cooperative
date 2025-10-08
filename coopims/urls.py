@@ -2,11 +2,13 @@ from django.contrib import admin
 from django.urls import path, include
 from coop import views 
 from django.urls import path, re_path
-from django.contrib.auth import views as auth_views
+from coop.views import custom_logout
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    path("admin/user-approvals/", views.user_approvals, name="user_approvals"),
+    path("admin/approve-user/<int:user_id>/", views.approve_user, name="approve_user"),
     path("user/documents/upload/", views.user_upload_document, name="user_upload_document"),
     path("documents/approve/", views.approve_documents, name="approve_documents"),
     path("documents/approve/<int:doc_id>/", views.approve_document, name="approve_document"),
@@ -43,7 +45,8 @@ urlpatterns = [
 
     # AUTH
     path('login/', views.custom_login, name='login'),
-    re_path(r'^logout/$', auth_views.LogoutView.as_view(), name='logout'),
+    path('register/', views.register, name='register'),
+    path('logout/', custom_logout, name='logout'),
 ]
 
 if settings.DEBUG:

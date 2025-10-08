@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}User Approvals{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Pending User Approvals</h2>
+    <table class="table table-bordered table-hover mt-4">
+        <thead class="thead-light">
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Phone Number</th>
+                <th>Date Joined</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.phone_number }}</td>
+                <td>{{ user.date_joined|date:'Y-m-d H:i' }}</td>
+                <td>
+                    <form method="post" action="{% url 'approve_user' user.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center">No users pending approval.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

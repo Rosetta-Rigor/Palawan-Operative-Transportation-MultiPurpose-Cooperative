@@ -1,3 +1,46 @@
+from django.views.decorators.http import require_POST
+# ==== User Approval (Admin) ====
+from django.contrib.admin.views.decorators import staff_member_required
+
+@staff_member_required
+def user_approvals(request):
+    User = get_user_model()
+    users = User.objects.filter(is_active=False)
+    return render(request, "user_approvals.html", {"users": users})
+
+@staff_member_required
+@require_POST
+def approve_user(request, user_id):
+    User = get_user_model()
+    user = get_object_or_404(User, pk=user_id, is_active=False)
+    user.is_active = True
+    # If the current user is a manager, set approved user to client
+    if hasattr(user, 'role'):
+        user.role = 'client'
+    user.save()
+    messages.success(request, f"User {user.username} has been approved and set as Client Member.")
+    return redirect('user_approvals')
+from django.contrib.auth import get_user_model
+from .forms import CustomUserRegistrationForm
+# ==== Registration View ====
+def register(request):
+    from django.contrib.auth import logout
+    from django.contrib.sessions.models import Session
+    logout(request)
+    request.session.flush()  # Clear all session data
+    if request.method == 'POST':
+        form = CustomUserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.is_active = False  # Require admin approval
+            user.save()
+            # Optionally notify admin here
+            # Start a new session after registration
+            request.session.cycle_key()
+            return redirect('login')
+    else:
+        form = CustomUserRegistrationForm()
+    return render(request, 'registration/register_standalone.html', {'form': form})
 # ==== Member Dormant/Activate Toggle ====
 from django.contrib.admin.views.decorators import staff_member_required
 
@@ -17,6 +60,15 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
+# ==== Custom Logout View ====
+def custom_logout(request):
+    """
+    Logs out the user and flushes the session completely.
+    """
+    logout(request)
+    request.session.flush()
+    return redirect('login')
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.db.models import Q
@@ -72,7 +124,12 @@ def member_add(request):
 def user_home(request):
     """
     Renders the home page for logged-in users (user side).
+    Only users with role 'client' can access.
     """
+    if not hasattr(request.user, 'role') or request.user.role != 'client':
+        from django.contrib import messages
+        messages.error(request, "You do not have access to the user portal.")
+        return redirect('login')
     return render(request, "user_home.html")
 
 # ==== User-Side Views ====
@@ -399,16 +456,28 @@ from django.contrib import messages
 
 # ==== Custom Login View ====
 def custom_login(request):
+    # Always clear session and logout on GET
+    if request.method == "GET":
+        logout(request)
+        request.session.flush()
+        return render(request, "login.html")
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
         user = authenticate(request, username=username, password=password)
         if user is not None:
+            if not user.is_active:
+                messages.error(request, "Your account is not yet approved by the admin.")
+                return render(request, "login.html")
             auth_login(request, user)
-            if user.is_staff:
+            # Only staff (admin/manager) can access admin side, not user portal
+            if user.is_staff or (hasattr(user, 'role') and user.role == 'manager'):
                 return redirect("home")
-            else:
+            elif hasattr(user, 'role') and user.role == 'client':
                 return redirect("user_home")
+            else:
+                messages.error(request, "You do not have access to the user portal.")
+                return render(request, "login.html")
         else:
             messages.error(request, "Invalid username or password.")
     return render(request, "login.html")

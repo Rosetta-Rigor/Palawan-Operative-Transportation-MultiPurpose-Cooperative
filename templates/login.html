@@ -17,6 +17,13 @@
         <img src="{% static 'img/home.png' %}" onerror="this.style.display='none'">
         <div class="login-title">POTMPC</div>
         <div class="login-subtitle">Palawan Operative Transportation Multi-Purpose Cooperative</div>
+        {% if messages %}
+            <div class="mt-2">
+                {% for message in messages %}
+                    <div class="alert alert-danger text-center" role="alert">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
         <form method="post" class="login-form">
             {% csrf_token %}
             <div class="input-group">
@@ -34,6 +41,9 @@
             </div>
             <button type="submit" class="login-btn">Sign In</button>
         </form>
+        <div class="text-center mt-3">
+            <a href="{% url 'register' %}">Don't have an account? Register here</a>
+        </div>
     </div>
     <script>
         function togglePassword() {

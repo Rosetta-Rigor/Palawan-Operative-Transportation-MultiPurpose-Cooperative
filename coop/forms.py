@@ -1,3 +1,23 @@
+from django.contrib.auth import get_user_model
+from django import forms
+from django.contrib.auth.forms import UserCreationForm
+
+class CustomUserRegistrationForm(UserCreationForm):
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.is_active = False
+        if commit:
+            user.save()
+        return user
+    email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    phone_number = forms.CharField(required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
+
+    class Meta:
+        model = get_user_model()
+        fields = ("username", "email", "phone_number", "password1", "password2")
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+        }
 from django import forms
 from .models import Member, Vehicle, Document, DocumentEntry, Batch
 
