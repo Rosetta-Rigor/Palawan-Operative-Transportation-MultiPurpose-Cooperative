@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h4>Document Details (TIN: {{ document.tin }})</h4>
+    <p>Vehicle: {% if document.vehicle %}{{ document.vehicle.plate_number }}{% else %}N/A{% endif %}</p>
+    <p>Member: {% if document.vehicle and document.vehicle.member %}{{ document.vehicle.member.full_name }}{% else %}N/A{% endif %}</p>
+    <h5>Renewal History</h5>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Renewal Date</th>
+                <th>OR</th>
+                <th>CR</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for entry in document.entries.all %}
+            <tr>
+                <td>{{ entry.renewal_date }}</td>
+                <td>
+                    {% if entry.official_receipt %}
+                        <a href="{{ entry.official_receipt.url }}" target="_blank">View OR</a>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td>
+                    {% if entry.certificate_of_registration %}
+                        <a href="{{ entry.certificate_of_registration.url }}" target="_blank">View CR</a>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="3">No renewal entries found.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'document_entry_add' document.pk %}" class="btn btn-warning">Renew Document</a>
+    <a href="{% url 'document_list' %}" class="btn btn-secondary">Back to List</a>
+</div>
+{% endblock %}

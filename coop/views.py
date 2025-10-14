@@ -371,7 +371,7 @@ class VehicleCreateView(CreateView):
     model = Vehicle
     form_class = VehicleForm
     template_name = "vehicle_add.html"
-    success_url = reverse_lazy("vehicle-list")
+    success_url = reverse_lazy("vehicle_list")
 
 @method_decorator(login_required, name='dispatch')
 class VehicleUpdateView(UpdateView):
@@ -383,7 +383,7 @@ class VehicleUpdateView(UpdateView):
     model = Vehicle
     form_class = VehicleForm
     template_name = "vehicle_add.html"
-    success_url = reverse_lazy("vehicle-list")
+    success_url = reverse_lazy("vehicle_list")
 
 @method_decorator(login_required, name='dispatch')
 class VehicleDeleteView(DeleteView):
@@ -394,7 +394,7 @@ class VehicleDeleteView(DeleteView):
     """
     model = Vehicle
     template_name = "vehicle_confirm_delete.html"
-    success_url = reverse_lazy("vehicle-list")
+    success_url = reverse_lazy("vehicle_list")
 
 # ==== Class-based Views: Document ====
 
@@ -409,9 +409,12 @@ class DocumentListView(ListView):
     context_object_name = "object_list"
     paginate_by = 10
 
-    def get_queryset(self):
-        # Optionally add search/filter logic here
-        return super().get_queryset().select_related('vehicle__member')
+def get_queryset(self):
+        queryset = Document.objects.all()
+        q = self.request.GET.get('q')
+        if q:
+                queryset = queryset.filter(tin__icontains=q)
+        return queryset
 
 @method_decorator(login_required, name='dispatch')
 class DocumentCreateView(CreateView):
@@ -481,3 +484,86 @@ def custom_login(request):
         else:
             messages.error(request, "Invalid username or password.")
     return render(request, "login.html")
+
+
+
+# Document list, detail, renew, and delete views should be implemented as described above.
+
+from django.views.generic.detail import DetailView
+from django.views.generic.edit import DeleteView, UpdateView, CreateView
+from django import forms
+from .models import Document,DocumentEntry
+
+class DocumentEntryForm(forms.ModelForm):
+    class Meta:
+        model = DocumentEntry
+        fields = ['renewal_date', 'official_receipt', 'certificate_of_registration']
+        widgets = {
+            'renewal_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'official_receipt': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'certificate_of_registration': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }
+
+def document_add(request):
+    if request.method == "POST":
+        doc_form = DocumentForm(request.POST)
+        entry_form = DocumentEntryForm(request.POST, request.FILES)
+        if doc_form.is_valid() and entry_form.is_valid():
+            document = doc_form.save()
+            entry = entry_form.save(commit=False)
+            entry.document = document
+            entry.save()
+            return redirect("document_list")
+    else:
+        doc_form = DocumentForm()
+        entry_form = DocumentEntryForm()
+    return render(request, "document_add.html", {"form": doc_form, "entry_form": entry_form})
+
+class DocumentDetailView(DetailView):
+    model = Document
+    template_name = "document_detail.html"
+    context_object_name = "document"
+
+class DocumentEntryDetailView(DetailView):
+    model = DocumentEntry
+    template_name = "document_entry_detail.html"
+    context_object_name = "entry"
+
+class DocumentUpdateView(UpdateView):
+    model = Document
+    form_class = DocumentForm
+    template_name = "document_add.html"  # Or create a separate document_edit.html
+    success_url = reverse_lazy("document_list")
+
+class DocumentEntryCreateView(CreateView):
+    model = DocumentEntry
+    form_class = DocumentEntryForm
+    template_name = "document_entry_add.html"
+
+    def get_initial(self):
+        initial = super().get_initial()
+        document_pk = self.kwargs.get("pk")
+        if document_pk:
+            initial["document"] = document_pk
+        return initial
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["document"] = self.get_document()
+        return context
+
+    def get_document(self):
+        from .models import Document
+        return Document.objects.get(pk=self.kwargs["pk"])
+
+    def form_valid(self, form):
+        form.instance.document = self.get_document()
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy("document_detail", kwargs={"pk": self.object.document.pk})
+
+class DocumentDeleteView(DeleteView):
+    model = Document
+    template_name = "document_confirm_delete.html"
+    success_url = reverse_lazy("document_list")

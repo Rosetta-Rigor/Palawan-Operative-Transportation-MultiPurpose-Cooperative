@@ -5,74 +5,97 @@
     <div class="container-fluid">
         <h4 class="page-title">Documents</h4>
         <div class="row">
-            {% include 'includes/document_sidebar.html' %}
-            <div class="col-md-10">
+            <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">List of Documents</div>
+                        <div class="card-category">Page Subtitle</div>
+                    </div>
+                    <br />
+                    <div class="col-md-12 row">
+                        <div class="col-md-6">
+                            <form class="navbar-left navbar-form nav-search mr-md-3" action="{% url 'document_list' %}">
+                                <div class="input-group">
+                                    <input type="text" id="document-search" placeholder="Search ..." class="form-control" name="q" autocomplete="off" />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="la la-search search-icon"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="pull-right">
+                                <a href="{% url 'document_add' %}" class="btn btn-success btn-rounded"> Add Document</a>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <table class="table table-striped mt-3">
-                            <thead>
-                                <tr>
-                                    <th>Plate Number</th>
-                                    <th>Member</th>
-                                    <th>Renewal Date</th>
-                                    <th>Official Receipt (OR)</th>
-                                    <th>Certificate of Registration (CR)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                        <div id="document-table-container">
+                            <table class="table table-striped mt-3">
+                                <thead>
+                                    <tr>
+                                        <th>TIN</th>
+                                        <th>Vehicle Plate</th>
+                                        <th>Member Name</th>
+                                        <th>Latest Renewal Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="document-table-body">
                                 {% for doc in object_list %}
-                                <tr>
-                                    <td>{{ doc.vehicle.plate_number }}</td>
-                                    <td>{{ doc.vehicle.member.name }}</td>
-                                    <td>{{ doc.renewal_date }}</td> <!-- Show the document's renewal date -->
-                                    <td>
-                                        {% if doc.official_receipt %}
-                                            <a href="{{ doc.official_receipt.url }}" target="_blank">View OR</a>
-                                        {% else %}
-                                            N/A
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if doc.certificate_of_registration %}
-                                            <a href="{{ doc.certificate_of_registration.url }}" target="_blank">View CR</a>
-                                        {% else %}
-                                            N/A
-                                        {% endif %}
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td>{{ doc.tin }}</td>
+                                        <td>{% if doc.vehicle %}{{ doc.vehicle.plate_number }}{% else %}N/A{% endif %}</td>
+                                        <td>
+                                            {% if doc.vehicle and doc.vehicle.member %}
+                                                {{ doc.vehicle.member.full_name }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if doc.entries.last %}
+                                                {{ doc.entries.last.renewal_date }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'document_detail' doc.pk %}" class="btn btn-sm btn-info">View</a>
+                                            <a href="{% url 'document_entry_add' doc.pk %}" class="btn btn-sm btn-warning">Renew</a>
+                                            <a href="{% url 'document_delete' doc.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                                        </td>
+                                    </tr>
                                 {% empty %}
-                                <tr>
-                                    <td colspan="5">No documents found.</td>
-                                </tr>
+                                    <tr><td colspan="5">No documents found.</td></tr>
                                 {% endfor %}
-                            </tbody>
-                        </table>
-                        {% if is_paginated %}
-                        <nav>
-                            <ul class="pagination">
-                                {% if page_obj.has_previous %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                                </li>
-                                {% endif %}
-                                <li class="page-item active">
-                                    <span class="page-link">{{ page_obj.number }}</span>
-                                </li>
-                                {% if page_obj.has_next %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                                </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                        {% endif %}
+                                </tbody>
+                            </table>
+                            {% include 'includes/pagination.html' %}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(function() {
+    $('#document-search').on('input', function() {
+        var query = $(this).val();
+        $.ajax({
+            url: "{% url 'document_list' %}",
+            data: { q: query },
+            dataType: 'json',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            success: function(data) {
+                $('#document-table-body').html(data.html);
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h4>Renew Document (TIN: {{ document.tin }})</h4>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="mb-3">
+            {{ form.renewal_date.label_tag }}{{ form.renewal_date }}
+            <small class="form-text text-muted">Select a new renewal date or leave blank to auto +1 year.</small>
+        </div>
+        <div class="mb-3">
+            {{ form.official_receipt.label_tag }}{{ form.official_receipt }}
+        </div>
+        <div class="mb-3">
+            {{ form.certificate_of_registration.label_tag }}{{ form.certificate_of_registration }}
+        </div>
+        <button type="submit" class="btn btn-primary">Renew</button>
+        <a href="{% url 'document_detail' document.pk %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

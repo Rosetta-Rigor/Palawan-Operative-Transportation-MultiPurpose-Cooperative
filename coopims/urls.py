@@ -31,8 +31,11 @@ urlpatterns = [
 
     # DOCUMENT CRUD
     path("documents/", views.DocumentListView.as_view(), name="document_list"),
-    path("documents/add/", views.DocumentCreateView.as_view(), name="document_add"),
-    path('documents/add/<int:vehicle_id>/<str:renewal_date>/', views.document_add_renewal, name='document_add_renewal'),
+    path("documents/add/", views.document_add, name="document_add"),
+    path("documents/<int:pk>/", views.DocumentDetailView.as_view(), name="document_detail"),
+    path("documents/<int:pk>/edit/", views.DocumentUpdateView.as_view(), name="document_edit"),
+    path("documents/<int:pk>/delete/", views.DocumentDeleteView.as_view(), name="document_delete"),
+    path("documents/<int:pk>/add_entry/", views.DocumentEntryCreateView.as_view(), name="document_entry_add"),
 
     # MEMBER RENEWAL
     path('members/<int:pk>/renew/', views.member_renewal_update, name='member_renewal_update'),
