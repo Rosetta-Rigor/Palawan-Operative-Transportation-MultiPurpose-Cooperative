@@ -3,14 +3,14 @@ from .models import User, Member, Vehicle, Batch, Document, DocumentEntry
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'email', 'phone_number', 'role', 'is_staff', 'is_superuser')
-    search_fields = ('username', 'email', 'phone_number')
-    list_filter = ('role', 'is_staff', 'is_superuser')
+    list_display = ('username', 'full_name', 'email', 'phone_number', 'role', 'id_image')
+    search_fields = ('username', 'full_name', 'email', 'phone_number')
+    list_filter = ('role',)
 
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'phone_number', 'email', 'batch', 'batch_monitoring_number', 'is_dormant', 'user_account')
-    search_fields = ('full_name', 'phone_number', 'email')
+    list_display = ('full_name', 'batch', 'batch_monitoring_number', 'is_dormant', 'user_account')
+    search_fields = ('full_name',)
     list_filter = ('batch', 'is_dormant')
 
 @admin.register(Vehicle)

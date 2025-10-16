@@ -16,6 +16,10 @@ def or_upload_path(instance, filename):
 def cr_upload_path(instance, filename):
     return document_upload_path(instance, filename, "cr")
 
+def id_upload_path(instance, filename):
+    # Store ID images in: media/ID/<username>/<filename>
+    return f"ID/{instance.username}/{filename}"
+
 class User(AbstractUser):
     # Only managers and admins can create accounts
     ROLE_CHOICES = (
@@ -24,7 +28,9 @@ class User(AbstractUser):
         ('client', 'Client Member'),
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='client')
+    full_name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    id_image = models.ImageField(upload_to=id_upload_path, null=True, blank=True)
     # Email and phone can be used for login
     groups = models.ManyToManyField(
         Group,
@@ -49,13 +55,17 @@ class Batch(models.Model):
 
 class Member(models.Model):
     full_name = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=20, unique=True)
-    email = models.EmailField(unique=True)
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="members")
     batch_monitoring_number = models.PositiveIntegerField()
     is_dormant = models.BooleanField(default=False)
-    user_account = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="member_profile")
-    # Vehicle is optional, can be assigned/unassigned
+    # phone_number and email removed, user_account now on User
+    user_account = models.OneToOneField(
+        'User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='member_profile'
+    )
     def __str__(self):
         return self.full_name
 

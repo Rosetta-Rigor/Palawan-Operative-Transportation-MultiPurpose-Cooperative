@@ -1,24 +1,27 @@
 from django.views.decorators.http import require_POST
 # ==== User Approval (Admin) ====
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import user_passes_test
+from .models import User, Member
 
-@staff_member_required
+@user_passes_test(lambda u: u.is_staff)
 def user_approvals(request):
     User = get_user_model()
-    users = User.objects.filter(is_active=False)
-    return render(request, "user_approvals.html", {"users": users})
+    users = User.objects.filter(is_active=False, role='client')
+    members = Member.objects.all()
+    return render(request, 'user_approvals.html', {'users': users, 'members': members})
 
-@staff_member_required
+@user_passes_test(lambda u: u.is_staff)
 @require_POST
 def approve_user(request, user_id):
-    User = get_user_model()
-    user = get_object_or_404(User, pk=user_id, is_active=False)
-    user.is_active = True
-    # If the current user is a manager, set approved user to client
-    if hasattr(user, 'role'):
-        user.role = 'client'
-    user.save()
-    messages.success(request, f"User {user.username} has been approved and set as Client Member.")
+    if request.method == 'POST':
+        user = get_object_or_404(User, pk=user_id)
+        member_id = request.POST.get('member_id')
+        member = get_object_or_404(Member, pk=member_id)
+        user.member_profile = member
+        user.is_active = True
+        user.save()
+        return redirect('user_approvals')
     return redirect('user_approvals')
 from django.contrib.auth import get_user_model
 from .forms import CustomUserRegistrationForm
@@ -29,13 +32,11 @@ def register(request):
     logout(request)
     request.session.flush()  # Clear all session data
     if request.method == 'POST':
-        form = CustomUserRegistrationForm(request.POST)
+        form = CustomUserRegistrationForm(request.POST, request.FILES)  # <-- Add request.FILES
         if form.is_valid():
             user = form.save(commit=False)
             user.is_active = False  # Require admin approval
             user.save()
-            # Optionally notify admin here
-            # Start a new session after registration
             request.session.cycle_key()
             return redirect('login')
     else:
@@ -292,8 +293,6 @@ class MemberListView(ListView):
         if q:
             queryset = queryset.filter(
                 Q(full_name__icontains=q) |
-                Q(phone_number__icontains=q) |
-                Q(email__icontains=q) |
                 Q(batch__name__icontains=q) |
                 Q(batch_monitoring_number__icontains=q) |
                 Q(vehicles__plate_number__icontains=q)
@@ -542,9 +541,15 @@ class DocumentEntryCreateView(CreateView):
 
     def get_initial(self):
         initial = super().get_initial()
-        document_pk = self.kwargs.get("pk")
-        if document_pk:
-            initial["document"] = document_pk
+        document = self.get_document()
+        # Get the latest renewal date and add 1 year
+        latest_entry = document.entries.order_by('-renewal_date').first()
+        if latest_entry and latest_entry.renewal_date:
+            next_renewal = latest_entry.renewal_date.replace(year=latest_entry.renewal_date.year + 1)
+            initial['renewal_date'] = next_renewal
+        else:
+            initial['renewal_date'] = None  # Or set to today if you prefer
+        initial['document'] = document.pk
         return initial
 
     def get_context_data(self, **kwargs):
