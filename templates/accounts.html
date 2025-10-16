@@ -1,11 +1,8 @@
 {% extends 'base.html' %}
-{% load static %}
-{% block title %}User Approvals{% endblock %}
+{% block title %}Accounts List{% endblock %}
 {% block content %}
 <div class="container mt-5">
-    <h1>PAKI DELETE ITO REFER TO ACCOUNTS SIDEBAR FEATURES</h1>
-    <h2>swap position with accounts</h2>
-    
+    <h2>Accounts</h2>
     <table class="table table-bordered table-hover mt-4">
         <thead class="thead-light">
             <tr>
@@ -13,9 +10,10 @@
                 <th>Full Name</th>
                 <th>Email</th>
                 <th>Phone Number</th>
+                <th>Role</th>
+                <th>Connected Member</th>
                 <th>ID Image</th>
-                <th>Date Joined</th>
-                <th>Action</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -25,6 +23,14 @@
                 <td>{{ user.full_name }}</td>
                 <td>{{ user.email }}</td>
                 <td>{{ user.phone_number }}</td>
+                <td>{{ user.role|title }}</td>
+                <td>
+                    {% if user.member_profile %}
+                        {{ user.member_profile.full_name }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
                 <td>
                     {% if user.id_image %}
                         <a href="{{ user.id_image.url }}" target="_blank">
@@ -34,36 +40,46 @@
                         <span class="text-muted">No ID</span>
                     {% endif %}
                 </td>
-                <td>{{ user.date_joined|date:'Y-m-d H:i' }}</td>
                 <td>
-                    <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#approveModal{{ user.id }}">
-                        Approve
+                    {% if user.is_active %}
+                        <form method="post" action="{% url 'deactivate_account' user.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning btn-sm">Deactivate</button>
+                        </form>
+                    {% else %}
+                        <form method="post" action="{% url 'activate_account' user.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-sm">Activate</button>
+                        </form>
+                    {% endif %}
+                    <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#editModal{{ user.id }}">
+                        Edit
                     </button>
-                    <!-- Modal -->
-                    <div class="modal fade" id="approveModal{{ user.id }}" tabindex="-1" role="dialog" aria-labelledby="approveModalLabel{{ user.id }}" aria-hidden="true">
+                    <!-- Edit Modal -->
+                    <div class="modal fade" id="editModal{{ user.id }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ user.id }}" aria-hidden="true">
                       <div class="modal-dialog" role="document">
-                        <form method="post" action="{% url 'approve_user' user.id %}">
+                        <form method="post" action="{% url 'edit_account' user.id %}">
                             {% csrf_token %}
                             <div class="modal-content">
                               <div class="modal-header">
-                                <h5 class="modal-title" id="approveModalLabel{{ user.id }}">Tie Member to Account</h5>
+                                <h5 class="modal-title" id="editModalLabel{{ user.id }}">Edit Connected Member</h5>
                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                   <span aria-hidden="true">&times;</span>
                                 </button>
                               </div>
                               <div class="modal-body">
                                 <div class="form-group">
-                                    <label for="memberSelect{{ user.id }}">Select Existing Member</label>
+                                    <label for="memberSelect{{ user.id }}">Select Member (not tied to any account)</label>
                                     <select class="form-control" id="memberSelect{{ user.id }}" name="member_id" required>
                                         <option value="">-- Select Member --</option>
-                                        {% for member in members %}
+                                        {% for member in available_members %}
                                             <option value="{{ member.id }}">{{ member.full_name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
                               </div>
                               <div class="modal-footer">
-                                <button type="submit" class="btn btn-success">Approve & Tie Member</button>
+                                <button type="submit" class="btn btn-success">Save</button>
                                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                               </div>
                             </div>
@@ -73,12 +89,9 @@
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="7" class="text-center">No users pending approval.</td></tr>
+            <tr><td colspan="8" class="text-center">No accounts found.</td></tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
-<!-- Bootstrap JS (for modal) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="{% static 'js/bootstrap.min.js' %}"></script>
 {% endblock %}

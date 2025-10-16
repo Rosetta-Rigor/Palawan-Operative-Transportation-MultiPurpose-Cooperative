@@ -50,6 +50,10 @@ urlpatterns = [
     path('login/', views.custom_login, name='login'),
     path('register/', views.register, name='register'),
     path('logout/', custom_logout, name='logout'),
+    path('accounts/', views.accounts_list, name='accounts_list'),
+    path('accounts/<int:user_id>/deactivate/', views.deactivate_account, name='deactivate_account'),
+    path('accounts/<int:user_id>/activate/', views.activate_account, name='activate_account'),
+    path('accounts/<int:user_id>/edit/', views.edit_account, name='edit_account'),
 ]
 
 if settings.DEBUG:

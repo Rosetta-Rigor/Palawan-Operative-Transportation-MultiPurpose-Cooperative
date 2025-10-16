@@ -14,14 +14,15 @@ def user_approvals(request):
 @user_passes_test(lambda u: u.is_staff)
 @require_POST
 def approve_user(request, user_id):
-    if request.method == 'POST':
-        user = get_object_or_404(User, pk=user_id)
-        member_id = request.POST.get('member_id')
-        member = get_object_or_404(Member, pk=member_id)
-        user.member_profile = member
-        user.is_active = True
-        user.save()
-        return redirect('user_approvals')
+    user = get_object_or_404(User, pk=user_id)
+    member_id = request.POST.get('member_id')
+    member = get_object_or_404(Member, pk=member_id)
+    # Tie both sides of the relationship
+    user.member_profile = member
+    member.user_account = user
+    user.is_active = True
+    user.save()
+    member.save()
     return redirect('user_approvals')
 from django.contrib.auth import get_user_model
 from .forms import CustomUserRegistrationForm
@@ -572,3 +573,40 @@ class DocumentDeleteView(DeleteView):
     model = Document
     template_name = "document_confirm_delete.html"
     success_url = reverse_lazy("document_list")
+from .models import User
+
+def accounts_list(request):
+    users = User.objects.all()
+    available_members = Member.objects.filter(user_account__isnull=True)
+    return render(request, 'accounts.html', {'users': users, 'available_members': available_members})
+
+@require_POST
+def deactivate_account(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
+    user.is_active = False
+    user.save()
+    return redirect('accounts_list')
+
+@require_POST
+def edit_account(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
+    member_id = request.POST.get('member_id')
+    if member_id:
+        member = get_object_or_404(Member, pk=member_id)
+        # Remove previous member link if exists
+        old_member = getattr(user, 'member_profile', None)
+        if old_member:
+            old_member.user_account = None
+            old_member.save()
+        user.member_profile = member
+        member.user_account = user
+        user.save()
+        member.save()
+    return redirect('accounts_list')
+
+@require_POST
+def activate_account(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
+    user.is_active = True
+    user.save()
+    return redirect('accounts_list')
