@@ -1,24 +1,38 @@
 {% for member in object_list %}
 <tr>
-    <td>{{ member.name }}</td>
-    <td>{{ member.gmail }}</td>
-    <td>{{ member.batch.number }}</td>
-    <td>{{ member.file_number }}</td>
-    <td>{{ member.renewal_date }}</td>
+    <td>{{ member.full_name }}</td>
     <td>
-        {% if member.vehicle %}
-            {{ member.vehicle.plate_number }}
+        {% if member.user_account %}
+            {{ member.user_account.email }}
         {% else %}
             N/A
         {% endif %}
     </td>
     <td>
-        <a href="{% url 'member-edit' member.pk %}" class="btn btn-sm btn-primary">Edit</a>
-        <a href="{% url 'member-delete' member.pk %}" class="btn btn-sm btn-danger">Delete</a>
+        {% if member.batch %}
+            {{ member.batch.number }}
+        {% else %}
+            N/A
+        {% endif %}
+    </td>
+    <td>{{ member.batch_monitoring_number|default:"N/A" }}</td>
+    <td>
+        {% if member.vehicles.all %}
+            {% for v in member.vehicles.all %}
+                {{ v.plate_number }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+        {% else %}
+            N/A
+        {% endif %}
+    </td>
+    <td>
+        <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm btn-primary">Edit</a>
+        <a href="{% url 'member_confirm_delete' member.pk %}" class="btn btn-sm btn-danger">Delete</a>
+        <a href="{% url 'member_view' member.pk %}" class="btn btn-sm btn-info">View</a>
     </td>
 </tr>
 {% empty %}
 <tr>
-    <td colspan="7">No members found.</td>
+    <td colspan="6">No members found.</td>
 </tr>
 {% endfor %}

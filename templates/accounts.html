@@ -3,6 +3,7 @@
 {% block content %}
 <div class="container mt-5">
     <h2>Accounts</h2>
+    <input type="text" id="account-search" placeholder="Search ..." class="form-control" name="q" autocomplete="off" />
     <table class="table table-bordered table-hover mt-4">
         <thead class="thead-light">
             <tr>
@@ -16,82 +17,26 @@
                 <th>Actions</th>
             </tr>
         </thead>
-        <tbody>
-            {% for user in users %}
-            <tr>
-                <td>{{ user.username }}</td>
-                <td>{{ user.full_name }}</td>
-                <td>{{ user.email }}</td>
-                <td>{{ user.phone_number }}</td>
-                <td>{{ user.role|title }}</td>
-                <td>
-                    {% if user.member_profile %}
-                        {{ user.member_profile.full_name }}
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </td>
-                <td>
-                    {% if user.id_image %}
-                        <a href="{{ user.id_image.url }}" target="_blank">
-                            <img src="{{ user.id_image.url }}" alt="ID Image" style="max-width:80px;max-height:80px;">
-                        </a>
-                    {% else %}
-                        <span class="text-muted">No ID</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if user.is_active %}
-                        <form method="post" action="{% url 'deactivate_account' user.id %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-warning btn-sm">Deactivate</button>
-                        </form>
-                    {% else %}
-                        <form method="post" action="{% url 'activate_account' user.id %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-success btn-sm">Activate</button>
-                        </form>
-                    {% endif %}
-                    <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#editModal{{ user.id }}">
-                        Edit
-                    </button>
-                    <!-- Edit Modal -->
-                    <div class="modal fade" id="editModal{{ user.id }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ user.id }}" aria-hidden="true">
-                      <div class="modal-dialog" role="document">
-                        <form method="post" action="{% url 'edit_account' user.id %}">
-                            {% csrf_token %}
-                            <div class="modal-content">
-                              <div class="modal-header">
-                                <h5 class="modal-title" id="editModalLabel{{ user.id }}">Edit Connected Member</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                  <span aria-hidden="true">&times;</span>
-                                </button>
-                              </div>
-                              <div class="modal-body">
-                                <div class="form-group">
-                                    <label for="memberSelect{{ user.id }}">Select Member (not tied to any account)</label>
-                                    <select class="form-control" id="memberSelect{{ user.id }}" name="member_id" required>
-                                        <option value="">-- Select Member --</option>
-                                        {% for member in available_members %}
-                                            <option value="{{ member.id }}">{{ member.full_name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                              </div>
-                              <div class="modal-footer">
-                                <button type="submit" class="btn btn-success">Save</button>
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                              </div>
-                            </div>
-                        </form>
-                      </div>
-                    </div>
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="8" class="text-center">No accounts found.</td></tr>
-            {% endfor %}
+        <tbody id="account-table-body">
+            {% include 'includes/account_table_rows.html' %}
         </tbody>
     </table>
 </div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(function() {
+    $('#account-search').on('input', function() {
+        var query = $(this).val();
+        $.ajax({
+            url: "{% url 'accounts_list' %}",
+            data: { q: query },
+            dataType: 'json',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            success: function(data) {
+                $('#account-table-body').html(data.html);
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

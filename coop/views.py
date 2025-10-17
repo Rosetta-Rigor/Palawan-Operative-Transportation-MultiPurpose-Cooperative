@@ -2,7 +2,11 @@ from django.views.decorators.http import require_POST
 # ==== User Approval (Admin) ====
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import user_passes_test
+from matplotlib.style import context
 from .models import User, Member
+
+
+
 
 @user_passes_test(lambda u: u.is_staff)
 def user_approvals(request):
@@ -275,12 +279,16 @@ def broadcast(request):
 
 # ==== Class-based Views: Member ====
 
+from django.db.models import Q, Exists, OuterRef
+
+from .models import Member, Vehicle, Document  # ensure Document imported above
+
 @method_decorator(login_required, name='dispatch')
 class MemberListView(ListView):
     """
     Displays a paginated list of members.
-    - Supports search via 'q' GET parameter (searches name, gmail, batch, etc.).
-    - If AJAX request, returns only the table rows HTML for dynamic updates.
+    Supports searching across Member fields, related Vehicle fields,
+    related Documents (by TIN) and linked User account fields.
     """
     model = Member
     template_name = "memberlist.html"
@@ -288,24 +296,34 @@ class MemberListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        # Filter queryset based on search query, matching new Member model fields
         queryset = super().get_queryset().select_related('batch').prefetch_related('vehicles')
-        q = self.request.GET.get("q", "")
-        if q:
-            queryset = queryset.filter(
-                Q(full_name__icontains=q) |
-                Q(batch__name__icontains=q) |
-                Q(batch_monitoring_number__icontains=q) |
-                Q(vehicles__plate_number__icontains=q)
-            ).distinct()
+        q = (self.request.GET.get("q") or "").strip()
+        if not q:
+         return queryset
+
+
+        # Subquery: any Document whose vehicle is owned by the member and tin matches q
+        doc_qs = Document.objects.filter(vehicle__member=OuterRef('pk'), tin__icontains=q)
+
+        
+        queryset = queryset.annotate(has_doc=Exists(doc_qs)).filter(
+            Q(full_name__icontains=q) |
+            Q(batch__number__icontains=q) |
+            Q(batch_monitoring_number__icontains=q) |
+            Q(vehicles__plate_number__icontains=q) |
+            Q(vehicles__engine_number__icontains=q) |
+            Q(vehicles__chassis_number__icontains=q) |
+            Q(user_account__username__icontains=q) |
+            Q(user_account__email__icontains=q) |
+            Q(user_account__phone_number__icontains=q) |
+            Q(has_doc=True)
+        ).distinct()
         return queryset
 
     def render_to_response(self, context, **response_kwargs):
-        # If AJAX request, return only table rows HTML for live search
         if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            html = render_to_string("includes/member_table_rows.html", context)
+            html = render_to_string("includes/member_table_rows.html", context, request=self.request)
             return JsonResponse({'html': html})
-        # Otherwise, render full template
         return super().render_to_response(context, **response_kwargs)
 
 @method_decorator(login_required, name='dispatch')
@@ -352,13 +370,9 @@ class VehicleListView(ListView):
         return queryset
 
     def render_to_response(self, context, **response_kwargs):
-        # If AJAX request, return only table rows HTML for live search
         if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            html = render_to_string(
-                "includes/vehicle_table_rows.html", context, request=self.request
-            )
+            html = render_to_string("includes/vehicle_table_rows.html", context, request=self.request)
             return JsonResponse({'html': html})
-        # Otherwise, render full template
         return super().render_to_response(context, **response_kwargs)
 
 @method_decorator(login_required, name='dispatch')
@@ -409,12 +423,11 @@ class DocumentListView(ListView):
     context_object_name = "object_list"
     paginate_by = 10
 
-def get_queryset(self):
-        queryset = Document.objects.all()
-        q = self.request.GET.get('q')
-        if q:
-                queryset = queryset.filter(tin__icontains=q)
-        return queryset
+def render_to_response(self, context, **response_kwargs):
+    if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string("includes/document_table_rows.html", context, request=self.request)
+        return JsonResponse({'html': html})
+    return super().render_to_response(context, **response_kwargs)
 
 @method_decorator(login_required, name='dispatch')
 class DocumentCreateView(CreateView):
@@ -576,10 +589,23 @@ class DocumentDeleteView(DeleteView):
 from .models import User
 
 def accounts_list(request):
+    q = (request.GET.get("q") or "").strip()
     users = User.objects.all()
+    if q:
+        users = users.filter(
+            Q(username__icontains=q) |
+            Q(full_name__icontains=q) |
+            Q(email__icontains=q) |
+            Q(phone_number__icontains=q) |
+            Q(role__icontains=q)
+        )
+    members = Member.objects.all()
     available_members = Member.objects.filter(user_account__isnull=True)
-    return render(request, 'accounts.html', {'users': users, 'available_members': available_members})
-
+    context = {'users': users, 'members': members, 'available_members': available_members}
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string('includes/account_table_rows.html', context, request=request)
+        return JsonResponse({'html': html})
+    return render(request, 'accounts.html', context)
 @require_POST
 def deactivate_account(request, user_id):
     user = get_object_or_404(User, pk=user_id)
@@ -587,22 +613,43 @@ def deactivate_account(request, user_id):
     user.save()
     return redirect('accounts_list')
 
-@require_POST
+@login_required
 def edit_account(request, user_id):
     user = get_object_or_404(User, pk=user_id)
-    member_id = request.POST.get('member_id')
-    if member_id:
-        member = get_object_or_404(Member, pk=member_id)
-        # Remove previous member link if exists
-        old_member = getattr(user, 'member_profile', None)
-        if old_member:
-            old_member.user_account = None
-            old_member.save()
-        user.member_profile = member
-        member.user_account = user
+    members = Member.objects.all()
+    if request.method == "POST":
+        user.full_name = request.POST.get("full_name", user.full_name)
+        user.email = request.POST.get("email", user.email)
+        user.phone_number = request.POST.get("phone_number", user.phone_number)
+        member_id = request.POST.get("member_id")
+
+        # Safely get the current member_profile (may not exist)
+        current_member = getattr(user, "member_profile", None)
+
+        # Untie previous member if needed
+        if current_member and (not member_id or str(current_member.id) != member_id):
+            current_member.user_account = None
+            current_member.save()
+            user.member_profile = None
+
+        # Tie new member if provided
+        if member_id:
+            member = get_object_or_404(Member, pk=member_id)
+            # Untie this member from any previous user
+            if member.user_account and member.user_account != user:
+                prev_user = member.user_account
+                prev_user.member_profile = None
+                prev_user.save()
+            user.member_profile = member
+            member.user_account = user
+            member.save()
+        else:
+            user.member_profile = None
+
         user.save()
-        member.save()
-    return redirect('accounts_list')
+        messages.success(request, "Account updated successfully.")
+        return redirect('accounts_list')
+    return render(request, "account_edit.html", {"user": user, "members": members})
 
 @require_POST
 def activate_account(request, user_id):
@@ -630,3 +677,33 @@ def my_profile(request):
     else:
         form = UserProfileForm(instance=user)
     return render(request, 'profile.html', {'form': form, 'user_obj': user})
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.admin.views.decorators import staff_member_required
+from .models import Member, Document, DocumentEntry, User
+
+@staff_member_required
+def member_view(request, pk):
+    member = get_object_or_404(Member, pk=pk)
+    # safely get linked user account (None if not connected)
+    user_account = get_object_or_404(User, pk=pk) 
+
+    vehicles = list(member.vehicles.all()) if hasattr(member, 'vehicles') else []
+    documents = list(Document.objects.filter(vehicle__in=vehicles)) if vehicles else []
+
+    # build mapping of entries and attach to documents
+    entries_qs = DocumentEntry.objects.filter(document__in=documents).order_by('renewal_date')
+    doc_entries = {}
+    for e in entries_qs:
+        doc_entries.setdefault(e.document_id, []).append(e)
+    # attach entries list to each document object (avoid clobbering related manager)
+    for doc in documents:
+        doc.entries_list = doc_entries.get(doc.id, [])
+
+    return render(request, 'member_detail.html', {
+        'member': member,
+        'user_account': user_account,   # pass user object (or None) to template
+        'vehicles': vehicles,
+        'documents': documents,
+    })
+

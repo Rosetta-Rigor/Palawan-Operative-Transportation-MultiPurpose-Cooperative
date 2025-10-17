@@ -1,0 +1,41 @@
+{% for user in users %}
+<tr>
+    <td>{{ user.username }}</td>
+    <td>{{ user.full_name }}</td>
+    <td>{{ user.email }}</td>
+    <td>{{ user.phone_number }}</td>
+    <td>{{ user.role|title }}</td>
+    <td>
+        {% if user.member_profile %}
+            {{ user.member_profile.full_name }}
+        {% else %}
+            N/A
+        {% endif %}
+    </td>
+    <td>
+        {% if user.id_image %}
+            <a href="{{ user.id_image.url }}" target="_blank">
+                <img src="{{ user.id_image.url }}" alt="ID Image" style="max-width:80px;max-height:80px;">
+            </a>
+        {% else %}
+            <span class="text-muted">No ID</span>
+        {% endif %}
+    </td>
+    <td>
+        {% if user.is_active %}
+            <form method="post" action="{% url 'deactivate_account' user.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-warning btn-sm">Deactivate</button>
+            </form>
+        {% else %}
+            <form method="post" action="{% url 'activate_account' user.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm">Activate</button>
+            </form>
+        {% endif %}
+        <a href="{% url 'edit_account' user.id %}" class="btn btn-primary btn-sm">Edit</a>
+    </td>
+</tr>
+{% empty %}
+<tr><td colspan="8" class="text-center">No accounts found.</td></tr>
+{% endfor %}

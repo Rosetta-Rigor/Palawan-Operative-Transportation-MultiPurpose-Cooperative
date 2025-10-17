@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+ 
+{% block content %}
+{% block title %}Member — {{ member.full_name }}{% endblock %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card mb-3">
+        <div class="card-header">
+          <h4 class="card-title">Profile</h4>
+        </div>
+        <div class="card-body">
+          <p><strong>Name:</strong> {{ member.full_name }}</p>
+          <p><strong>Email:</strong> {{ member.user_account.email|default:"Not provided" }}</p>
+          <p><strong>Phone:</strong> {{ member.user_account.phone_number|default:"Not provided" }}</p>
+          <p><strong>Batch:</strong>
+            {% if member.batch %}
+              {{ member.batch.number }}
+            {% else %}
+              Not connected
+            {% endif %}
+          </p>
+          <p><strong>Batch Monitoring #:</strong> {{ member.batch_monitoring_number|default:"N/A" }}</p>
+          <p><strong>Status:</strong> {% if member.is_dormant %}Dormant{% else %}Active{% endif %}</p>
+          <hr/>
+          <h5>Account</h5>
+          {% if member.user_account %}
+            <div class="mb-3">
+              <p><strong>Username:</strong> {{ member.user_account.username }}</p>
+              <p><strong>Account Email:</strong> {{ member.user_account.email }}</p>
+              <p><strong>Account Active:</strong> {{ member.user_account.is_active }}</p>
+
+              <!-- show profile image if available -->
+              <div class="mb-2">
+                <strong>Profile Image:</strong><br/>
+                {% if member.user_account.profile_image %}
+                  <a href="{{ member.user_account.profile_image.url }}" target="_blank">
+                    <img src="{{ member.user_account.profile_image.url }}" alt="Profile" style="max-width:120px;max-height:120px;object-fit:cover;border:1px solid #ddd;padding:4px;">
+                  </a>
+                {% else %}
+                  <img src="{% static 'img/boss.jpg' %}" alt="Default Profile" style="max-width:120px;max-height:120px;object-fit:cover;border:1px solid #ddd;padding:4px;">
+                {% endif %}
+              </div>
+
+              <!-- show ID image (id_image) if available -->
+              <div class="mb-2">
+                <strong>ID Image:</strong><br/>
+                {% if member.user_account.id_image %}
+                  <a href="{{ member.user_account.id_image.url }}" target="_blank">
+                    <img src="{{ member.user_account.id_image.url }}" alt="ID Image" style="max-width:200px;max-height:120px;object-fit:cover;border:1px solid #ddd;padding:4px;">
+                  </a>
+                {% else %}
+                  <div class="text-muted small">ID image not uploaded</div>
+                {% endif %}
+              </div>
+
+              <a class="btn btn-sm btn-secondary" href="{% url 'accounts_list' %}">Open Accounts List</a>
+            </div>
+          {% else %}
+            <p class="text-muted">Not connected to an account</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header"><h4 class="card-title">Vehicles</h4></div>
+        <div class="card-body">
+          {% if vehicles %}
+            <ul class="list-unstyled">
+              {% for v in vehicles %}
+                <li class="mb-2">
+                  <strong>{{ v.plate_number }}</strong> — {{ v.make_brand }} {{ v.year_model }} ({{ v.color }})<br/>
+                  Engine: {{ v.engine_number|default:"N/A" }}, Chassis: {{ v.chassis_number|default:"N/A" }}
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted">Not connected to any vehicle</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header"><h4 class="card-title">Documents</h4></div>
+        <div class="card-body">
+          {% if documents %}
+            {% for doc in documents %}
+              <div class="mb-3">
+                <strong>Document TIN:</strong> {{ doc.tin }}<br/>
+                <strong>Vehicle:</strong> {% if doc.vehicle %}{{ doc.vehicle.plate_number }}{% else %}N/A{% endif %}<br/>
+                <strong>Entries:</strong>
+                {% if doc.entries_list %}
+                  <ul class="list-unstyled">
+                    {% for e in doc.entries_list %}
+                      <li class="mb-2">
+                        <div><strong>{{ e.renewal_date|date:"Y-m-d" }}</strong></div>
+
+                        <div class="d-flex align-items-center" style="gap:10px;">
+                          <!-- Official Receipt (OR) -->
+                          {% if e.official_receipt %}
+                            <a href="{{ e.official_receipt.url }}" target="_blank" title="Open Official Receipt (new tab)">
+                              <img src="{{ e.official_receipt.url }}" alt="OR" style="max-width:120px;max-height:90px;object-fit:cover;border:1px solid #ddd;padding:2px;">
+                            </a>
+                          {% else %}
+                            <div class="text-muted small">OR: Not uploaded</div>
+                          {% endif %}
+
+                          <!-- Certificate of Registration (CR) -->
+                          {% if e.certificate_of_registration %}
+                            <a href="{{ e.certificate_of_registration.url }}" target="_blank" title="Open Certificate of Registration (new tab)">
+                              <img src="{{ e.certificate_of_registration.url }}" alt="CR" style="max-width:120px;max-height:90px;object-fit:cover;border:1px solid #ddd;padding:2px;">
+                            </a>
+                          {% else %}
+                            <div class="text-muted small">CR: Not uploaded</div>
+                          {% endif %}
+                        </div>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p class="text-muted">No document entries</p>
+                {% endif %}
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-muted">Not connected to any documents</p>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header"><h5>Quick Info</h5></div>
+        <div class="card-body">
+          <p><strong>Joined:</strong>
+            {% if member.created_at %}
+              {{ member.created_at|date:"Y-m-d" }}
+            {% else %}
+              N/A
+            {% endif %}
+          </p>
+          <p><strong>Address:</strong> {{ member.address|default:"N/A" }}</p>
+          <p><strong>Notes:</strong> {{ member.notes|default:"-" }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

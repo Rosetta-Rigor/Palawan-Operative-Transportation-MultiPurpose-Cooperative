@@ -46,7 +46,7 @@ class VehicleForm(forms.ModelForm):
         fields = [
             'plate_number', 'engine_number', 'chassis_number', 'make_brand',
             'year_model', 'series', 'color', 'member'
-            # 'body_type' REMOVED because it's non-editable
+            
         ]
         widgets = {
             'plate_number': forms.TextInput(attrs={'class': 'form-control'}),

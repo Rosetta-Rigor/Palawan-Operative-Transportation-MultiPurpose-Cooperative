@@ -14,7 +14,7 @@
                     <br />
                     <div class="col-md-12 row">
                         <div class="col-md-6">
-                            <form class="navbar-left navbar-form nav-search mr-md-3" action="{% url 'member_list' %}">
+                            <form class="navbar-left navbar-form nav-search mr-md-3" action="{% url 'member_list' %}" method="get" id="member-search-form">
                                 <div class="input-group">
                                     <input type="text" id="member-search" placeholder="Search ..." class="form-control" name="q" autocomplete="off" />
                                     <div class="input-group-append">
@@ -44,31 +44,7 @@
                                 </tr>
                             </thead>
                             <tbody id="member-table-body">
-                                {% for member in object_list %}
-                                <tr>
-                                    <td>{{ member.full_name }}</td>
-                                    <td>{{ member.email }}</td>
-                                    <td>{{ member.batch.number }}</td>
-                                    <td>{{ member.batch_monitoring_number }}</td>
-                                    <td>
-                                        {% if member.vehicles.all %}
-                                            {% for v in member.vehicles.all %}
-                                                {{ v.plate_number }}{% if not forloop.last %}, {% endif %}
-                                            {% endfor %}
-                                        {% else %}
-                                            N/A
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm btn-primary">Edit</a>
-                                        <a href="{% url 'member_confirm_delete' member.pk %}" class="btn btn-sm btn-danger">Delete</a>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="7">No members found.</td>
-                                </tr>
-                                {% endfor %}
+                                {% include 'includes/member_table_rows.html' %}
                             </tbody>
                         </table>
                     </div>

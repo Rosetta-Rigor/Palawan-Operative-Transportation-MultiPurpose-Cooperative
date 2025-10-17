@@ -1,0 +1,27 @@
+{% for doc in object_list %}
+<tr>
+    <td>{{ doc.tin }}</td>
+    <td>{% if doc.vehicle %}{{ doc.vehicle.plate_number }}{% else %}N/A{% endif %}</td>
+    <td>
+        {% if doc.vehicle and doc.vehicle.member %}
+            {{ doc.vehicle.member.full_name }}
+        {% else %}
+            N/A
+        {% endif %}
+    </td>
+    <td>
+        {% if doc.entries.last %}
+            {{ doc.entries.last.renewal_date }}
+        {% else %}
+            N/A
+        {% endif %}
+    </td>
+    <td>
+        <a href="{% url 'document_detail' doc.pk %}" class="btn btn-sm btn-info">View</a>
+        <a href="{% url 'document_entry_add' doc.pk %}" class="btn btn-sm btn-warning">Renew</a>
+        <a href="{% url 'document_delete' doc.pk %}" class="btn btn-sm btn-danger">Delete</a>
+    </td>
+</tr>
+{% empty %}
+<tr><td colspan="5">No documents found.</td></tr>
+{% endfor %}

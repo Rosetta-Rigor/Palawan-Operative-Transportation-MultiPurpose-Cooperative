@@ -49,25 +49,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="vehicle-table-body">
-                                    {% for vehicle in object_list %}
-                                    <tr>
-                                        <td>{{ vehicle.plate_number }}</td>
-                                        <td>{{ vehicle.engine_number }}</td>
-                                        <td>{{ vehicle.chassis_number }}</td>
-                                        <td>{{ vehicle.make_brand }}</td>
-                                        <td>{{ vehicle.body_type }}</td>
-                                        <td>{{ vehicle.year_model }}</td>
-                                        <td>{{ vehicle.series }}</td>
-                                        <td>{{ vehicle.color }}</td>
-                                        <td>{% if vehicle.member %}{{ vehicle.member.full_name }}{% else %}N/A{% endif %}</td>
-                                        <td>
-                                            <a href="{% url 'vehicle_edit' vehicle.pk %}" class="btn btn-sm btn-primary">Edit</a>
-                                            <a href="{% url 'vehicle_delete' vehicle.pk %}" class="btn btn-sm btn-danger">Delete</a>
-                                        </td>
-                                    </tr>
-                                    {% empty %}
-                                    <tr><td colspan="10">No vehicles found.</td></tr>
-                                    {% endfor %}
+                                    {% include 'includes/vehicle_table_rows.html' %}
                                 </tbody>
                             </table>
                             {% include 'includes/pagination.html' %}
@@ -81,15 +63,15 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(function() {
-    $('#vehicle-search').on('input', function() {
+    $('#document-search').on('input', function() {
         var query = $(this).val();
         $.ajax({
-            url: "{% url 'vehicle_list' %}",
+            url: "{% url 'document_list' %}",
             data: { q: query },
             dataType: 'json',
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             success: function(data) {
-                $('#vehicle-table-body').html(data.html);
+                $('#document-table-body').html(data.html);
             }
         });
     });

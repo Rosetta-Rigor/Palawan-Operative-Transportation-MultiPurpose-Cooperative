@@ -8,6 +8,7 @@ from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [
+    path('accounts/<int:user_id>/edit/', views.edit_account, name='edit_account'),
     path("admin/user-approvals/", views.user_approvals, name="user_approvals"),
     path("admin/approve-user/<int:user_id>/", views.approve_user, name="approve_user"),
     path("user/documents/upload/", views.user_upload_document, name="user_upload_document"),
@@ -16,6 +17,7 @@ urlpatterns = [
     path("broadcast/", views.broadcast, name="broadcast"),
     path("admin/", admin.site.urls),
     path("", views.home, name="home"),
+    
 
     # MEMBER CRUD
     path("members/", views.MemberListView.as_view(), name="member_list"),
@@ -60,6 +62,7 @@ urlpatterns = [
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='registration/password_reset_done.html'), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='registration/password_reset_confirm.html'), name='password_reset_confirm'),
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete'),
+    path('members/<int:pk>/view/', views.member_view, name='member_view'),
 ]
 
 if settings.DEBUG:
