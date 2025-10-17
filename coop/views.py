@@ -3,7 +3,10 @@ from django.views.decorators.http import require_POST
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import user_passes_test
 from matplotlib.style import context
-from .models import User, Member
+from .models import Batch, User, Member
+import json
+from django.utils import timezone
+from datetime import timedelta
 
 
 
@@ -91,13 +94,6 @@ VehicleFormSet = inlineformset_factory(
 )
 
 # ==== Function-based Views ====
-
-@login_required
-def home(request):
-    """
-    Renders the home page for logged-in users.
-    """
-    return render(request, "home.html")
 
 @login_required
 def member_add(request):
@@ -720,3 +716,60 @@ def member_search_api(request):
     members = Member.objects.filter(full_name__icontains=q)[:10] if q else []
     results = [{'id': m.id, 'text': m.full_name} for m in members]
     return JsonResponse({'results': results})
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model
+from .models import Member, Vehicle
+
+from django.core.paginator import Paginator
+
+@login_required
+def home(request):
+    User = get_user_model()
+    total_members = Member.objects.count()
+    accounts_count = User.objects.filter(is_active=True).count()
+    vehicles_count = Vehicle.objects.count()
+    batch_count = Batch.objects.count()
+    document_count = Document.objects.count()
+
+    # Prepare batch cards data
+    batch_cards = []
+    for batch in Batch.objects.all():
+        members_qs = batch.members.select_related('user_account').all().order_by('full_name')
+        paginator = Paginator(members_qs, 10)
+        page_number = request.GET.get(f'batch_{batch.id}_page', 1)
+        page_obj = paginator.get_page(page_number)
+        members_data = []
+        for member in page_obj.object_list:
+            # Get vehicle and document
+            vehicle = member.vehicles.first()
+            document = vehicle.document if vehicle and hasattr(vehicle, 'document') else None
+            # Get latest renewal date from DocumentEntry
+            expiry_date = None
+            if document:
+                latest_entry = document.entries.order_by('-renewal_date').first()
+                if latest_entry and latest_entry.renewal_date:
+                    expiry_date = latest_entry.renewal_date.replace(year=latest_entry.renewal_date.year + 1)
+            members_data.append({
+                'full_name': member.full_name,
+                'expiry_date': expiry_date.strftime('%Y-%m-%d') if expiry_date else 'N/A'
+            })
+        batch_cards.append({
+            'id': batch.id,
+            'number': batch.number,
+            'members': members_data,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous(),
+            'page_number': page_obj.number,
+            'num_pages': paginator.num_pages,
+        })
+
+    context = {
+        'total_members': total_members,
+        'accounts_count': accounts_count,
+        'vehicles_count': vehicles_count,
+        'batch_count': batch_count,
+        'document_count': document_count,
+        'batch_cards': batch_cards,
+    }
+    return render(request, "home.html", context)
