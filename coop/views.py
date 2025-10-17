@@ -707,3 +707,16 @@ def member_view(request, pk):
         'documents': documents,
     })
 
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from django.contrib.auth.decorators import login_required
+from .models import Member
+
+@require_GET
+@login_required
+def member_search_api(request):
+    q = request.GET.get('q', '').strip()
+    members = Member.objects.filter(full_name__icontains=q)[:10] if q else []
+    results = [{'id': m.id, 'text': m.full_name} for m in members]
+    return JsonResponse({'results': results})
