@@ -48,20 +48,23 @@
 			<div class="scrollbar-inner sidebar-wrapper">
 				<div class="user">
 					<div class="photo">
-						<img src="{% static 'img/boss.jpg' %}" alt="Img Profile">
+					  {% if user.is_authenticated and user.profile_image %}
+					    <img src="{{ user.profile_image.url }}" alt="Img Profile">
+					  {% else %}
+					    <img src="{% static 'img/boss.jpg' %}" alt="Default Profile">
+					  {% endif %}
 					</div>
 					<div class="info">
 						<a data-toggle="collapse" href="#userMenu" aria-expanded="true">
 							<span>
-								Admin
+								{{ user.username }}
 								<span class="user-level">Administrator</span>
 								<span class="caret"></span>
 							</span>
 						</a>
 						<div class="collapse in" id="userMenu" aria-expanded="true">
 							<ul class="nav">
-								<li><a href="#"><span class="link-collapse">My Profile</span></a></li>
-								<li><a href="#"><span class="link-collapse">Settings</span></a></li>
+								<li><a href="{% url 'my_profile' %}"><span class="link-collapse">My Profile</span></a></li>
 								<li>
 									<a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
 										<i class="fa fa-power-off"></i> Logout

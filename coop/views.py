@@ -610,3 +610,23 @@ def activate_account(request, user_id):
     user.is_active = True
     user.save()
     return redirect('accounts_list')
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .forms import UserProfileForm
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+@login_required
+def my_profile(request):
+    user = request.user
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile updated.')
+            return redirect('my_profile')
+    else:
+        form = UserProfileForm(instance=user)
+    return render(request, 'profile.html', {'form': form, 'user_obj': user})

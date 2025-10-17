@@ -20,6 +20,9 @@ def id_upload_path(instance, filename):
     # Store ID images in: media/ID/<username>/<filename>
     return f"ID/{instance.username}/{filename}"
 
+def profile_upload_path(instance, filename):
+    return f"profiles/{instance.username}/{filename}"
+
 class User(AbstractUser):
     # Only managers and admins can create accounts
     ROLE_CHOICES = (
@@ -31,7 +34,8 @@ class User(AbstractUser):
     full_name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
     id_image = models.ImageField(upload_to=id_upload_path, null=True, blank=True)
-    # Email and phone can be used for login
+    profile_image = models.ImageField(upload_to=profile_upload_path, null=True, blank=True)
+    email = models.EmailField(unique=True)
     groups = models.ManyToManyField(
         Group,
         related_name="coop_user_set",  # <-- unique related_name

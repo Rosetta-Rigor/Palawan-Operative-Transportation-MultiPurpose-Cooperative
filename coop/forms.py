@@ -3,15 +3,27 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import User, Member, Vehicle, Batch, Document, DocumentEntry
 
+User = get_user_model()
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username', 'profile_image']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'profile_image': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
+        }
+
 class CustomUserRegistrationForm(UserCreationForm):
     full_name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}))
     email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'form-control'}))
     phone_number = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}))
     id_image = forms.ImageField(widget=forms.ClearableFileInput(attrs={'class': 'form-control'}))
+    profile_image = forms.ImageField(widget=forms.ClearableFileInput(attrs={'class': 'form-control'}), required=False)
 
     class Meta:
         model = User
-        fields = ("username", "full_name", "email", "phone_number", "id_image", "password1", "password2")
+        fields = ("username", "full_name", "email", "phone_number", "id_image", "profile_image", "password1", "password2")
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
         }

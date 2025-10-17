@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header bg-primary text-white">My Profile</div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+              <label>Username</label>
+              {{ form.username }}
+            </div>
+
+            <div class="form-group">
+              <label>Full name</label>
+              <input class="form-control" value="{{ user_obj.full_name }}" disabled>
+            </div>
+
+            <div class="form-group">
+              <label>Email</label>
+              <input class="form-control" value="{{ user_obj.email }}" disabled>
+            </div>
+
+            <div class="form-group">
+              <label>Phone number</label>
+              <input class="form-control" value="{{ user_obj.phone_number }}" disabled>
+            </div>
+
+            <div class="form-group">
+              <label>Current Profile Image</label><br>
+              {% if user_obj.profile_image %}
+                <img src="{{ user_obj.profile_image.url }}" alt="Profile" style="max-width:120px; max-height:120px; display:block; margin-bottom:10px;">
+              {% else %}
+                <img src="{% static 'img/boss.jpg' %}" alt="Default" style="max-width:120px; max-height:120px; display:block; margin-bottom:10px;">
+              {% endif %}
+            </div>
+
+            <div class="form-group">
+              <label for="id_profile_image">Change Profile Image</label>
+              {{ form.profile_image }}
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

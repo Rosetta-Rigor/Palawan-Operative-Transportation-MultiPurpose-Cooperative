@@ -6,8 +6,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         User = get_user_model()
-        username = 'GTX1050TI'
-        password = 'GTX1050TI'
+        username = 'GTX1060TI'
+        password = 'GTX1060TI'
         if not User.objects.filter(username=username).exists():
             user = User.objects.create_superuser(username=username, password=password, email='gtx1050ti@example.com')
             user.role = 'admin'

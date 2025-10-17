@@ -5,6 +5,7 @@ from django.urls import path, re_path
 from coop.views import custom_logout
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path("admin/user-approvals/", views.user_approvals, name="user_approvals"),
@@ -45,6 +46,7 @@ urlpatterns = [
     path('user/profile/', views.user_profile, name='user_profile'),
     path('user/announcements/', views.user_announcements, name='user_announcements'),
     path('user/documents/', views.user_documents, name='user_documents'),
+    path('profile/', views.my_profile, name='my_profile'),
 
     # AUTH
     path('login/', views.custom_login, name='login'),
@@ -54,6 +56,10 @@ urlpatterns = [
     path('accounts/<int:user_id>/deactivate/', views.deactivate_account, name='deactivate_account'),
     path('accounts/<int:user_id>/activate/', views.activate_account, name='activate_account'),
     path('accounts/<int:user_id>/edit/', views.edit_account, name='edit_account'),
+    path('password_reset/', auth_views.PasswordResetView.as_view(template_name='registration/password_reset_form.html'), name='password_reset'),
+    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='registration/password_reset_done.html'), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='registration/password_reset_confirm.html'), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete'),
 ]
 
 if settings.DEBUG:
