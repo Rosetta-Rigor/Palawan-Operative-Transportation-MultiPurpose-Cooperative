@@ -108,10 +108,54 @@ def member_add(request):
         member_form = MemberForm(request.POST)
         if member_form.is_valid():
             member = member_form.save()
+
+            # Get selected existing vehicle from the form (optional)
+            selected_vehicle = member_form.cleaned_data.get('vehicle')
+
             # Handle new vehicle creation via formset
             formset = VehicleFormSet(request.POST, instance=member)
             if formset.is_valid():
+                # Validate duplicates between selected_vehicle, existing member vehicles and formset entries
+                member_existing_plates = set(v.plate_number for v in member.vehicles.all())
+                plate_set = set(member_existing_plates)
+                if selected_vehicle:
+                    plate_set.add(selected_vehicle.plate_number)
+
+                duplicate_found = False
+                for f in formset.forms:
+                    if not hasattr(f, 'cleaned_data'):
+                        continue
+                    cd = f.cleaned_data
+                    if not cd or cd.get('DELETE', False):
+                        continue
+                    plate = cd.get('plate_number')
+                    inst = getattr(f, 'instance', None)
+                    # If this form is editing an existing vehicle and the plate is unchanged, allow it
+                    if inst and getattr(inst, 'pk', None):
+                        existing_plate = getattr(inst, 'plate_number', None)
+                        if existing_plate and plate == existing_plate:
+                            plate_set.add(plate)
+                            continue
+                    if plate:
+                        if plate in plate_set:
+                            f.add_error('plate_number', 'Vehicle with this Plate number already exists.')
+                            duplicate_found = True
+                        else:
+                            plate_set.add(plate)
+                if duplicate_found:
+                    # Re-render with errors
+                    return render(request, "member_add.html", {"form": member_form, "formset": formset})
+
+                # Save formset and attach selected existing vehicle if provided
                 formset.save()
+                if selected_vehicle:
+                    # Untie from previous member if necessary
+                    if selected_vehicle.member and selected_vehicle.member != member:
+                        prev = selected_vehicle.member
+                        selected_vehicle.member = member
+                    else:
+                        selected_vehicle.member = member
+                    selected_vehicle.save()
                 return redirect("member_list")
         else:
             formset = VehicleFormSet(request.POST)
@@ -173,8 +217,50 @@ def member_edit(request, pk):
         member_form = MemberForm(request.POST, instance=member)
         formset = VehicleFormSet(request.POST, instance=member)
         if member_form.is_valid() and formset.is_valid():
-            member_form.save()
+            member = member_form.save()
+            selected_vehicle = member_form.cleaned_data.get('vehicle')
+
+            # Validate duplicates between selected_vehicle, existing member vehicles and formset entries
+            member_existing_plates = set(v.plate_number for v in member.vehicles.all())
+            plate_set = set(member_existing_plates)
+            if selected_vehicle:
+                plate_set.add(selected_vehicle.plate_number)
+
+            duplicate_found = False
+            for f in formset.forms:
+                if not hasattr(f, 'cleaned_data'):
+                    continue
+                cd = f.cleaned_data
+                if not cd or cd.get('DELETE', False):
+                    continue
+                plate = cd.get('plate_number')
+                inst = getattr(f, 'instance', None)
+                # If editing an existing vehicle and plate unchanged, allow it
+                if inst and getattr(inst, 'pk', None):
+                    existing_plate = getattr(inst, 'plate_number', None)
+                    if existing_plate and plate == existing_plate:
+                        plate_set.add(plate)
+                        continue
+                if plate:
+                    if plate in plate_set:
+                        f.add_error('plate_number', 'Vehicle with this Plate number already exists.')
+                        duplicate_found = True
+                    else:
+                        plate_set.add(plate)
+            if duplicate_found:
+                return render(request, "member_add.html", {"form": member_form, "formset": formset})
+
             formset.save()
+
+            if selected_vehicle:
+                # Attach selected existing vehicle to this member
+                if selected_vehicle.member and selected_vehicle.member != member:
+                    # reassign ownership
+                    selected_vehicle.member = member
+                else:
+                    selected_vehicle.member = member
+                selected_vehicle.save()
+
             return redirect("member_list")
     else:
         member_form = MemberForm(instance=member)
@@ -292,17 +378,16 @@ class MemberListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related('batch').prefetch_related('vehicles')
+        # ensure we pull the linked user fields efficiently
+        qs = super().get_queryset().select_related('batch', 'user_account').prefetch_related('vehicles')
         q = (self.request.GET.get("q") or "").strip()
         if not q:
-         return queryset
-
-
+            return qs
         # Subquery: any Document whose vehicle is owned by the member and tin matches q
         doc_qs = Document.objects.filter(vehicle__member=OuterRef('pk'), tin__icontains=q)
 
         
-        queryset = queryset.annotate(has_doc=Exists(doc_qs)).filter(
+        queryset = qs.annotate(has_doc=Exists(doc_qs)).filter(
             Q(full_name__icontains=q) |
             Q(batch__number__icontains=q) |
             Q(batch_monitoring_number__icontains=q) |
@@ -315,6 +400,20 @@ class MemberListView(ListView):
             Q(has_doc=True)
         ).distinct()
         return queryset
+
+    def get_context_data(self, **kwargs):
+        """Add start_index for global row numbering across pages."""
+        context = super().get_context_data(**kwargs)
+        page_obj = context.get('page_obj')
+        if page_obj:
+            try:
+                start = (page_obj.number - 1) * (self.paginate_by or 0)
+            except Exception:
+                start = 0
+        else:
+            start = 0
+        context['start_index'] = start
+        return context
 
     def render_to_response(self, context, **response_kwargs):
         if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -331,7 +430,7 @@ class MemberDeleteView(DeleteView):
     """
     model = Member
     template_name = "member_confirm_delete.html"
-    success_url = reverse_lazy("member-list")
+    success_url = reverse_lazy("member_list")
 
 # ==== Class-based Views: Vehicle ====
 
@@ -349,7 +448,7 @@ class VehicleListView(ListView):
 
     def get_queryset(self):
         # Filter queryset based on search query
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().select_related('member')
         q = self.request.GET.get("q", "")
         if q:
             queryset = queryset.filter(
@@ -361,7 +460,7 @@ class VehicleListView(ListView):
                 Q(year_model__icontains=q) |
                 Q(series__icontains=q) |
                 Q(color__icontains=q) |
-                Q(member__name__icontains=q)
+                Q(member__full_name__icontains=q)
             )
         return queryset
 
@@ -418,12 +517,22 @@ class DocumentListView(ListView):
     template_name = "documentlist.html"
     context_object_name = "object_list"
     paginate_by = 10
+    def get_queryset(self):
+        qs = super().get_queryset().select_related('vehicle', 'vehicle__member')
+        q = (self.request.GET.get('q') or '').strip()
+        if not q:
+            return qs
+        return qs.filter(
+            Q(tin__icontains=q) |
+            Q(vehicle__plate_number__icontains=q) |
+            Q(vehicle__member__full_name__icontains=q)
+        ).distinct()
 
-def render_to_response(self, context, **response_kwargs):
-    if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        html = render_to_string("includes/document_table_rows.html", context, request=self.request)
-        return JsonResponse({'html': html})
-    return super().render_to_response(context, **response_kwargs)
+    def render_to_response(self, context, **response_kwargs):
+        if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            html = render_to_string("includes/document_table_rows.html", context, request=self.request)
+            return JsonResponse({'html': html})
+        return super().render_to_response(context, **response_kwargs)
 
 @method_decorator(login_required, name='dispatch')
 class DocumentCreateView(CreateView):
@@ -682,7 +791,7 @@ from .models import Member, Document, DocumentEntry, User
 def member_view(request, pk):
     member = get_object_or_404(Member, pk=pk)
     # safely get linked user account (None if not connected)
-    user_account = get_object_or_404(User, pk=pk) 
+    user_account = getattr(member, 'user_account', None)
 
     vehicles = list(member.vehicles.all()) if hasattr(member, 'vehicles') else []
     documents = list(Document.objects.filter(vehicle__in=vehicles)) if vehicles else []
@@ -715,6 +824,31 @@ def member_search_api(request):
     q = request.GET.get('q', '').strip()
     members = Member.objects.filter(full_name__icontains=q)[:10] if q else []
     results = [{'id': m.id, 'text': m.full_name} for m in members]
+    return JsonResponse({'results': results})
+
+
+@require_GET
+@login_required
+def user_search_api(request):
+    """
+    Search API for User objects used by Select2 AJAX widgets.
+    Returns JSON in Select2 { results: [{id, text}, ...] } format.
+    """
+    from django.contrib.auth import get_user_model
+    UserModel = get_user_model()
+    q = request.GET.get('q', '').strip()
+    if not q:
+        users = []
+    else:
+        users = UserModel.objects.filter(
+            Q(username__icontains=q) |
+            Q(full_name__icontains=q) |
+            Q(email__icontains=q)
+        )[:10]
+    results = []
+    for u in users:
+        label = getattr(u, 'full_name', None) or u.username
+        results.append({'id': u.id, 'text': label})
     return JsonResponse({'results': results})
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required

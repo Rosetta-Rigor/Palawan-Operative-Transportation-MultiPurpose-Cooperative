@@ -42,8 +42,12 @@
                                 {{ form.color }}
                             </div>
                             <div class="form-group">
-                                <label for="id_member">Member (optional)</label>
-                                {{ form.member }}
+                                <label for="vehicleMemberSelect">Member (optional)</label>
+                                <select id="vehicleMemberSelect" name="member" class="form-control" style="width:100%">
+                                    {% if form.instance and form.instance.member %}
+                                        <option value="{{ form.instance.member.id }}" selected>{{ form.instance.member.full_name }}</option>
+                                    {% endif %}
+                                </select>
                             </div>
                             <div class="form-group">
                                 <button type="submit" class="btn btn-success btn-rounded">Save</button>
@@ -56,4 +60,35 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const $select = $('#vehicleMemberSelect');
+    console.log('vehicle_add: select length=', $select.length, 'select2 available:', !!($.fn && $.fn.select2));
+    if ($select.length && $.fn && $.fn.select2) {
+        $select.select2({
+            theme: 'bootstrap-5',
+            placeholder: '-- Select Member (optional) --',
+            allowClear: true,
+            ajax: {
+                url: "{% url 'member_search_api' %}",
+                dataType: 'json',
+                delay: 250,
+                data: function(params) { return { q: params.term }; },
+                processResults: function(data) { return { results: data.results }; },
+                cache: true
+            },
+            minimumInputLength: 1,
+            width: 'resolve'
+        }).on('select2:open', function() { console.log('vehicle_add: select2 opened'); });
+
+        $(document).on('keyup', '.select2-search__field', function() { console.log('vehicle_add: search field:', $(this).val()); });
+    } else {
+        console.warn('vehicle_add: Select2 not available; providing text fallback');
+        $('#vehicleMemberSelect').replaceWith('<input type="text" id="vehicleMemberFallback" name="member_text" class="form-control" placeholder="Type member name">');
+    }
+});
+</script>
 {% endblock %}

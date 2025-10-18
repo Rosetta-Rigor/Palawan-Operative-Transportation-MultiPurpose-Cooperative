@@ -131,12 +131,6 @@
 							   <p>Approve Documents</p>
 						   </a>
 					   </li>
-						<li class="nav-item">
-					   		<a href="{% url 'user_approvals' %}">
-						   		<i class="la la-user-check"></i>
-						   		<p>User Approvals</p>
-					   		</a>
-				   		</li>
 					   <li class="nav-item">
 						   <a href="{% url 'broadcast' %}">
 							   <i class="la la-bullhorn"></i>
@@ -191,6 +185,7 @@
     <script src="{% static 'js/plugin/jquery-mapael/maps/world_countries.min.js' %}"></script>
     <script src="{% static 'js/plugin/chart-circle/circles.min.js' %}"></script>
     <script src="{% static 'js/plugin/jquery-scrollbar/jquery.scrollbar.min.js' %}"></script>
-    <script src="{% static 'js/ready.min.js' %}"></script>
+        <script src="{% static 'js/ready.min.js' %}"></script>
+        {% block extra_js %}{% endblock %}
 </body>
 </html>

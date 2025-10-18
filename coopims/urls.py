@@ -64,6 +64,7 @@ urlpatterns = [
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete'),
     path('members/<int:pk>/view/', views.member_view, name='member_view'),
     path('api/members/search/', views.member_search_api, name='member_search_api'),
+    path('api/users/search/', views.user_search_api, name='user_search_api'),
 ]
 
 if settings.DEBUG:

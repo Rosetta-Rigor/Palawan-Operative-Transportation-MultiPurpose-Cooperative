@@ -40,8 +40,6 @@
                                         <th>Engine Number</th>
                                         <th>Chassis Number</th>
                                         <th>Make/Brand</th>
-                                        <th>Body Type</th>
-                                        <th>Year Model</th>
                                         <th>Series</th>
                                         <th>Color</th>
                                         <th>Owner</th>
@@ -63,15 +61,15 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(function() {
-    $('#document-search').on('input', function() {
+    $('#vehicle-search').on('input', function() {
         var query = $(this).val();
         $.ajax({
-            url: "{% url 'document_list' %}",
+            url: "{% url 'vehicle_list' %}",
             data: { q: query },
             dataType: 'json',
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             success: function(data) {
-                $('#document-table-body').html(data.html);
+                $('#vehicle-table-body').html(data.html);
             }
         });
     });
