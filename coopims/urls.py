@@ -65,7 +65,9 @@ urlpatterns = [
     path('members/<int:pk>/view/', views.member_view, name='member_view'),
     path('api/members/search/', views.member_search_api, name='member_search_api'),
     path('api/users/search/', views.user_search_api, name='user_search_api'),
+    path('api/vehicle-member-select2/', views.vehicle_member_select2_api, name='vehicle_member_select2_api'),
 ]
+
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

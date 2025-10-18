@@ -8,7 +8,7 @@ import json
 from django.utils import timezone
 from datetime import timedelta
 
-
+from django.db import models
 
 
 @user_passes_test(lambda u: u.is_staff)
@@ -622,21 +622,35 @@ class DocumentEntryForm(forms.ModelForm):
             'certificate_of_registration': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
 
+@login_required
 def document_add(request):
     if request.method == "POST":
         doc_form = DocumentForm(request.POST)
         entry_form = DocumentEntryForm(request.POST, request.FILES)
-        if doc_form.is_valid() and entry_form.is_valid():
-            document = doc_form.save()
+        vehicle_id = request.POST.get('vehicle')
+        vehicle_obj = None
+        if vehicle_id:
+            try:
+                vehicle_obj = Vehicle.objects.get(id=vehicle_id)
+            except Vehicle.DoesNotExist:
+                doc_form.add_error('vehicle', 'Selected vehicle does not exist.')
+        if doc_form.is_valid() and entry_form.is_valid() and vehicle_obj:
+            document = doc_form.save(commit=False)
+            document.vehicle = vehicle_obj
+            document.save()
             entry = entry_form.save(commit=False)
             entry.document = document
             entry.save()
             return redirect("document_list")
+        return render(request, "document_add.html", {
+            "form": doc_form,
+            "entry_form": entry_form,
+            "selected_vehicle": vehicle_id,
+        })
     else:
         doc_form = DocumentForm()
         entry_form = DocumentEntryForm()
-    return render(request, "document_add.html", {"form": doc_form, "entry_form": entry_form})
-
+        return render(request, "document_add.html", {"form": doc_form, "entry_form": entry_form})
 class DocumentDetailView(DetailView):
     model = Document
     template_name = "document_detail.html"
@@ -850,6 +864,28 @@ def user_search_api(request):
         label = getattr(u, 'full_name', None) or u.username
         results.append({'id': u.id, 'text': label})
     return JsonResponse({'results': results})
+
+
+# views.py
+@require_GET
+@login_required
+def vehicle_member_select2_api(request):
+    q = request.GET.get('q', '').strip()
+    results = []
+    vehicles = Vehicle.objects.select_related('member')
+    if q:
+        vehicles = vehicles.filter(
+            models.Q(plate_number__icontains=q) |
+            models.Q(member__full_name__icontains=q)
+        )
+    for v in vehicles:
+        if v.member:
+            label = f'{v.member.full_name} ("{v.plate_number}")'
+        else:
+            label = v.plate_number
+        results.append({'id': v.id, 'text': label})  # <-- use v.id here!
+    return JsonResponse({'results': results})
+
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model

@@ -6,11 +6,19 @@
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.non_field_errors }}
+        {{ form.errors }}
         <div class="mb-3">
             {{ form.tin.label_tag }}{{ form.tin }}
         </div>
         <div class="mb-3">
-            {{ form.vehicle.label_tag }}{{ form.vehicle }}
+            <label for="id_vehicle">Vehicle</label>
+            <select id="id_vehicle" name="vehicle" class="form-control" style="width:100%">
+                {% if selected_vehicle %}
+                    <option value="{{ selected_vehicle }}" selected="selected">{{ selected_vehicle }}</option>
+                {% elif form.vehicle.value %}
+                    <option value="{{ form.vehicle.value }}" selected="selected">{{ form.vehicle.value }}</option>
+                {% endif %}
+            </select>
         </div>
         <div class="mb-3">
             {{ entry_form.renewal_date.label_tag }}{{ entry_form.renewal_date }}
@@ -25,4 +33,28 @@
         <a href="{% url 'document_list' %}" class="btn btn-secondary">Cancel</a>
     </form>
 </div>
+<!-- Select2 JS (already loaded in base.html) -->
+<script>
+$(document).ready(function() {
+    $('#id_vehicle').select2({
+        theme: 'bootstrap-5',
+        placeholder: "Search by member name or plate number...",
+        allowClear: true,
+        ajax: {
+            url: "{% url 'vehicle_member_select2_api' %}",
+            dataType: 'json',
+            delay: 250,
+            data: function(params) {
+                return { q: params.term };
+            },
+            processResults: function(data) {
+                return { results: data.results };
+            },
+            cache: true
+        },
+        minimumInputLength: 1,
+        width: 'resolve'
+    });
+});
+</script>
 {% endblock %}
