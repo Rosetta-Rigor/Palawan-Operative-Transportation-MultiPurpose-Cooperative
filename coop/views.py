@@ -765,6 +765,14 @@ def accounts_list(request):
             Q(phone_number__icontains=q) |
             Q(role__icontains=q)
         )
+    users = User.objects.filter(role__iexact='client')
+    if q:
+        users = users.filter(
+            Q(username__icontains=q) |
+            Q(full_name__icontains=q) |
+            Q(email__icontains=q) |
+            Q(phone_number__icontains=q)
+        )
     members = Member.objects.all()
     available_members = Member.objects.filter(user_account__isnull=True)
     context = {'users': users, 'members': members, 'available_members': available_members}
@@ -772,6 +780,7 @@ def accounts_list(request):
         html = render_to_string('includes/account_table_rows.html', context, request=request)
         return JsonResponse({'html': html})
     return render(request, 'accounts.html', context)
+
 @require_POST
 def deactivate_account(request, user_id):
     user = get_object_or_404(User, pk=user_id)
@@ -779,6 +788,7 @@ def deactivate_account(request, user_id):
     user.save()
     return redirect('accounts_list')
 
+@login_required
 @login_required
 def edit_account(request, user_id):
     user = get_object_or_404(User, pk=user_id)
@@ -815,7 +825,7 @@ def edit_account(request, user_id):
         user.save()
         messages.success(request, "Account updated successfully.")
         return redirect('accounts_list')
-    return render(request, "account_edit.html", {"user": user, "members": members})
+    return render(request, "account_edit.html", {"edited_user": user, "members": members})
 
 @require_POST
 def activate_account(request, user_id):

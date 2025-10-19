@@ -22,18 +22,23 @@
         {% endif %}
     </td>
     <td>
-        {% if user.is_active %}
-            <form method="post" action="{% url 'deactivate_account' user.id %}" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-warning btn-sm">Deactivate</button>
-            </form>
+        {# Actions only allowed for client accounts (defensive check) #}
+        {% if user.role|lower == 'client' %}
+            {% if user.is_active %}
+                <form method="post" action="{% url 'deactivate_account' user.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning btn-sm">Deactivate</button>
+                </form>
+            {% else %}
+                <form method="post" action="{% url 'activate_account' user.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-sm">Activate</button>
+                </form>
+            {% endif %}
+            <a href="{% url 'edit_account' user.id %}" class="btn btn-primary btn-sm">Edit</a>
         {% else %}
-            <form method="post" action="{% url 'activate_account' user.id %}" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-success btn-sm">Activate</button>
-            </form>
+            <span class="text-muted">Restricted</span>
         {% endif %}
-    <a href="{% url 'edit_account' user.id %}" class="btn btn-primary btn-sm">Edit</a>
     </td>
 </tr>
 {% empty %}
