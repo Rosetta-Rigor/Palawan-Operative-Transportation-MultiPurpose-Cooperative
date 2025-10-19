@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="container mt-4">
+    <h4>Edit Document</h4>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {{ form.errors }}
+        <div class="mb-3">
+            {{ form.tin.label_tag }}{{ form.tin }}
+        </div>
+        <div class="mb-3">
+            <label for="id_vehicle">Vehicle</label>
+            <select id="id_vehicle" name="vehicle" class="form-control" style="width:100%">
+                {% if current_vehicle_id and current_vehicle_label %}
+                    <option value="{{ current_vehicle_plate }}" selected="selected">{{ current_vehicle_label }}</option>
+                {% elif form.initial.vehicle %}
+                    <option value="{{ form.initial.vehicle }}" selected="selected">{{ form.initial.vehicle }}</option>
+                {% endif %}
+            </select>
+            {% if form.errors.vehicle %}
+                <div class="text-danger">{{ form.errors.vehicle }}</div>
+            {% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{% url 'document_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('#id_vehicle').select2({
+        theme: 'bootstrap-5',
+        placeholder: "Search by member name or plate number...",
+        allowClear: true,
+        ajax: {
+            url: "{% url 'vehicle_member_select2_api' %}",
+            dataType: 'json',
+            delay: 250,
+            data: function(params) {
+                return {
+                    q: params.term,
+                    exclude_document_id: '{{ object.id }}'  // allow selecting current doc's vehicle, exclude others already used
+                };
+            },
+            processResults: function(data) {
+                return { results: data.results };
+            },
+            cache: true
+        },
+        minimumInputLength: 1,
+        width: 'resolve'
+    });
+});
+</script>
+{% endblock %}

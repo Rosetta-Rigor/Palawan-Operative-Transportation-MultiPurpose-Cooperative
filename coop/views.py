@@ -505,6 +505,7 @@ class VehicleDeleteView(DeleteView):
     template_name = "vehicle_confirm_delete.html"
     success_url = reverse_lazy("vehicle_list")
 
+
 # ==== Class-based Views: Document ====
 
 @method_decorator(login_required, name='dispatch')
@@ -574,6 +575,52 @@ def get_vehicle_data(request):
     return JsonResponse(data)
 from django.contrib.auth import authenticate, login as auth_login
 from django.contrib import messages
+
+@method_decorator(login_required, name='dispatch')
+class DocumentUpdateView(UpdateView):
+    model = Document
+    form_class = DocumentForm
+    template_name = "document_edit.html"
+    success_url = reverse_lazy("document_list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        doc = self.get_object()
+        current_vehicle = getattr(doc, 'vehicle', None)
+        if current_vehicle:
+            member_name = getattr(current_vehicle.member, 'full_name', None)
+            if member_name:
+                label = f'{member_name} ("{current_vehicle.plate_number}")'
+            else:
+                label = current_vehicle.plate_number
+            # expose plate (not id) for the template/select2 initial option
+            context['current_vehicle_plate'] = current_vehicle.plate_number
+            context['current_vehicle_label'] = label
+        else:
+            context['current_vehicle_plate'] = None
+            context['current_vehicle_label'] = None
+        return context
+
+    def form_valid(self, form):
+        # Select2 now posts a plate_number string as the "vehicle" field
+        vehicle_plate = self.request.POST.get('vehicle')
+        vehicle_obj = None
+        if vehicle_plate:
+            try:
+                vehicle_obj = Vehicle.objects.get(plate_number=vehicle_plate)
+            except Vehicle.DoesNotExist:
+                form.add_error('vehicle', 'Selected vehicle does not exist.')
+                return self.form_invalid(form)
+
+            # Prevent selecting a vehicle that is already tied to another document
+            exists = Document.objects.filter(vehicle=vehicle_obj).exclude(pk=self.object.pk).exists()
+            if exists:
+                form.add_error('vehicle', 'Selected vehicle is already tied to another document.')
+                return self.form_invalid(form)
+
+        form.instance.vehicle = vehicle_obj
+        return super().form_valid(form)
+
 
 # ==== Custom Login View ====
 def custom_login(request):
@@ -871,19 +918,36 @@ def user_search_api(request):
 @login_required
 def vehicle_member_select2_api(request):
     q = request.GET.get('q', '').strip()
+    exclude_document_id = request.GET.get('exclude_document_id')
     results = []
     vehicles = Vehicle.objects.select_related('member')
+
+    # Exclude vehicles already tied to any Document, but allow the vehicle
+    # currently tied to the document being edited (exclude_document_id).
+    if exclude_document_id:
+        try:
+            exclude_doc_pk = int(exclude_document_id)
+        except (TypeError, ValueError):
+            exclude_doc_pk = None
+        if exclude_doc_pk:
+            vehicles = vehicles.filter(models.Q(document__isnull=True) | models.Q(document__pk=exclude_doc_pk))
+        else:
+            vehicles = vehicles.filter(document__isnull=True)
+    else:
+        vehicles = vehicles.filter(document__isnull=True)
+
     if q:
         vehicles = vehicles.filter(
             models.Q(plate_number__icontains=q) |
             models.Q(member__full_name__icontains=q)
         )
-    for v in vehicles:
+
+    for v in vehicles[:50]:  # limit results
         if v.member:
             label = f'{v.member.full_name} ("{v.plate_number}")'
         else:
             label = v.plate_number
-        results.append({'id': v.id, 'text': label})  # <-- use v.id here!
+        results.append({'id': v.id, 'text': label})
     return JsonResponse({'results': results})
 
 from django.shortcuts import render
