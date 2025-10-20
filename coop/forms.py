@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import User, Member, Vehicle, Batch, Document, DocumentEntry
+from .models import User, Member, Vehicle, Batch, Document, DocumentEntry, Announcement
 
 User = get_user_model()
 
@@ -87,3 +87,22 @@ class DocumentEntryForm(forms.ModelForm):
             'official_receipt': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'certificate_of_registration': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
+
+
+class AnnouncementForm(forms.ModelForm):
+    class Meta:
+        model = Announcement
+        fields = ['message', 'recipients']
+        widgets = {
+            'message': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'recipients': forms.SelectMultiple(attrs={'class': 'form-control select2', 'style': 'width:100%'}),
+        }
+        help_texts = {
+            'recipients': 'Select client accounts that should receive this announcement. Leave empty to target all clients.',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # limit recipients queryset to client role users
+        UserModel = get_user_model()
+        self.fields['recipients'].queryset = UserModel.objects.filter(role__iexact='client')

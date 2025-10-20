@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.utils import timezone
+from django.conf import settings
 
 def document_upload_path(instance, filename, doc_type):
     """
@@ -99,6 +100,36 @@ class DocumentEntry(models.Model):
     certificate_of_registration = models.ImageField(upload_to=cr_upload_path)
     def __str__(self):
         return f"{self.document.tin} - {self.renewal_date}"
+    
+class Announcement(models.Model):
+    """
+    One-way announcement created by admin/manager targeting client users.
+    """
+    message = models.TextField()
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="announcements_created",
+        help_text="Admin or manager who created the announcement"
+    )
+    recipients = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name="announcements_received",
+        limit_choices_to={'role': 'client'},
+        help_text="Client accounts that will receive/view this announcement"
+    )
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Announcement"
+        verbose_name_plural = "Announcements"
+
+    def __str__(self):
+        return f"Announcement by {self.created_by or 'system'} @ {self.created_at:%Y-%m-%d %H:%M}"
 
 # Signals or logic should be added in views/forms to:
 # - Sync Member info to User account

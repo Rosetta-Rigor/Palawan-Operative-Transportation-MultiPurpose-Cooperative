@@ -9,7 +9,10 @@ from django.utils import timezone
 from datetime import timedelta
 
 from django.db import models
-
+from django.contrib import messages
+from .models import Announcement
+from .forms import AnnouncementForm
+from django.db.models import Q
 
 @user_passes_test(lambda u: u.is_staff)
 def user_approvals(request):
@@ -1029,3 +1032,38 @@ def home(request):
         'batch_cards': batch_cards,
     }
     return render(request, "home.html", context)
+
+@staff_member_required
+def broadcast(request):
+    """
+    Admin/Manager page to create announcements targeted to client users.
+    If recipients left empty in the form, the announcement will be considered
+    broadcast to all clients (handled when clients fetch announcements).
+    """
+    if request.method == "POST":
+        form = AnnouncementForm(request.POST)
+        if form.is_valid():
+            ann = form.save(commit=False)
+            ann.created_by = request.user
+            ann.save()
+            form.save_m2m()
+            messages.success(request, "Announcement created.")
+            # Placeholder for dispatch (email/push). Implement send logic here if desired.
+            return redirect('broadcast')
+    else:
+        form = AnnouncementForm()
+
+    broadcasts = Announcement.objects.order_by('-created_at')[:50]
+    return render(request, "broadcast.html", {"form": form, "broadcasts": broadcasts})
+
+
+@login_required
+def user_announcements(request):
+    """
+    Client-facing announcement list:
+    - Show announcements that either target this user (recipients includes user)
+      OR have no recipients (meaning broadcast to all clients).
+    """
+    user = request.user
+    qs = Announcement.objects.filter(Q(recipients__isnull=True) | Q(recipients=user)).distinct().order_by('-created_at')
+    return render(request, "user_announcements.html", {"announcements": qs})

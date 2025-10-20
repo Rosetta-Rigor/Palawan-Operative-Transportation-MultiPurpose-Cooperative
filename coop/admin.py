@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Member, Vehicle, Batch, Document, DocumentEntry
+from .models import User, Member, Vehicle, Batch, Document, DocumentEntry, Announcement
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -36,3 +36,30 @@ class DocumentEntryAdmin(admin.ModelAdmin):
     list_display = ('document', 'renewal_date')
     search_fields = ('document__tin',)
     list_filter = ('renewal_date',)
+
+
+@admin.register(Announcement)
+class AnnouncementAdmin(admin.ModelAdmin):
+    list_display = ('short_message', 'created_by', 'created_at', 'recipient_count')
+    search_fields = ('message', 'created_by__username', 'created_by__full_name')
+    list_filter = ('created_at',)
+    filter_horizontal = ('recipients',)
+    readonly_fields = ('created_at',)
+
+    def save_model(self, request, obj, form, change):
+        # Ensure created_by is set to the admin/manager creating the announcement
+        if not obj.created_by:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+        # Optional: place to trigger notification dispatch (email/push) to recipients
+        # Example placeholder:
+        # from .notifications import send_announcement_to_users
+        # send_announcement_to_users(obj, obj.recipients.all())
+
+    def short_message(self, obj):
+        return (obj.message[:60] + '...') if len(obj.message) > 60 else obj.message
+    short_message.short_description = "Message"
+
+    def recipient_count(self, obj):
+        return obj.recipients.count()
+    recipient_count.short_description = "Recipients"

@@ -1,35 +1,70 @@
 {% extends 'base.html' %}
 {% block title %}Broadcast Announcements{% endblock %}
 {% block content %}
-<div class="user-dashboard-card" style="max-width:700px; margin:32px auto;">
+<div class="user-dashboard-card" style="max-width:900px; margin:32px auto;">
     <h2>Broadcast Announcements & Notifications</h2>
+
     <form method="post" action="{% url 'broadcast' %}">
         {% csrf_token %}
-        <div class="form-group">
-            <label for="announcement_title">Title</label>
-            <input type="text" class="form-control" id="announcement_title" name="announcement_title" required>
+        {{ form.non_field_errors }}
+        <div class="form-group mb-3">
+            {{ form.message.label_tag }}
+            {{ form.message }}
+            {% if form.message.errors %}<div class="text-danger small">{{ form.message.errors }}</div>{% endif %}
         </div>
-        <div class="form-group">
-            <label for="announcement_message">Message</label>
-            <textarea class="form-control" id="announcement_message" name="announcement_message" rows="4" required></textarea>
+
+        <div class="form-group mb-3">
+            {{ form.recipients.label_tag }}
+            {{ form.recipients }}
+            <small class="form-text text-muted">{{ form.recipients.help_text }}</small>
+            {% if form.recipients.errors %}<div class="text-danger small">{{ form.recipients.errors }}</div>{% endif %}
         </div>
+
         <div class="form-group">
-            <label for="notification_type">Type</label>
-            <select class="form-control" id="notification_type" name="notification_type">
-                <option value="announcement">Announcement</option>
-                <option value="notification">Notification</option>
-            </select>
+            <button type="submit" class="btn btn-primary">Broadcast</button>
+            <a href="{% url 'home' %}" class="btn btn-secondary">Cancel</a>
         </div>
-        <button type="submit" class="btn btn-primary">Broadcast</button>
     </form>
+
     <hr>
+
     <h4>Recent Broadcasts</h4>
-    <ul>
+    <ul class="list-unstyled">
         {% for item in broadcasts %}
-            <li><strong>{{ item.title }}</strong>: {{ item.message }} <span style="color:#888;">({{ item.type }})</span></li>
+            <li class="mb-3 p-3 border rounded">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <strong>{{ item.created_by.get_username|default:"System" }}</strong>
+                        <div class="small text-muted">{{ item.created_at|date:"M d, Y H:i" }}</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="badge bg-secondary">Recipients: {% if item.recipients.exists %}{{ item.recipients.count }}{% else %}All Clients{% endif %}</span>
+                    </div>
+                </div>
+                <p class="mt-2 mb-0">{{ item.message }}</p>
+            </li>
         {% empty %}
             <li>No broadcasts yet.</li>
         {% endfor %}
     </ul>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // initialize Select2 for recipients if present
+  try {
+    const $rec = $('.select2');
+    if ($rec.length) {
+      $rec.select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Select client recipients (leave empty = all clients)',
+        allowClear: true,
+        width: '100%'
+      });
+    }
+  } catch (e) {
+    console.warn('Select2 init failed', e);
+  }
+});
+</script>
 {% endblock %}
