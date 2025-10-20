@@ -4,9 +4,21 @@
 <br><br>
 <div class="user-dashboard-card">
     <h2>My Profile</h2>
-    <div class="feature-card">Name: <span class="placeholder">{{ user.get_full_name }}</span></div>
+    <div class="feature-card">Name:
+        <span class="placeholder">
+            {% if user.member_profile %}
+                {{ user.member_profile.full_name }}
+            {% elif user.full_name %}
+                {{ user.full_name }}
+            {% else %}
+                {{ user.username }}
+            {% endif %}
+        </span>
+    </div>
     <div class="feature-card">Email: <span class="placeholder">{{ user.email }}</span></div>
-    <div class="feature-card">Member Since: <span class="placeholder">2024</span></div>
-    <div class="feature-card">Status: <span class="placeholder">Active</span></div>
+    <div class="feature-card">Phone: <span class="placeholder">{{ user.phone_number|default:"N/A" }}</span></div>
+    <div class="mt-3">
+      <a href="{% url 'my_profile' %}" class="btn btn-primary">Edit Profile</a>
+    </div>
 </div>
 {% endblock %}

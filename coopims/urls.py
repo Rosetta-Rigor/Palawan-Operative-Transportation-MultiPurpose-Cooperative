@@ -14,10 +14,11 @@ urlpatterns = [
     path("user/documents/upload/", views.user_upload_document, name="user_upload_document"),
     path("documents/approve/", views.approve_documents, name="approve_documents"),
     path("documents/approve/<int:doc_id>/", views.approve_document, name="approve_document"),
-    path("broadcast/", views.broadcast, name="broadcast"),
     path("admin/", admin.site.urls),
     path("", views.home, name="home"),
     
+    #ANNOUNCEMENT CRUD
+    path("broadcast/", views.broadcast, name="broadcast"),
 
     # MEMBER CRUD
     path("members/", views.MemberListView.as_view(), name="member_list"),
@@ -49,6 +50,7 @@ urlpatterns = [
     path('user/announcements/', views.user_announcements, name='user_announcements'),
     path('user/documents/', views.user_documents, name='user_documents'),
     path('profile/', views.my_profile, name='my_profile'),
+    path('user/profile/edit/', views.my_profile, name='user_profile_edit'),
 
     # AUTH
     path('login/', views.custom_login, name='login'),

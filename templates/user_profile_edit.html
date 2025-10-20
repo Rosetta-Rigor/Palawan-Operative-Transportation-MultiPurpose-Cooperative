@@ -1,0 +1,61 @@
+{% extends 'user_base.html' %}
+{% load static %}
+{% block title %}Edit Profile{% endblock %}
+{% block content %}
+<div class="user-dashboard-card" style="max-width:900px; margin:24px auto;">
+  <h2>Edit Profile</h2>
+
+  {# show full form errors for debugging #}
+  {% if form.errors %}
+    <div class="alert alert-danger">
+      <strong>Form validation errors:</strong>
+      <pre>{{ form.errors }}</pre>
+    </div>
+  {% endif %}
+
+  {% if messages %}
+    {% for m in messages %}
+      <div class="alert alert-{{ m.tags }}">{{ m }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="row">
+      <div class="col-md-4 text-center">
+        {% if request.user.profile_image %}
+          <img src="{{ request.user.profile_image.url }}" alt="Profile" class="img-fluid rounded mb-2" style="max-height:200px;">
+        {% else %}
+          <img src="{% static 'img/boss.jpg' %}" alt="Default" class="img-fluid rounded mb-2" style="max-height:200px;">
+        {% endif %}
+        <div class="small text-muted">Current picture</div>
+      </div>
+      <div class="col-md-8">
+        <div class="mb-3">
+          <label class="form-label">Full name</label>
+          {{ form.full_name }}
+          {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors }}</div>{% endif %}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          {{ form.email }}
+          {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Phone number</label>
+          {{ form.phone_number }}
+          {% if form.phone_number.errors %}<div class="text-danger small">{{ form.phone_number.errors }}</div>{% endif %}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Profile picture</label>
+          {{ form.profile_image }}
+          {% if form.profile_image.errors %}<div class="text-danger small">{{ form.profile_image.errors }}</div>{% endif %}
+        </div>
+        <button type="submit" class="btn btn-success">Save changes</button>
+        <a href="{% url 'user_profile' %}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

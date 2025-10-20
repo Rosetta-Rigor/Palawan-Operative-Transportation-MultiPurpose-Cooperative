@@ -1,52 +1,43 @@
 {% extends 'user_base.html' %}
 {% load static %}
-{% block title %}Announcements - Coop Management{% endblock %}
+{% block title %}Announcements{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/user_announcements.css' %}">
-<br><br>
-<h1 class="announcements-header">Cooperative Announcements</h1>
-<div class="announcement-timeline">
-    <div class="announcement-event">
-        <span class="announcement-dot"></span>
-        <div class="announcement-title">Coop Meeting</div>
-        <div class="announcement-detail">General assembly scheduled for <span style="color:#43a047;font-weight:600;">October 10, 2025</span>.</div>
-        <div class="announcement-date">Posted: 09/10/2025</div>
-    </div>
-    <div class="announcement-event">
-        <span class="announcement-dot"></span>
-        <div class="announcement-title">Renewal Reminder</div>
-        <div class="announcement-detail">Membership renewal is due <span style="color:#43a047;font-weight:600;">next month</span>.</div>
-        <div class="announcement-date">Posted: 09/09/2025</div>
-    </div>
-    <div class="announcement-event">
-        <span class="announcement-dot"></span>
-        <div class="announcement-title">System Update</div>
-        <div class="announcement-detail" style="color:#1976d2;">New features coming soon to the user portal.</div>
-        <div class="announcement-date">Posted: 09/08/2025</div>
-    </div>
-    <div class="announcement-event">
-        <span class="announcement-dot"></span>
-        <div class="announcement-title">Document Upload</div>
-        <div class="announcement-detail">Upload and track your documents here soon.</div>
-        <div class="announcement-date">Posted: 09/07/2025</div>
-    </div>
-    <div class="announcement-event">
-        <span class="announcement-dot"></span>
-        <div class="announcement-title">Vehicle Registration</div>
-        <div class="announcement-detail">Register new vehicles and view status (coming soon).</div>
-        <div class="announcement-date">Posted: 09/06/2025</div>
-    </div>
-    <div class="announcement-event">
-        <span class="announcement-dot"></span>
-        <div class="announcement-title">Notifications</div>
-        <div class="announcement-detail">Personalized notifications will appear here.</div>
-        <div class="announcement-date">Posted: 09/05/2025</div>
-    </div>
-    <div class="announcement-event">
-        <span class="announcement-dot"></span>
-        <div class="announcement-title">Profile Management</div>
-        <div class="announcement-detail">Edit your profile and settings (feature coming soon).</div>
-        <div class="announcement-date">Posted: 09/04/2025</div>
-    </div>
+<div class="container mt-4" style="max-width:900px; margin:0 auto;">
+    <br><br>
+  <h2>Announcements</h2>
+  <p class="text-muted small">Announcements</p>
+
+  {% if announcements %}
+    <ul class="list-unstyled">
+      {% for ann in announcements %}
+        <li class="mb-3 p-3 border rounded">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <strong>
+                {{ ann.created_by.full_name|default:ann.created_by.username|default:"System" }}
+              </strong>
+              <div class="small text-muted">
+                {{ ann.created_at|date:"M d, Y H:i" }}
+              </div>
+            </div>
+            <div class="text-end">
+              {% if ann.recipients.count %}
+                <span class="badge bg-info">Targeted</span>
+              {% else %}
+                <span class="badge bg-secondary">Broadcast</span>
+              {% endif %}
+            </div>
+          </div>
+          <p class="mt-2 mb-0">{{ ann.message }}</p>
+
+          {% if ann.recipients.count %}
+            <div class="small text-muted mt-2">Recipients: {{ ann.recipients.count }}</div>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="alert alert-light">No announcements.</div>
+  {% endif %}
 </div>
 {% endblock %}

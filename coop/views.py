@@ -853,21 +853,26 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import UserProfileForm
 from django.contrib.auth import get_user_model
+from django.core.files.storage import default_storage
 
 User = get_user_model()
 
 @login_required
 def my_profile(request):
+    """
+    Edit logged-in user's profile (separate edit template).
+    Editable fields: full_name, email, phone_number, profile_image.
+    """
     user = request.user
     if request.method == 'POST':
         form = UserProfileForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
             form.save()
             messages.success(request, 'Profile updated.')
-            return redirect('my_profile')
+            return redirect('user_profile')  # view-only page after edit
     else:
         form = UserProfileForm(instance=user)
-    return render(request, 'profile.html', {'form': form, 'user_obj': user})
+    return render(request, 'user_profile_edit.html', {'form': form, 'user_obj': user})
 
 from django.shortcuts import render, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required

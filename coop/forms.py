@@ -8,9 +8,12 @@ User = get_user_model()
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['username', 'profile_image']
+        # allow editing full name, email, phone number and profile picture
+        fields = ['full_name', 'email', 'phone_number', 'profile_image']
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'full_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
             'profile_image': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
         }
 

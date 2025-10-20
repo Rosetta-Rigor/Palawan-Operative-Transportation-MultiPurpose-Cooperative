@@ -82,33 +82,47 @@
 		<div class="sidebar">
 		<div class="scrollbar-inner sidebar-wrapper" style="background:#fffbe6;color:#4e3a21;min-height:100vh;width:240px;position:fixed;left:0;top:0;z-index:1000;">
 				<div class="user">
-					<div class="photo">
-						<img src="{% static 'img/boss.jpg' %}" alt="Img Profile">
-					</div>
-					<div class="info">
-						<a data-toggle="collapse" href="#userMenu" aria-expanded="true">
-							<span>
-								Admin
-								<span class="user-level">User</span>
-								<span class="caret"></span>
-							</span>
-						</a>
-						<div class="collapse in" id="userMenu" aria-expanded="true">
-							<ul class="nav">
-								<li><a href="#"><span class="link-collapse">My Profile</span></a></li>
-								<li><a href="#"><span class="link-collapse">Settings</span></a></li>
-								<li>
-									<a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-										<i class="fa fa-power-off"></i> Logout
-									</a>
-									<form id="logout-form" action="{% url 'logout' %}" method="post" style="display:none;">
-										{% csrf_token %}
-									</form>
-								</li>
-							</ul>
-						</div>
-					</div>
-				</div>
+                    <div class="photo">
+                        {# show user's profile image if available, otherwise fallback to static avatar #}
+                        {% if request.user.profile_image %}
+                            <img src="{{ request.user.profile_image.url }}" alt="Profile Image">
+                        {% else %}
+                            <img src="{% static 'img/boss.jpg' %}" alt="Img Profile">
+                        {% endif %}
+                    </div>
+                    <div class="info">
+                        <a data-toggle="collapse" href="#userMenu" aria-expanded="true">
+                            <span>
+                                {# Prefer Member.full_name if linked, otherwise user.full_name or username #}
+                                {% if request.user.member_profile %}
+                                    {{ request.user.member_profile.full_name }}
+                                {% elif request.user.full_name %}
+                                    {{ request.user.full_name }}
+                                {% else %}
+                                    {{ request.user.username }}
+                                {% endif %}
+                                <span class="user-level">
+                                    {{ request.user.role|capfirst }}
+                                </span>
+                                <span class="caret"></span>
+                            </span>
+                        </a>
+                        <div class="collapse in" id="userMenu" aria-expanded="true">
+                            <ul class="nav">
+                                <li><a href="{% url 'user_profile' %}"><span class="link-collapse">My Profile</span></a></li>
+                                <li><a href="{% url 'my_profile' %}"><span class="link-collapse">Edit Profile</span></a></li>
+                                <li>
+                                    <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                        <i class="fa fa-power-off"></i> Logout
+                                    </a>
+                                    <form id="logout-form" action="{% url 'logout' %}" method="post" style="display:none;">
+                                        {% csrf_token %}
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
 				<ul class="nav">
 					<li class="nav-item">
 						<a class="d-inline-flex align-items-center rounded border-0" data-toggle="collapse" href="#dashboardMenu" role="button" aria-expanded="false" aria-controls="dashboardMenu" style="color:#a67c52;background:none;width:100%;text-align:left;">
@@ -133,12 +147,6 @@
 						<a href="{% url 'user_announcements' %}">
 							<i class="la la-bell"></i>
 							<p>Announcements</p>
-						</a>
-					</li>
-					<li class="nav-item">
-						<a href="{% url 'user_profile' %}">
-							<i class="la la-users"></i>
-							<p>Profile</p>
 						</a>
 					</li>
 					<li class="nav-item">
