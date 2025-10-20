@@ -11,6 +11,7 @@ urlpatterns = [
     path('accounts/<int:user_id>/edit/', views.edit_account, name='edit_account'),
     path("admin/user-approvals/", views.user_approvals, name="user_approvals"),
     path("admin/approve-user/<int:user_id>/", views.approve_user, name="approve_user"),
+    path('admin/profile/edit/', views.admin_profile_edit, name='admin_profile_edit'),
     path("user/documents/upload/", views.user_upload_document, name="user_upload_document"),
     path("documents/approve/", views.approve_documents, name="approve_documents"),
     path("documents/approve/<int:doc_id>/", views.approve_document, name="approve_document"),

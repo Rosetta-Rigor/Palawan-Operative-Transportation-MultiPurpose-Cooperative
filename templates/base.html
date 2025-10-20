@@ -76,7 +76,7 @@
                         </a>
                         <div class="collapse in" id="userMenu" aria-expanded="true">
                             <ul class="nav">
-                                <li><a href="{% url 'my_profile' %}"><span class="link-collapse">My Profile</span></a></li>
+                                <li><a href="{% url 'admin_profile_edit' %}">Edit Admin Profile</a></li>
                                 <li>
                                     <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                         <i class="fa fa-power-off"></i> Logout
@@ -143,12 +143,6 @@
 						   <a href="/document_update_requests/">
 							   <i class="la la-edit"></i>
 							   <p>Document Update Requests</p>
-						   </a>
-					   </li>
-					   <li class="nav-item">
-						   <a href="#requests-section">
-							   <i class="la la-envelope"></i>
-							   <p>Requests</p>
 						   </a>
 					   </li>
 					   <li class="nav-item">

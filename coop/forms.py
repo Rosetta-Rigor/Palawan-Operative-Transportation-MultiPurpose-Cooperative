@@ -18,6 +18,17 @@ class UserProfileForm(forms.ModelForm):
             'profile_image': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
         }
 
+class AdminProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'profile_image']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'profile_image': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
+        }
+
+
 class CustomUserRegistrationForm(UserCreationForm):
     full_name = forms.CharField(widget=forms.TextInput(attrs={'class': 'form-control'}))
     email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'form-control'}))

@@ -27,3 +27,11 @@
 @media (max-width:480px){
   .admin-card-grid { grid-template-columns: 1fr; }
 }
+
+a.admin-card,
+a.admin-card:hover,
+a.admin-card:focus,
+a.admin-card:active {
+  text-decoration: none !important;
+  color: #1f2937 !important;
+}

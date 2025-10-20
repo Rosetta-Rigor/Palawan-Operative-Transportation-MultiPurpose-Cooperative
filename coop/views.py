@@ -942,28 +942,40 @@ def user_documents(request):
 from django.shortcuts import render, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import Member, Document, DocumentEntry, User
+from .forms import AdminProfileForm
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def admin_profile_edit(request):
+    user = request.user
+    if request.method == 'POST':
+        form = AdminProfileForm(request.POST, request.FILES, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile updated successfully.")
+            return redirect('admin_profile_edit')
+    else:
+        form = AdminProfileForm(instance=user)
+    return render(request, 'admin_profile_edit.html', {'form': form})
 
 @staff_member_required
 def member_view(request, pk):
     member = get_object_or_404(Member, pk=pk)
-    # safely get linked user account (None if not connected)
     user_account = getattr(member, 'user_account', None)
-
     vehicles = list(member.vehicles.all()) if hasattr(member, 'vehicles') else []
-    documents = list(Document.objects.filter(vehicle__in=vehicles)) if vehicles else []
-
-    # build mapping of entries and attach to documents
-    entries_qs = DocumentEntry.objects.filter(document__in=documents).order_by('renewal_date')
-    doc_entries = {}
-    for e in entries_qs:
-        doc_entries.setdefault(e.document_id, []).append(e)
-    # attach entries list to each document object (avoid clobbering related manager)
-    for doc in documents:
-        doc.entries_list = doc_entries.get(doc.id, [])
-
+    # Only include documents with at least one approved/manager entry
+    documents = []
+    for doc in Document.objects.filter(vehicle__in=vehicles):
+        # Only approved or manager-created entries
+        entries = list(doc.entries.filter(
+            models.Q(status="approved") | models.Q(uploaded_by__isnull=True)
+        ).order_by('renewal_date'))
+        if entries:
+            doc.entries_list = entries
+            documents.append(doc)
     return render(request, 'member_detail.html', {
         'member': member,
-        'user_account': user_account,   # pass user object (or None) to template
+        'user_account': user_account,
         'vehicles': vehicles,
         'documents': documents,
     })
