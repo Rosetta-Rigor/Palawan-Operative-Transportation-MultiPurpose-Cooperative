@@ -630,9 +630,21 @@ def custom_login(request):
         request.session.flush()
         return render(request, "login.html")
     if request.method == "POST":
-        username = request.POST.get("username")
+        username_input = (request.POST.get("username") or "").strip()
         password = request.POST.get("password")
-        user = authenticate(request, username=username, password=password)
+        # first try normal authenticate (treat input as username)
+        user = authenticate(request, username=username_input, password=password)
+        # fallback: if not found, try to treat input as email and resolve to username
+        if user is None and username_input:
+            from django.contrib.auth import get_user_model
+            UserModel = get_user_model()
+            try:
+                user_obj = UserModel.objects.get(email__iexact=username_input)
+            except UserModel.DoesNotExist:
+                user_obj = None
+            if user_obj:
+                user = authenticate(request, username=user_obj.get_username(), password=password)
+
         if user is not None:
             if not user.is_active:
                 messages.error(request, "Your account is not yet approved by the admin.")
@@ -647,7 +659,7 @@ def custom_login(request):
                 messages.error(request, "You do not have access to the user portal.")
                 return render(request, "login.html")
         else:
-            messages.error(request, "Invalid username or password.")
+            messages.error(request, "Invalid username/email or password.")
     return render(request, "login.html")
 
 
