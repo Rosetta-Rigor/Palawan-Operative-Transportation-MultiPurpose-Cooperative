@@ -2,19 +2,73 @@
 {% block title %}Upload Document - User{% endblock %}
 {% block content %}
 <br><br>
-<div class="user-dashboard-card" style="max-width:700px; margin:32px auto;">
-    <h2>Upload Document</h2>
-    <form method="post" enctype="multipart/form-data" action="{% url 'user_upload_document' %}">
+<div class="user-dashboard-card" style="max-width:900px; margin:20px auto;">
+  <h4>Your Uploads / Status</h4>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Renewal Date</th>
+        <th>Status</th>
+        <th>Manager Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in entries %}
+      <tr>
+        <td>{{ e.renewal_date }}</td>
+        <td>
+          {% if e.status == "pending" %}
+            <span class="badge bg-warning text-dark">Pending</span>
+          {% elif e.status == "approved" %}
+            <span class="badge bg-success">Approved</span>
+          {% else %}
+            <span class="badge bg-danger">Rejected</span>
+          {% endif %}
+          {% if e.approved_at %}<div class="small text-muted">{{ e.approved_at|date:"M d, Y H:i" }}</div>{% endif %}
+        </td>
+        <td>{{ e.manager_notes|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="3" class="text-muted">No uploads yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if vehicle and document %}
+    <p class="small text-muted">Vehicle: <strong>{{ vehicle.plate_number }}</strong> — TIN: <strong>{{ document.tin }}</strong></p>
+{% endif %}
+
+{% if messages %}
+      {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }}">{{ msg }}</div>
+      {% endfor %}
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" action="{% url 'user_upload_document' %}">
         {% csrf_token %}
-        <div class="form-group">
-            <label for="doc_name">Document Name</label>
-            <input type="text" class="form-control" id="doc_name" name="doc_name" required>
+        {{ form.non_field_errors }}
+
+        <div class="form-group mb-3">
+            {{ form.renewal_date.label_tag }}
+            {{ form.renewal_date }}
+            {% if form.renewal_date.errors %}<div class="text-danger small">{{ form.renewal_date.errors }}</div>{% endif %}
         </div>
-        <div class="form-group">
-            <label for="doc_file">File</label>
-            <input type="file" class="form-control" id="doc_file" name="doc_file" required>
+
+        <div class="form-group mb-3">
+            {{ form.official_receipt.label_tag }}
+            {{ form.official_receipt }}
+            {% if form.official_receipt.errors %}<div class="text-danger small">{{ form.official_receipt.errors }}</div>{% endif %}
         </div>
+
+        <div class="form-group mb-3">
+            {{ form.certificate_of_registration.label_tag }}
+            {{ form.certificate_of_registration }}
+            {% if form.certificate_of_registration.errors %}<div class="text-danger small">{{ form.certificate_of_registration.errors }}</div>{% endif %}
+        </div>
+
         <button type="submit" class="btn btn-primary">Upload</button>
+        <a href="{% url 'user_documents' %}" class="btn btn-secondary">Cancel</a>
     </form>
 </div>
 {% endblock %}

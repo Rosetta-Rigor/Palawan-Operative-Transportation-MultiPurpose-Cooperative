@@ -1,38 +1,42 @@
 {% extends 'base.html' %}
 {% block title %}Check & Approve Documents{% endblock %}
 {% block content %}
-<div class="user-dashboard-card" style="max-width:700px; margin:32px auto;">
-    <h2>Check & Approve Documents</h2>
+<div class="user-dashboard-card" style="max-width:900px; margin:32px auto;">
+    <h2>Pending User Uploads</h2>
     <table class="table table-bordered">
         <thead>
             <tr>
-                <th>Document</th>
-                <th>User</th>
-                <th>Date Uploaded</th>
-                <th>Status</th>
+                <th>Document (TIN)</th>
+                <th>Vehicle</th>
+                <th>Member</th>
+                <th>Uploaded By</th>
+                <th>Renewal Date</th>
                 <th>Action</th>
             </tr>
         </thead>
         <tbody>
-            {% for doc in documents %}
+            {% for entry in documents %}
             <tr>
-                <td>{{ doc.name }}</td>
-                <td>{{ doc.user }}</td>
-                <td>{{ doc.date_uploaded }}</td>
-                <td>{{ doc.status }}</td>
+                <td>{{ entry.document.tin }}</td>
+                <td>{{ entry.document.vehicle.plate_number }}</td>
+                <td>{{ entry.document.vehicle.member.full_name }}</td>
+                <td>{{ entry.uploaded_by.get_username }}</td>
+                <td>{{ entry.renewal_date }}</td>
                 <td>
-                    {% if doc.status == 'Pending' %}
-                    <form method="post" action="{% url 'approve_document' doc.id %}">
+                    <form method="post" action="{% url 'approve_document' entry.id %}" style="display:inline;">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                        <input type="text" name="manager_notes" placeholder="Manager notes (optional)" class="form-control mb-1">
+                        <button class="btn btn-success btn-sm">Approve</button>
                     </form>
-                    {% else %}
-                    <span class="text-success">Approved</span>
-                    {% endif %}
+                    <form method="post" action="{% url 'reject_document' entry.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="text" name="manager_notes" placeholder="Manager notes (optional)" class="form-control mb-1">
+                        <button class="btn btn-danger btn-sm">Reject</button>
+                    </form>
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="5">No documents to approve.</td></tr>
+            <tr><td colspan="6">No pending uploads.</td></tr>
             {% endfor %}
         </tbody>
     </table>

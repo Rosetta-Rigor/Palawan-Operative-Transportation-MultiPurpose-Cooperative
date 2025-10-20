@@ -98,6 +98,19 @@ class DocumentEntry(models.Model):
     renewal_date = models.DateField()
     official_receipt = models.ImageField(upload_to=or_upload_path)
     certificate_of_registration = models.ImageField(upload_to=cr_upload_path)
+    status = models.CharField(
+        max_length=20,
+        choices=(("pending", "Pending"), ("approved", "Approved"), ("rejected", "Rejected")),
+        default="pending"
+    )
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="uploaded_entries"
+    )
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="approved_entries"
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    manager_notes = models.TextField(null=True, blank=True)
     def __str__(self):
         return f"{self.document.tin} - {self.renewal_date}"
     
