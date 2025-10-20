@@ -1,0 +1,29 @@
+/* Admin-specific card styles for the dashboard */
+.admin-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  margin-bottom: 20px;
+}
+.admin-card {
+  background: linear-gradient(135deg, #f0f6ff 0%, #ffffff 100%);
+  border-left: 6px solid rgba(58, 123, 213, 0.9);
+  padding: 18px;
+  border-radius: 10px;
+  transition: transform .12s ease, box-shadow .12s ease;
+  box-shadow: 0 6px 18px rgba(10, 25, 41, 0.04);
+  text-decoration: none;
+  color: #1f2937;
+}
+.admin-card:hover { transform: translateY(-6px); box-shadow: 0 16px 36px rgba(10,25,41,0.08); }
+.admin-card .title { font-weight:700; font-size:1.05rem; margin-bottom:6px; }
+.admin-card .meta { color:#6b7280; font-size:0.9rem; }
+.admin-card .big { font-size:1.8rem; font-weight:700; margin-top:8px; color:#0b4da2; }
+
+/* utility */
+@media (max-width:768px){
+  .admin-card-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width:480px){
+  .admin-card-grid { grid-template-columns: 1fr; }
+}

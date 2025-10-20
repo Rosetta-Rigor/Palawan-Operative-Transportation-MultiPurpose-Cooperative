@@ -874,6 +874,42 @@ def my_profile(request):
         form = UserProfileForm(instance=user)
     return render(request, 'user_profile_edit.html', {'form': form, 'user_obj': user})
 
+@login_required
+def user_vehicles(request):
+    if not getattr(request.user, 'member_profile', None):
+        messages.info(request, "No member profile connected to your account.")
+    return render(request, "user_vehicles.html")
+
+@login_required
+def user_documents(request):
+    """
+    User-facing documents view.
+    Only shows documents when:
+      - user is linked to a Member (user.member_profile)
+      - that Member has a Vehicle that has a Document assigned
+    Otherwise show an informational message and no documents.
+    """
+    user = request.user
+    member = getattr(user, "member_profile", None)
+
+    if not member:
+        messages.info(request, "Your account is not assigned to a member. Ask a manager to link you to a member with vehicles/documents.")
+        return render(request, "user_documents.html", {"documents": [], "member": None, "allowed": False})
+
+    vehicles = member.vehicles.select_related("document").all()
+    documents = []
+    for v in vehicles:
+        doc = getattr(v, "document", None)
+        if doc:
+            entries = doc.entries.order_by("-renewal_date")
+            documents.append({"vehicle": v, "document": doc, "entries": entries})
+
+    if not documents:
+        messages.info(request, "No documents available for your assigned vehicles. A manager must assign a vehicle with a document to your member account.")
+        return render(request, "user_documents.html", {"documents": [], "member": member, "allowed": False})
+
+    return render(request, "user_documents.html", {"documents": documents, "member": member, "allowed": True})
+
 from django.shortcuts import render, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import Member, Document, DocumentEntry, User

@@ -5,7 +5,6 @@
 <div class="user-dashboard-card" style="max-width:900px; margin:24px auto;">
   <h2>Edit Profile</h2>
 
-  {# show full form errors for debugging #}
   {% if form.errors %}
     <div class="alert alert-danger">
       <strong>Form validation errors:</strong>
@@ -33,10 +32,26 @@
       </div>
       <div class="col-md-8">
         <div class="mb-3">
-          <label class="form-label">Full name</label>
-          {{ form.full_name }}
+          <label class="form-label">Member Name</label>
+          <div class="form-control-plaintext">
+            {% if request.user.member_profile %}
+              {{ request.user.member_profile.full_name }}
+            {% elif request.user.full_name %}
+              {{ request.user.full_name }}
+            {% else %}
+              {{ request.user.username }}
+            {% endif %}
+          </div>
+          <input type="hidden" name="full_name" value="{% if request.user.member_profile %}{{ request.user.member_profile.full_name }}{% elif request.user.full_name %}{{ request.user.full_name }}{% else %}{{ request.user.username }}{% endif %}">
           {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors }}</div>{% endif %}
         </div>
+
+        <div class="mb-3">
+          <label class="form-label">Username</label>
+          {{ form.username }}
+          {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors }}</div>{% endif %}
+        </div>
+
         <div class="mb-3">
           <label class="form-label">Email</label>
           {{ form.email }}

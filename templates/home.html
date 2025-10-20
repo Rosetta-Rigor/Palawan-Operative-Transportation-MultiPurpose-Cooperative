@@ -1,76 +1,75 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/user_home_cards.css' %}">
+{% endblock %}
+{% block title %}Home - POTMPC{% endblock %}
 {% block content %}
 <div class="container py-5">
-  <!-- Primary Dashboard Cards -->
+
+  <!-- Replaced: card boards with CSS-driven card grid -->
+  <br><br>
   <div class="row mb-4">
-    <div class="col-md-3 mb-3">
-      <div class="card text-white bg-primary h-100 shadow">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center">
-          <div class="mb-2">
-            <i class="la la-users la-2x"></i>
-            <span class="h5 ml-2">Total Members</span>
+    <div class="col-12">
+      <div class="user-card-grid">
+        <a class="user-card" href="{% url 'member_list' %}">
+          <div class="uc-left"><div class="uc-icon uc-icon-people"><i class="la la-users"></i></div></div>
+          <div class="uc-body">
+            <div class="uc-title">Members</div>
+            <div class="uc-sub">{{ total_members|default:0 }} total members</div>
           </div>
-          <a href="{% url 'member_list' %}" class="stretched-link text-white">
-            <div class="display-4 font-weight-bold">{{ total_members }}</div>
-          </a>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3 mb-3">
-      <div class="card text-white bg-success h-100 shadow">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center">
-          <div class="mb-2">
-            <i class="la la-user-check la-2x"></i>
-            <span class="h5 ml-2">Client Accounts</span>
+          <div class="uc-right"><span class="uc-action">Open</span></div>
+        </a>
+
+        <a class="user-card" href="{% url 'accounts_list' %}">
+          <div class="uc-left"><div class="uc-icon uc-icon-user"><i class="la la-user"></i></div></div>
+          <div class="uc-body">
+            <div class="uc-title">Client Accounts</div>
+            <div class="uc-sub">{{ accounts_count|default:0 }} accounts</div>
           </div>
-          <a href="{% url 'accounts_list' %}" class="stretched-link text-white">
-            <div class="display-4 font-weight-bold">{{ accounts_count }}</div>
-          </a>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3 mb-3">
-      <div class="card text-white bg-info h-100 shadow">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center">
-          <div class="mb-2">
-            <i class="la la-layer-group la-2x"></i>
-            <span class="h5 ml-2">Batch Count</span>
+          <div class="uc-right"><span class="uc-action">View</span></div>
+        </a>
+
+        <a class="user-card" href="{% url 'document_list' %}">
+          <div class="uc-left"><div class="uc-icon uc-icon-docs"><i class="la la-file"></i></div></div>
+          <div class="uc-body">
+            <div class="uc-title">Documents</div>
+            <div class="uc-sub">{{ document_count|default:0 }} documents</div>
           </div>
-          <a href="{% url 'member_list' %}?batch=" class="stretched-link text-white">
-            <div class="display-4 font-weight-bold">{{ batch_count }}</div>
-          </a>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3 mb-3">
-      <div class="card text-white bg-warning h-100 shadow">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center">
-          <div class="mb-2">
-            <i class="la la-file la-2x"></i>
-            <span class="h5 ml-2">Documents</span>
+          <div class="uc-right"><span class="uc-action">Open</span></div>
+        </a>
+
+        <a class="user-card" href="{% url 'vehicle_list' %}">
+          <div class="uc-left"><div class="uc-icon uc-icon-car"><i class="la la-car"></i></div></div>
+          <div class="uc-body">
+            <div class="uc-title">Vehicles</div>
+            <div class="uc-sub">{{ vehicles_count|default:0 }} vehicles</div>
           </div>
-          <a href="{% url 'document_list' %}" class="stretched-link text-white">
-            <div class="display-4 font-weight-bold">{{ document_count }}</div>
-          </a>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3 mb-3">
-      <div class="card text-white bg-secondary h-100 shadow">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center">
-          <div class="mb-2">
-            <i class="la la-car la-2x"></i>
-            <span class="h5 ml-2">Total Vehicles</span>
+          <div class="uc-right"><span class="uc-action">View</span></div>
+        </a>
+
+         <a class="user-card" href="{% url 'approve_documents' %}">
+          <div class="uc-left"><div class="uc-icon uc-icon-docs"><i class="la la-check-circle"></i></div></div>
+          <div class="uc-body">
+            <div class="uc-title">Approve Documents</div>
+            <div class="uc-sub">Review & approve uploaded documents</div>
           </div>
-          <a href="{% url 'vehicle_list' %}" class="stretched-link text-white">
-            <div class="display-4 font-weight-bold">{{ vehicles_count }}</div>
-          </a>
-        </div>
+          <div class="uc-right"><span class="uc-action">Approve</span></div>
+        </a>
+
+        <a class="user-card" href="{% url 'broadcast' %}">
+          <div class="uc-left"><div class="uc-icon uc-icon-bell"><i class="la la-bell"></i></div></div>
+          <div class="uc-body">
+            <div class="uc-title">Announcements</div>
+            <div class="uc-sub">Manager broadcasts & messages</div>
+          </div>
+          <div class="uc-right"><span class="uc-action">See</span></div>
+        </a>
       </div>
     </div>
   </div>
 
-  <!-- Batch Cardboards -->
+  <!-- keep the existing Batch Overview section -->
   <div class="mt-4">
     <h2 class="h4 font-weight-bold mb-3">Batch Overview</h2>
     <div class="row">

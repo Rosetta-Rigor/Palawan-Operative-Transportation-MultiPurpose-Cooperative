@@ -1,0 +1,91 @@
+{% extends 'user_base.html' %}
+{% load static %}
+{% block title %}My Vehicles{% endblock %}
+{% block content %}
+<div class="container mt-4" style="max-width:1000px; margin:0 auto;">
+    <br><br>
+  <h2 class="mb-3">My Vehicles</h2>
+
+  {% if not request.user.member_profile %}
+    <div class="alert alert-warning">No member profile is connected to your account.</div>
+  {% else %}
+    {% with vehicles=request.user.member_profile.vehicles.all %}
+      {% if vehicles %}
+        <div class="row">
+          {% for v in vehicles %}
+            <div class="col-md-6 mb-4">
+              <div class="card h-100 shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>{{ v.plate_number }}</strong>
+                    <div class="small text-muted">{{ v.make_brand }} {% if v.year_model %}• {{ v.year_model }}{% endif %}</div>
+                  </div>
+                  <div class="text-end">
+                    <span class="badge badge-info">
+                      {% if forloop.counter0 < 2 %}Assigned{% else %}Extra{% endif %}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="card-body">
+                  <ul class="list-unstyled mb-2">
+                    <li><strong>Plate:</strong> {{ v.plate_number }}</li>
+                    {% if v.engine_number %}<li><strong>Engine #:</strong> {{ v.engine_number }}</li>{% endif %}
+                    {% if v.chassis_number %}<li><strong>Chassis #:</strong> {{ v.chassis_number }}</li>{% endif %}
+                    {% if v.color %}<li><strong>Color:</strong> {{ v.color }}</li>{% endif %}
+                    {% if v.member %}
+                      <li><strong>Member:</strong> {{ v.member.full_name }}</li>
+                    {% endif %}
+                  </ul>
+
+                  <hr>
+
+                  <h6 class="mb-2">Document</h6>
+                  {% if v.document %}
+                    <div class="mb-2"><strong>TIN:</strong> {{ v.document.tin }}</div>
+
+                    {% with entries=v.document.entries.all %}
+                      {% if entries %}
+                        <ul class="list-unstyled">
+                          {% for e in entries %}
+                            <li class="mb-2">
+                              <div class="small text-muted">Renewal: {{ e.renewal_date|date:"M d, Y" }}</div>
+                              <div>
+                                {% if e.official_receipt %}
+                                  <a class="btn btn-sm btn-outline-primary mr-2" href="{{ e.official_receipt.url }}" target="_blank">View OR</a>
+                                {% endif %}
+                                {% if e.certificate_of_registration %}
+                                  <a class="btn btn-sm btn-outline-secondary" href="{{ e.certificate_of_registration.url }}" target="_blank">View CR</a>
+                                {% endif %}
+                              </div>
+                            </li>
+                          {% endfor %}
+                        </ul>
+                      {% else %}
+                        <div class="text-muted small">No document entries available.</div>
+                      {% endif %}
+                    {% endwith %}
+                  {% else %}
+                    <div class="text-muted small">No document linked to this vehicle.</div>
+                  {% endif %}
+                </div>
+
+                <div class="card-footer d-flex justify-content-between">
+                  <div class="small text-muted">Vehicle ID: {{ v.id }}</div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        {% if vehicles.count >= 2 %}
+          <div class="alert alert-info small">You already have {{ vehicles.count }} vehicle(s) connected. Members are limited to two vehicles.</div>
+        {% endif %}
+
+      {% else %}
+        <div class="alert alert-light">You have no vehicles connected to your member profile.</div>
+      {% endif %}
+    {% endwith %}
+  {% endif %}
+</div>
+{% endblock %}

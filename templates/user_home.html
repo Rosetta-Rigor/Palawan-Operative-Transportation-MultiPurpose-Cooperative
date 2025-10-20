@@ -1,40 +1,74 @@
 {% extends 'user_base.html' %}
 {% load static %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/user_home.css' %}">
+<link rel="stylesheet" href="{% static 'css/user_home_cards.css' %}">
 {% endblock %}
 {% block title %}User Home - POTMPC{% endblock %}
 {% block content %}
 <div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-lg user-home-card">
-                <div class="card-body text-center">
-                    <img src="{% static 'img/.png' %}" alt="POTMPC Logo" class="user-home-logo">
-                    <h2 class="mb-2 user-home-title">Palawan Operator's Tourist Transport Multi-Purpose Cooperative</h2>
-                    <h5 class="mb-4 user-home-subtitle">Welcome to the User Portal</h5>
-                    <p class="lead mb-4">Your cooperative dashboard. Use the navigation to access features and manage your account.</p>
-                    <div class="row mt-4">
-                        <div class="col-md-6 mb-3">
-                            <div class="p-3 rounded user-home-feature">
-                                <strong>Features will appear here</strong>
-                                <p class="mb-0">Let us know what you want to see on your dashboard.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="p-3 rounded user-home-feature">
-                                <strong>Quick Links</strong>
-                                <ul class="list-unstyled mb-0">
-                                    <li>Files</li>
-                                    <li>Announcements</li>
-                                    <li>Profile</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="row mb-4 align-items-center">
+    <div class="col-md-12">
+      <h1 class="h3 mb-1">Welcome,
+        {% if request.user.member_profile %}{{ request.user.member_profile.full_name }}
+        {% elif request.user.full_name %}{{ request.user.full_name }}
+        {% else %}{{ request.user.username }}{% endif %}
+      </h1>
+      <p class="text-muted">Quick access to your documents, announcements and profile.</p>
     </div>
+  </div>
+
+  <div class="user-card-grid">
+    <a class="user-card" href="{% url 'user_documents' %}">
+      <div class="uc-left">
+        <div class="uc-icon uc-icon-docs"><i class="la la-files"></i></div>
+      </div>
+      <div class="uc-body">
+        <div class="uc-title">My Documents</div>
+        <div class="uc-sub">{{ document_count|default:0 }} document{{ document_count|pluralize }}</div>
+      </div>
+      <div class="uc-right">
+        <span class="uc-action">Open</span>
+      </div>
+    </a>
+
+    <a class="user-card" href="{% url 'user_announcements' %}">
+      <div class="uc-left">
+        <div class="uc-icon uc-icon-bell"><i class="la la-bell"></i></div>
+      </div>
+      <div class="uc-body">
+        <div class="uc-title">Announcements</div>
+        <div class="uc-sub">View messages from managers</div>
+      </div>
+      <div class="uc-right">
+        <span class="uc-action">View</span>
+      </div>
+    </a>
+
+    <a class="user-card" href="{% url 'user_profile' %}">
+      <div class="uc-left">
+        <div class="uc-icon uc-icon-user"><i class="la la-user"></i></div>
+      </div>
+      <div class="uc-body">
+        <div class="uc-title">My Profile</div>
+        <div class="uc-sub">Edit contact & profile picture</div>
+      </div>
+      <div class="uc-right">
+        <span class="uc-action">Edit</span>
+      </div>
+    </a>
+
+    <a class="user-card" href="{% url 'user_vehicles' %}">
+      <div class="uc-left">
+        <div class="uc-icon uc-icon-car"><i class="la la-car"></i></div>
+      </div>
+      <div class="uc-body">
+        <div class="uc-title">My Vehicles</div>
+        <div class="uc-sub">{{ vehicles_count|default:0 }} total</div>
+      </div>
+      <div class="uc-right">
+        <span class="uc-action">Browse</span>
+      </div>
+    </a>
+  </div>
 </div>
 {% endblock %}

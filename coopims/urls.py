@@ -51,6 +51,7 @@ urlpatterns = [
     path('user/documents/', views.user_documents, name='user_documents'),
     path('profile/', views.my_profile, name='my_profile'),
     path('user/profile/edit/', views.my_profile, name='user_profile_edit'),
+    path('user/vehicles/', views.user_vehicles, name='user_vehicles'),
 
     # AUTH
     path('login/', views.custom_login, name='login'),

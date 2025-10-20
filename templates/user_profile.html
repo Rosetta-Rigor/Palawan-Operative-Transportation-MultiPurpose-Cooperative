@@ -1,24 +1,53 @@
 {% extends 'user_base.html' %}
+{% load static %}
 {% block title %}User Profile - Coop Management{% endblock %}
 {% block content %}
 <br><br>
 <div class="user-dashboard-card">
     <h2>My Profile</h2>
-    <div class="feature-card">Name:
-        <span class="placeholder">
-            {% if user.member_profile %}
-                {{ user.member_profile.full_name }}
-            {% elif user.full_name %}
-                {{ user.full_name }}
+
+    <div class="row">
+        <div class="col-md-3 text-center">
+            {% if user.profile_image %}
+                <img src="{{ user.profile_image.url }}" alt="Profile Image" class="img-fluid rounded mb-2" style="max-height:160px;">
+            {% elif user.member_profile and user.member_profile.photo %}
+                <img src="{{ user.member_profile.photo.url }}" alt="Profile Image" class="img-fluid rounded mb-2" style="max-height:160px;">
             {% else %}
-                {{ user.username }}
+                <img src="{% static 'img/boss.jpg' %}" alt="Default Avatar" class="img-fluid rounded mb-2" style="max-height:160px;">
             {% endif %}
-        </span>
+        </div>
+
+        <div class="col-md-9">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="feature-card">Name:
+                        <span class="placeholder">
+                            {% if user.member_profile %}
+                                {{ user.member_profile.full_name }}
+                            {% elif user.full_name %}
+                                {{ user.full_name }}
+                            {% else %}
+                                {{ user.username }}
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="feature-card">Username:
+                        <span class="placeholder">{{ user.username }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card">Email: <span class="placeholder">{{ user.email }}</span></div>
+            <div class="feature-card">Phone: <span class="placeholder">{{ user.phone_number|default:"N/A" }}</span></div>
+
+            <div class="mt-3">
+              <a href="{% url 'my_profile' %}" class="btn btn-primary">Edit Profile</a>
+            </div>
+        </div>
     </div>
-    <div class="feature-card">Email: <span class="placeholder">{{ user.email }}</span></div>
-    <div class="feature-card">Phone: <span class="placeholder">{{ user.phone_number|default:"N/A" }}</span></div>
-    <div class="mt-3">
-      <a href="{% url 'my_profile' %}" class="btn btn-primary">Edit Profile</a>
-    </div>
+
 </div>
 {% endblock %}

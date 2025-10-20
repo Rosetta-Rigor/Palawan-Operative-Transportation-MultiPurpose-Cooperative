@@ -2,20 +2,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-	<title>{% block title %}Coop Management{% endblock %}</title>
-	<meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
-	<link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900">
-	<link rel="stylesheet" href="{% static 'css/ready.css' %}">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <title>{% block title %}Coop Management{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no"/>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900">
+    <link rel="stylesheet" href="{% static 'css/ready.css' %}">
     <link rel="stylesheet" href="{% static 'css/demo.css' %}">
-	<link rel="stylesheet" href="{% static 'css/user_custom.css' %}">
+    <link rel="stylesheet" href="{% static 'css/user_custom.css' %}">
     <link rel="stylesheet" href="{% static 'css/user_navbar.css' %}">
-	<!-- Sidebar styling now uses user_custom.css -->
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
-
-		{% if messages %}
+    <div id="app">
+        {% if messages %}
 			<div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
 								z-index: 99999; width: auto; max-width: 90%; text-align: center; pointer-events: none;">
 				{% for message in messages %}
@@ -61,120 +61,105 @@
 				</div>
 		</div>
 
-	<div class="wrapper">
-		<!-- HEADER -->
-		<div class="main-header">
-			<div class="logo-header d-flex align-items-center justify-content-between" style="display: flex; align-items: center; justify-content: space-between;">
-				<a href="{% url 'user_home' %}" class="logo" style="flex: 1 0 auto; display: flex; align-items: center; gap: 12px;">
-					<img src="{% static 'img/home.png' %}" alt="Logo" style="height:40px; width:auto;">
-					POTMPC Portal
-				</a>
-				<div class="d-flex align-items-center" style="gap: 16px;">
-					<button class="navbar-toggler sidenav-toggler ml-auto" type="button" data-toggle="collapse" data-target="collapse" aria-controls="sidebar" aria-expanded="false" aria-label="Toggle navigation">
-						<span class="navbar-toggler-icon"></span>
-					</button>
-					<button class="topbar-toggler more"><i class="la la-ellipsis-v"></i></button>
-				</div>
-			</div>
-		</div>
-
-		<!-- SIDEBAR -->
-		<div class="sidebar">
-		<div class="scrollbar-inner sidebar-wrapper" style="background:#fffbe6;color:#4e3a21;min-height:100vh;width:240px;position:fixed;left:0;top:0;z-index:1000;">
-				<div class="user">
-                    <div class="photo">
-                        {# show user's profile image if available, otherwise fallback to static avatar #}
-                        {% if request.user.profile_image %}
-                            <img src="{{ request.user.profile_image.url }}" alt="Profile Image">
-                        {% else %}
-                            <img src="{% static 'img/boss.jpg' %}" alt="Img Profile">
-                        {% endif %}
-                    </div>
-                    <div class="info">
-                        <a data-toggle="collapse" href="#userMenu" aria-expanded="true">
-                            <span>
-                                {# Prefer Member.full_name if linked, otherwise user.full_name or username #}
-                                {% if request.user.member_profile %}
-                                    {{ request.user.member_profile.full_name }}
-                                {% elif request.user.full_name %}
-                                    {{ request.user.full_name }}
-                                {% else %}
-                                    {{ request.user.username }}
-                                {% endif %}
-                                <span class="user-level">
-                                    {{ request.user.role|capfirst }}
-                                </span>
-                                <span class="caret"></span>
-                            </span>
-                        </a>
-                        <div class="collapse in" id="userMenu" aria-expanded="true">
-                            <ul class="nav">
-                                <li><a href="{% url 'user_profile' %}"><span class="link-collapse">My Profile</span></a></li>
-                                <li><a href="{% url 'my_profile' %}"><span class="link-collapse">Edit Profile</span></a></li>
-                                <li>
-                                    <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                        <i class="fa fa-power-off"></i> Logout
-                                    </a>
-                                    <form id="logout-form" action="{% url 'logout' %}" method="post" style="display:none;">
-                                        {% csrf_token %}
-                                    </form>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-				<ul class="nav">
-					<li class="nav-item">
-						<a class="d-inline-flex align-items-center rounded border-0" data-toggle="collapse" href="#dashboardMenu" role="button" aria-expanded="false" aria-controls="dashboardMenu" style="color:#a67c52;background:none;width:100%;text-align:left;">
-							<i class="la la-dashboard"></i>
-							<span>Dashboard</span>
-						</a>
-						<div class="collapse in" id="dashboardMenu">
-							<ul class="list-unstyled fw-normal pb-1 small">
-								<li><a href="{% url 'user_home' %}" style="margin-left: 20px;" class="d-inline-flex text-decoration-none rounded">Home</a></li>
-								<li><a href="#" style="margin-left: 20px;" class="d-inline-flex text-decoration-none rounded">Placeholder</a></li>
-								<li><a href="#" style="margin-left: 20px;" class="d-inline-flex text-decoration-none rounded">Placeholder</a></li>
-							</ul>
-						</div>
-					</li>
-					<li class="nav-item">
-						<a href="{% url 'user_documents' %}">
-							<i class="la la-files"></i>
-							<p>Documents</p>
-						</a>
-					</li>
-					<li class="nav-item">
-						<a href="{% url 'user_announcements' %}">
-							<i class="la la-bell"></i>
-							<p>Announcements</p>
-						</a>
-					</li>
-					<li class="nav-item">
-						<a href="{% url 'user_upload_document' %}">
-							<i class="la la-upload"></i>
-							<p>Upload Document</p>
-						</a>
-					</li>
-				</ul>
-			</div>
-		</div>
-
-		<!-- MAIN PANEL -->
-		<div class="main-panel">
-			{% block content %}{% endblock %}
-			
-			<footer class="footer">
-				<div class="container-fluid">
-					<div class="copyright ml-auto">
-						2025, Coop Management
+		<div class="wrapper">
+			<!-- HEADER -->
+			<div class="main-header">
+				<div class="logo-header d-flex align-items-center justify-content-between" style="display: flex; align-items: center; justify-content: space-between;">
+					<a href="{% url 'user_home' %}" class="logo" style="flex: 1 0 auto; display: flex; align-items: center; gap: 12px;">
+						<img src="{% static 'img/home.png' %}" alt="Logo" style="height:40px; width:auto;">
+						POTMPC Portal
+					</a>
+					<div class="d-flex align-items-center" style="gap: 16px;">
+						<button class="navbar-toggler sidenav-toggler ml-auto" type="button" data-toggle="collapse" data-target="collapse" aria-controls="sidebar" aria-expanded="false" aria-label="Toggle navigation">
+							<span class="navbar-toggler-icon"></span>
+						</button>
+						<button class="topbar-toggler more"><i class="la la-ellipsis-v"></i></button>
 					</div>
 				</div>
-			</footer>
-		</div>
-	</div>
+			</div>
 
-	<!-- JS -->
-	<script src="{% static 'js/core/jquery.3.2.1.min.js' %}"></script>
+			<!-- SIDEBAR -->
+			<div class="sidebar">
+			<div class="scrollbar-inner sidebar-wrapper" style="background:#fffbe6;color:#4e3a21;min-height:100vh;width:240px;position:fixed;left:0;top:0;z-index:1000;">
+					<div class="user">
+                        <div class="photo">
+                            {# show user's profile image if available, otherwise fallback to static avatar #}
+                            {% if request.user.profile_image %}
+                                <img src="{{ request.user.profile_image.url }}" alt="Profile Image">
+                            {% else %}
+                                <img src="{% static 'img/boss.jpg' %}" alt="Img Profile">
+                            {% endif %}
+                        </div>
+                        <div class="info">
+                            <a data-toggle="collapse" href="#userMenu" aria-expanded="true">
+                                <span>
+                                    {# show username only (client account) instead of member name #}
+                                    {{ request.user.username }}
+                                    <span class="user-level">
+                                        {{ request.user.role|capfirst }}
+                                    </span>
+                                    <span class="caret"></span>
+                                </span>
+                            </a>
+                            <div class="collapse in" id="userMenu" aria-expanded="true">
+                                <ul class="nav">
+                                    <li><a href="{% url 'user_profile' %}"><span class="link-collapse">My Profile</span></a></li>
+                                    <li>
+                                        <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                            <i class="fa fa-power-off"></i> Logout
+                                        </a>
+                                        <form id="logout-form" action="{% url 'logout' %}" method="post" style="display:none;">
+                                            {% csrf_token %}
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+					<ul class="nav">
+						<li class="nav-item">
+							<a class="d-inline-flex align-items-center rounded border-0" data-toggle="collapse" href="#dashboardMenu" role="button" aria-expanded="false" aria-controls="dashboardMenu" style="color:#a67c52;background:none;width:100%;text-align:left;">
+								<i class="la la-dashboard"></i>
+								<span>Dashboard</span>
+							</a>
+							<div class="collapse in" id="dashboardMenu">
+								<ul class="list-unstyled fw-normal pb-1 small">
+									<li><a href="{% url 'user_home' %}" style="margin-left: 20px;" class="d-inline-flex text-decoration-none rounded">Home</a></li>
+								</ul>
+							</div>
+						</li>
+						<li class="nav-item">
+							<a href="{% url 'user_documents' %}">
+								<i class="la la-files"></i>
+								<p>Documents</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="{% url 'user_announcements' %}">
+								<i class="la la-bell"></i>
+								<p>Announcements</p>
+							</a>
+						</li>
+						<li class="nav-item">
+							<a href="{% url 'user_upload_document' %}">
+								<i class="la la-upload"></i>
+								<p>Upload Document</p>
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+
+			<!-- MAIN PANEL -->
+			<div class="main-panel">
+				{% block content %}{% endblock %}
+				
+			</div>
+		</div>
+    </div>
+
+    <!-- JS -->
+    <script src="{% static 'js/core/jquery.3.2.1.min.js' %}"></script>
 	<script src="{% static 'js/core/popper.min.js' %}"></script>
 	<script src="{% static 'js/core/bootstrap.min.js' %}"></script>
 	<script src="{% static 'js/plugin/jquery-ui-1.12.1.custom/jquery-ui.min.js' %}"></script>
@@ -187,5 +172,6 @@
 	<script src="{% static 'js/plugin/chart-circle/circles.min.js' %}"></script>
 	<script src="{% static 'js/plugin/jquery-scrollbar/jquery.scrollbar.min.js' %}"></script>
 	<script src="{% static 'js/ready.min.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
