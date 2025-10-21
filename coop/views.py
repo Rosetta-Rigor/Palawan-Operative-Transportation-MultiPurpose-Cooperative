@@ -14,6 +14,8 @@ from .models import Announcement
 from .forms import AnnouncementForm
 from django.db.models import Q
 
+
+
 @user_passes_test(lambda u: u.is_staff)
 def user_approvals(request):
     User = get_user_model()
@@ -1211,3 +1213,21 @@ def user_upload_document(request):
         "document": document,
         "entries": user_entries,
     })
+
+
+@login_required
+def user_document_entry_count_api(request):
+    """
+    Returns the total number of DocumentEntry objects for the logged-in user's documents.
+    JSON response: { "count": <int> }
+    Only counts DocumentEntry objects connected to the user's member's vehicles' documents.
+    """
+    user = request.user
+    member = getattr(user, "member_profile", None)
+    count = 0
+    if member:
+        # Get all documents linked to the user's vehicles
+        documents = Document.objects.filter(vehicle__member=member)
+        # Count all DocumentEntry objects linked to those documents
+        count = DocumentEntry.objects.filter(document__in=documents).count()
+    return JsonResponse({"count": count})

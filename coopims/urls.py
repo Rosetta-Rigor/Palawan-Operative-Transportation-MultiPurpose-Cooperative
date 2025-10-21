@@ -1,11 +1,10 @@
 from django.contrib import admin
-from django.urls import path, include
-from coop import views 
-from django.urls import path, re_path
-from coop.views import custom_logout
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from coop import views
+from coop.views import custom_logout
 
 urlpatterns = [
     path('accounts/<int:user_id>/edit/', views.edit_account, name='edit_account'),
@@ -56,7 +55,7 @@ urlpatterns = [
     # AUTH
     path('login/', views.custom_login, name='login'),
     path('register/', views.register, name='register'),
-    path('logout/', custom_logout, name='logout'),
+    path('logout/', views.custom_logout, name='logout'),
     path('accounts/', views.accounts_list, name='accounts_list'),
     path('accounts/<int:user_id>/deactivate/', views.deactivate_account, name='deactivate_account'),
     path('accounts/<int:user_id>/activate/', views.activate_account, name='activate_account'),
@@ -67,6 +66,7 @@ urlpatterns = [
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete'),
     path('members/<int:pk>/view/', views.member_view, name='member_view'),
     path('api/members/search/', views.member_search_api, name='member_search_api'),
+    path('api/user/document-entry-count/', views.user_document_entry_count_api, name='user_document_entry_count_api'),
     path('api/users/search/', views.user_search_api, name='user_search_api'),
     path('api/vehicle-member-select2/', views.vehicle_member_select2_api, name='vehicle_member_select2_api'),
     path('user/vehicles/', views.user_vehicles, name='user_vehicles'),

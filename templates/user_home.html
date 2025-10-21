@@ -24,7 +24,7 @@
       </div>
       <div class="uc-body">
         <div class="uc-title">My Documents</div>
-        <div class="uc-sub">{{ document_count|default:0 }} document{{ document_count|pluralize }}</div>
+        <div class="uc-sub" id="user-doc-count">Loading...</div>
       </div>
       <div class="uc-right">
         <span class="uc-action">Open</span>
@@ -71,4 +71,21 @@
     </a>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  fetch("{% url 'user_document_entry_count_api' %}")
+    .then(response => response.json())
+    .then(data => {
+      const count = data.count || 0;
+      const plural = count === 1 ? "" : "s";
+      document.getElementById("user-doc-count").textContent = `${count} document${plural}`;
+    })
+    .catch(() => {
+      document.getElementById("user-doc-count").textContent = "0 documents";
+    });
+});
+</script>
 {% endblock %}
