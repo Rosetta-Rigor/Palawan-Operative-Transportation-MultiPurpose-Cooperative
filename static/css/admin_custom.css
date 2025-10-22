@@ -69,3 +69,49 @@ body {
     border-radius: 8px;
     transition: background 0.2s, color 0.2s;
 }
+
+/* Submenu show/hide and styling */
+.has-submenu .nav-link { cursor: pointer; }
+.submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .22s ease, padding .18s ease;
+    padding-top: 0;
+    padding-bottom: 0;
+    background: transparent;
+}
+.submenu.open {
+    max-height: 420px; /* enough to show submenu items */
+    padding-top: 4px;
+    padding-bottom: 8px;
+    background: transparent;
+}
+
+/* Ensure submenu items use the same active styles as top-level items */
+.submenu .nav-item .nav-link {
+    padding-left: 48px; /* indent submenu */
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: transparent;
+}
+
+/* When a submenu item is active, only it is highlighted */
+.submenu .nav-item.active .nav-link,
+.submenu .nav-link.active {
+    background: #ffecb3 !important;
+    color: #a67c52 !important;
+    border-left: 6px solid #a67c52;
+    border-radius: 0;
+}
+
+/* If no submenu item is active, parent .has-submenu keeps the general active look */
+.nav-item.has-submenu.active > .nav-link {
+    background: #ffecb3 !important;
+    color: #a67c52 !important;
+    border-left: 6px solid #a67c52;
+}
+
+/* make sure submenu background doesn't create extra box */
+.submenu { box-shadow: none; border: none; }
+
+

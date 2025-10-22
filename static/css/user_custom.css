@@ -63,8 +63,8 @@ body {
 }
 .sidebar-nav .nav-link {
     display: flex;
-    align-items: center;
-    gap: 14px;
+    align-items: center; /* vertical center icon + text */
+    gap: 12px;
     font-size: 1rem;
     font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
     font-weight: 600;
@@ -72,7 +72,7 @@ body {
     background: transparent;
     border: none;
     border-radius: 0;
-    padding: 14px 28px 14px 24px;
+    padding: 14px 20px; /* tighten horizontal padding */
     transition: background 0.18s, color 0.18s;
     outline: none !important;
     text-decoration: none !important;
@@ -87,7 +87,7 @@ body {
 .sidebar-nav .nav-link[aria-current="page"] {
     background: #ffecb3 !important;
     color: #a67c52 !important;
-    border-left: 6px solid #a67c52;
+    border-left: 3px solid #a67c52;
     font-weight: 700;
     border-radius: 0;
     box-shadow: none;
@@ -103,7 +103,7 @@ body {
 
 /* --- User Card at Bottom --- */
 .sidebar-user-card {
-    background: #fff;
+    background: #ffffff;
     border-top: 2px solid #e0cfa2;
     border-left: none;
     border-right: none;
@@ -161,7 +161,7 @@ body {
     transform: rotate(180deg);
 }
 .sidebar-user-card .user-level {
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     color: #a67c52;
     font-weight: 600;
     margin-top: 2px;
@@ -209,21 +209,133 @@ body {
     color: #a67c52;
 }
 
-/* SIDEBAR */
+/* make icon + text align consistently */
+.sidebar-nav .nav-link {
+    display: flex;
+    align-items: center; /* vertical center icon + text */
+    gap: 12px;
+    padding: 14px 20px; /* tighten horizontal padding */
+}
+
+/* ensure the text elements don't break lines or get offset */
+.sidebar-nav .nav-link p,
+.sidebar-nav .nav-link span {
+    margin: 0;
+    line-height: 1;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* push arrow to the far right of the link */
+.parent-arrow {
+    margin-left: auto;
+    font-size: 1.05rem;
+    color: #a67c52;
+    transform: rotate(180deg); /* show down when CLOSED (▲ rotated) */
+    transition: transform .18s ease;
+    display: inline-block;
+}
+
+/* when link has .open (server-side or JS), arrow points up */
+.sidebar-nav .nav-link.open .parent-arrow,
+.sidebar-nav .nav-link .parent-arrow.open {
+    transform: rotate(0deg);
+}
+
+/* submenu indent and ensure active child highlights only the child */
+.submenu .nav-item .nav-link {
+    padding-left: 48px;
+}
+
+/* active child: sharp left border and full width highlight */
+.submenu .nav-item.active .nav-link,
+.submenu .nav-link.active {
+    background: #ffecb3 !important;
+    color: #a67c52 !important;
+    border-left: 3px solid #a67c52;
+    border-radius: 0;
+}
+
+/* parent .has-submenu no longer gets active by default; if you want parent highlighted
+   when no child is active, add server-side condition and class on the parent link */
+
+/* remove any unexpected wrapper box: make sidebar full height and flush with header */
+.sidebar {
+    top: 0;
+    border-radius: 0;
+    border: none;
+}
+
+/* ensure submenu doesn't add its own boxed background */
+.submenu {
+    background: transparent;
+    box-shadow: none;
+}
+
+/* keep hover/focus overrides (disable bootstrap blue) */
+.sidebar-nav .nav-link:focus,
+.sidebar-nav .nav-link:active,
+.sidebar-nav .nav-link:hover {
+    background: #ffe9b3 !important;
+    color: #6B2F13 !important;
+    text-decoration: none !important;
+}
+
+/* Mobile / small-screen off-canvas behavior -------------------------------------------------- */
 @media (max-width: 900px) {
+    /* Sidebar becomes off-canvas (hidden) by default */
     .sidebar {
-        width: 100vw;
-        min-width: 0;
-        max-width: 100vw;
+        width: 80%;
+        max-width: 320px;
+        height: 100vh;
+        position: fixed;
         left: 0;
         top: 0;
-        background: #fffbe6 !important;
+        transform: translateX(-100%);
+        transition: transform .22s ease, box-shadow .22s ease;
+        box-shadow: none;
+        z-index: 10002;
+        overflow: auto; /* allow scrolling of nav items */
+        -webkit-overflow-scrolling: touch;
     }
-    .sidebar-nav {
-        width: 100vw;
+
+    /* When JS toggles .collapsed, show the sidebar (treat collapsed as "open" on mobile) */
+    .sidebar.collapsed {
+        transform: translateX(0);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.24);
     }
+
+    /* Create a full-screen translucent overlay when sidebar is open */
+    .sidebar.collapsed::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.32);
+        z-index: 10001; /* behind sidebar (10002) so sidebar stays on top */
+        pointer-events: auto;
+    }
+
+    /* Main content should not be shifted on mobile */
     .main-panel {
         margin-left: 0 !important;
+        transition: none;
+    }
+
+    /* Make sure toggle button is visible and clickable */
+    .sidebar-toggle {
+        display: inline-flex;
+        z-index: 10003;
+    }
+
+    /* Ensure user dropdown still positions correctly inside the visible sidebar */
+    .sidebar-user-card .user-dropdown-menu {
+        left: 18px;
+        bottom: 60px;
+    }
+
+    /* Submenu open animation remains same; allow submenu height to expand inside off-canvas */
+    .submenu.open {
+        max-height: 999px;
     }
 }
 

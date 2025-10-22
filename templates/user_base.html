@@ -160,27 +160,19 @@
 	<script src="{% static 'js/ready.min.js' %}"></script>
     {% block extra_js %}{% endblock %}
 	<script>
-// Define the handler outside to avoid multiple bindings
-function handleUserMenuClickOutside(e) {
-	var menu = document.getElementById('userMenuDropdown');
-	var arrow = document.getElementById('userDropdownArrow');
-	if (!menu.contains(e.target) && !arrow.contains(e.target)) {
-		menu.classList.remove('show');
-		arrow.classList.remove('open');
-		document.removeEventListener('click', handleUserMenuClickOutside);
-	}
-}
-
 function toggleUserMenu() {
-	var menu = document.getElementById('userMenuDropdown');
-	var arrow = document.getElementById('userDropdownArrow');
-	var isOpen = menu.classList.toggle('show');
-	arrow.classList.toggle('open');
-	if (isOpen) {
-		document.addEventListener('click', handleUserMenuClickOutside);
-	} else {
-		document.removeEventListener('click', handleUserMenuClickOutside);
-	}
+    var menu = document.getElementById('userMenuDropdown');
+    var arrow = document.getElementById('userDropdownArrow');
+    menu.classList.toggle('show');
+    arrow.classList.toggle('open');
+    // Close on click outside
+    document.addEventListener('click', function handler(e) {
+        if (!menu.contains(e.target) && !arrow.contains(e.target)) {
+            menu.classList.remove('show');
+            arrow.classList.remove('open');
+            document.removeEventListener('click', handler);
+        }
+    });
 }
 </script>
 </body>
