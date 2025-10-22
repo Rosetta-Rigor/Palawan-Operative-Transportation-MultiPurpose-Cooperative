@@ -1,8 +1,5 @@
 body {
-    background: url('../img/bg.jpg') no-repeat center center fixed;
-    background-size: cover;
-    min-height: 100vh;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    /* Remove background or min-height if not needed */
 }
 .user-home-card {
     background: #FFD43B;

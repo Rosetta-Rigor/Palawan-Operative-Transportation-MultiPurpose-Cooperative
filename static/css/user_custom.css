@@ -30,42 +30,215 @@ body {
     margin-top: 24px;
 }
 
-/* Remove default left border from all sidebar links */
-.sidebar .nav .nav-item > a,
-.sidebar .nav .collapse .list-unstyled li a {
-    border-left: 4px solid transparent;
-    transition: border-color 0.2s;
+/* --- Sidebar Layout --- */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 259px;
+    height: 100vh;
+    background: #fffbe6;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    z-index: 1000;
+    border: none;
+    box-shadow: 2px 0 8px rgba(166, 124, 82, 0.04);
+    margin: 0;
+    padding: 0;
 }
 
-/* Sidebar nav item hover effect */
-.sidebar .nav .nav-item > a:hover,
-.sidebar .nav .nav-item > a:focus {
-    background: #ffe9b3 !important;
-    color: #6B2F13 !important;
-    border-radius: 8px;
-    transition: background 0.2s, color 0.2s;
+/* --- Nav Section --- */
+.sidebar-nav {
+    flex: 1 1 auto;
+    padding-top: 61px;
+    padding-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
 }
-/* Collapse menu links hover */
-.sidebar .nav .collapse .list-unstyled li a:hover,
-.sidebar .nav .collapse .list-unstyled li a:focus {
-    background: #ffe9b3 !important;
-    color: #6B2F13 !important;
-    border-radius: 8px;
-    transition: background 0.2s, color 0.2s;
+.sidebar-nav .nav-item {
+    width: 100%;
+}
+.sidebar-nav .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 1rem;
+    font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
+    font-weight: 600;
+    color: #4e3a21;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 14px 28px 14px 24px;
+    transition: background 0.18s, color 0.18s;
+    outline: none !important;
+    text-decoration: none !important;
+    box-shadow: none;
+    width: 100%;
+    position: relative;
 }
 
-/* Dashboard nav item and collapse links hover fix */
-.sidebar .nav .nav-item > a[data-toggle="collapse"]:hover,
-.sidebar .nav .nav-item > a[data-toggle="collapse"]:focus {
-    background: #ffe9b3 !important;
-    color: #6B2F13 !important;
-    border-radius: 8px;
-    transition: background 0.2s, color 0.2s;
+/* HIGHLIGHT OF ITEMS */
+.sidebar-nav .nav-item.active .nav-link,
+.sidebar-nav .nav-link.active,
+.sidebar-nav .nav-link[aria-current="page"] {
+    background: #ffecb3 !important;
+    color: #a67c52 !important;
+    border-left: 6px solid #a67c52;
+    font-weight: 700;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
 }
-.sidebar .nav #dashboardMenu ul li a:hover,
-.sidebar .nav #dashboardMenu ul li a:focus {
+
+/* Sidebar icons */
+.sidebar-nav .nav-link i {
+    font-size: 1.35em;
+    min-width: 28px;
+    color: #a67c52;
+}
+
+/* --- User Card at Bottom --- */
+.sidebar-user-card {
+    background: #fff;
+    border-top: 2px solid #e0cfa2;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    border-radius: 0;
+    margin: 0;
+    margin-bottom: 2px;
+    padding: 18px 18px 0 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    position: relative;
+    min-height: 70px;
+    cursor: pointer;
+    box-shadow: none;
+}
+.sidebar-user-card .photo img {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #a67c52;
+}
+.sidebar-user-card .info {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+.sidebar-user-card .user-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+}
+.sidebar-user-card .username {
+    font-size: 1.1rem;
+    font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
+    font-weight: 700;
+    color: #4e3a21;
+    margin-right: 8px;
+}
+.sidebar-user-card .dropdown-arrow {
+    display: inline-block;
+    font-size: 1.2em;
+    color: #a67c52;
+    rotate: 180deg;
+    transition: transform 0.2s;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+.sidebar-user-card .dropdown-arrow.open {
+    transform: rotate(180deg);
+}
+.sidebar-user-card .user-level {
+    font-size: 0.95rem;
+    color: #a67c52;
+    font-weight: 600;
+    margin-top: 2px;
+    margin-left: 0;
+    display: block;
+}
+
+/*  user dropdown menu */
+.sidebar-user-card .user-dropdown-menu {
+    display: none;
+    position: absolute;
+    bottom: 60px;
+    left: 18px;
+    width: 210px;
+    background: #f3e7c2;
+    border-radius: 12px;
+    box-shadow: 0 6px 24px rgba(166, 124, 82, 0.13);
+    padding: 10px 0;
+    z-index: 1001;
+    border: 1px solid #e0cfa2;
+}
+.sidebar-user-card .user-dropdown-menu.show {
+    display: block;
+}
+.sidebar-user-card .user-dropdown-menu ul.nav {
+    margin: 0;
+    padding: 0;
+}
+.sidebar-user-card .user-dropdown-menu ul.nav li {
+    list-style: none;
+}
+.sidebar-user-card .user-dropdown-menu ul.nav li a {
+    display: block;
+    padding: 12px 22px;
+    color: #4e3a21;
+    font-size: 1.08rem;
+    font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
+    font-weight: 600;
+    border-radius: 8px;
+    text-decoration: none !important;
+    transition: background 0.15s, color 0.15s;
+}
+.sidebar-user-card .user-dropdown-menu ul.nav li a:hover {
+    background: #ffe9b3;
+    color: #a67c52;
+}
+
+/* SIDEBAR */
+@media (max-width: 900px) {
+    .sidebar {
+        width: 100vw;
+        min-width: 0;
+        max-width: 100vw;
+        left: 0;
+        top: 0;
+        background: #fffbe6 !important;
+    }
+    .sidebar-nav {
+        width: 100vw;
+    }
+    .main-panel {
+        margin-left: 0 !important;
+    }
+}
+
+/* CODE FOR REMOVAL OF BOOTSTRAP HIGHLIGHT */
+.sidebar-nav .nav-link:focus,
+.sidebar-nav .nav-link:active {
     background: #ffe9b3 !important;
     color: #6B2F13 !important;
-    border-radius: 8px;
-    transition: background 0.2s, color 0.2s;
+    box-shadow: none !important;
+    outline: none !important;
+    text-decoration: none !important;
+}
+
+.sidebar-nav .nav-link:hover {
+    background: #ffe9b3 !important;
+    color: #6B2F13 !important;
+    text-decoration: none !important;
 }

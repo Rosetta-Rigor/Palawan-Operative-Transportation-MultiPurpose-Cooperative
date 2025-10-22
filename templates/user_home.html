@@ -9,8 +9,7 @@
   <div class="row mb-4 align-items-center">
     <div class="col-md-12">
       <h1 class="h3 mb-1">Welcome,
-        {% if request.user.member_profile %}{{ request.user.member_profile.full_name }}
-        {% elif request.user.full_name %}{{ request.user.full_name }}
+        {% if request.user.member_profile %}{{ request.user.username }}
         {% else %}{{ request.user.username }}{% endif %}
       </h1>
       <p class="text-muted">Quick access to your documents, announcements and profile.</p>
@@ -20,7 +19,7 @@
   <div class="user-card-grid">
     <a class="user-card" href="{% url 'user_documents' %}">
       <div class="uc-left">
-        <div class="uc-icon uc-icon-docs"><i class="la la-files"></i></div>
+        <div class="uc-icon uc-icon-docs"><i class="la la-file"></i></div>
       </div>
       <div class="uc-body">
         <div class="uc-title">My Documents</div>

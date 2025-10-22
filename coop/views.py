@@ -1069,17 +1069,13 @@ from django.core.paginator import Paginator
 @login_required
 def home(request):
     User = get_user_model()
-    today = timezone.localtime(timezone.now()).date()
-
     total_members = Member.objects.count()
     accounts_count = User.objects.filter(is_active=True).count()
     vehicles_count = Vehicle.objects.count()
     batch_count = Batch.objects.count()
     document_count = Document.objects.count()
 
-    urgent_members = []
-    warning_members = []
-
+    # Prepare batch cards data
     batch_cards = []
     for batch in Batch.objects.all():
         members_qs = batch.members.select_related('user_account').all().order_by('full_name')
@@ -1087,39 +1083,20 @@ def home(request):
         page_number = request.GET.get(f'batch_{batch.id}_page', 1)
         page_obj = paginator.get_page(page_number)
         members_data = []
-
         for member in page_obj.object_list:
+            # Get vehicle and document
             vehicle = member.vehicles.first()
             document = vehicle.document if vehicle and hasattr(vehicle, 'document') else None
-
+            # Get latest renewal date from DocumentEntry
             expiry_date = None
             if document:
-                # Only consider approved/manager entries
-                latest_entry = document.entries.filter(
-                    models.Q(status="approved") | models.Q(uploaded_by__isnull=True)
-                ).order_by('-renewal_date').first()
+                latest_entry = document.entries.order_by('-renewal_date').first()
                 if latest_entry and latest_entry.renewal_date:
                     expiry_date = latest_entry.renewal_date.replace(year=latest_entry.renewal_date.year + 1)
-                    if expiry_date:
-                        days_left = (expiry_date - today).days
-                        if 0 <= days_left <= 15:
-                            urgent_members.append({
-                                'name': member.full_name,
-                                'expiry_date': expiry_date.strftime('%Y-%m-%d'),
-                                'days_left': days_left,
-                            })
-                        elif 16 <= days_left <= 30:
-                            warning_members.append({
-                                'name': member.full_name,
-                                'expiry_date': expiry_date.strftime('%Y-%m-%d'),
-                                'days_left': days_left,
-                            })
-
             members_data.append({
                 'full_name': member.full_name,
                 'expiry_date': expiry_date.strftime('%Y-%m-%d') if expiry_date else 'N/A'
             })
-
         batch_cards.append({
             'id': batch.id,
             'number': batch.number,
@@ -1137,8 +1114,6 @@ def home(request):
         'batch_count': batch_count,
         'document_count': document_count,
         'batch_cards': batch_cards,
-        'urgent_members': urgent_members,
-        'warning_members': warning_members,
     }
     return render(request, "home.html", context)
 

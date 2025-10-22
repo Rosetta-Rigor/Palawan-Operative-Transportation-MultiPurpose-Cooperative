@@ -67,7 +67,7 @@
 				<div class="logo-header d-flex align-items-center justify-content-between" style="display: flex; align-items: center; justify-content: space-between;">
 					<a href="{% url 'user_home' %}" class="logo" style="flex: 1 0 auto; display: flex; align-items: center; gap: 12px;">
 						<img src="{% static 'img/home.png' %}" alt="Logo" style="height:40px; width:auto;">
-						POTMPC Portal
+						POTMPC PORTAL
 					</a>
 					<div class="d-flex align-items-center" style="gap: 16px;">
 						<button class="navbar-toggler sidenav-toggler ml-auto" type="button" data-toggle="collapse" data-target="collapse" aria-controls="sidebar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,80 +80,66 @@
 
 			<!-- SIDEBAR -->
 			<div class="sidebar">
-			<div class="scrollbar-inner sidebar-wrapper" style="background:#fffbe6;color:#4e3a21;min-height:100vh;width:240px;position:fixed;left:0;top:0;z-index:1000;">
-					<div class="user">
-                        <div class="photo">
-                            {# show user's profile image if available, otherwise fallback to static avatar #}
-                            {% if request.user.profile_image %}
-                                <img src="{{ request.user.profile_image.url }}" alt="Profile Image">
-                            {% else %}
-                                <img src="{% static 'img/boss.jpg' %}" alt="Img Profile">
-                            {% endif %}
-                        </div>
-                        <div class="info">
-                            <a data-toggle="collapse" href="#userMenu" aria-expanded="true">
-                                <span>
-                                    {# show username only (client account) instead of member name #}
-                                    {{ request.user.username }}
-                                    <span class="user-level">
-                                        {{ request.user.role|capfirst }}
-                                    </span>
-                                    <span class="caret"></span>
-                                </span>
-                            </a>
-                            <div class="collapse in" id="userMenu" aria-expanded="true">
-                                <ul class="nav">
-                                    <li><a href="{% url 'user_profile' %}"><span class="link-collapse">My Profile</span></a></li>
-                                    <li>
-                                        <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                            <i class="fa fa-power-off"></i> Logout
-                                        </a>
-                                        <form id="logout-form" action="{% url 'logout' %}" method="post" style="display:none;">
-                                            {% csrf_token %}
-                                        </form>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-					<ul class="nav">
-						<li class="nav-item">
-							<a class="d-inline-flex align-items-center rounded border-0" data-toggle="collapse" href="#dashboardMenu" role="button" aria-expanded="false" aria-controls="dashboardMenu" style="color:#a67c52;background:none;width:100%;text-align:left;">
-								<i class="la la-dashboard"></i>
-								<span>Dashboard</span>
-							</a>
-							<div class="collapse in" id="dashboardMenu">
-								<ul class="list-unstyled fw-normal pb-1 small">
-									<li><a href="{% url 'user_home' %}" style="margin-left: 20px;" class="d-inline-flex text-decoration-none rounded">Home</a></li>
-								</ul>
-							</div>
-						</li>
-						<li class="nav-item">
-							<a href="{% url 'user_documents' %}">
-								<i class="la la-files"></i>
-								<p>Documents</p>
-							</a>
-						</li>
-						<li class="nav-item">
-							<a href="{% url 'user_announcements' %}">
-								<i class="la la-bell"></i>
-								<p>Announcements</p>
-							</a>
-						</li>
-						<li class="nav-item">
-							<a href="{% url 'user_upload_document' %}">
-								<i class="la la-upload"></i>
-								<p>Upload Document</p>
-							</a>
-						</li>
-					</ul>
+				<nav class="sidebar-nav">
+					<div class="nav-item {% if request.resolver_match.url_name == 'user_home' %}active{% endif %}">
+						<a class="nav-link" href="{% url 'user_home' %}">
+							<i class="la la-dashboard"></i>
+							Home
+						</a>
+					</div>
+					<div class="nav-item {% if request.resolver_match.url_name == 'user_documents' %}active{% endif %}">
+						<a class="nav-link" href="{% url 'user_documents' %}">
+							<i class="la la-file"></i>
+							Documents
+						</a>
+					</div>
+					<div class="nav-item {% if request.resolver_match.url_name == 'user_announcements' %}active{% endif %}">
+						<a class="nav-link" href="{% url 'user_announcements' %}">
+							<i class="la la-bell"></i>
+							Announcements
+						</a>
+					</div>
+					<div class="nav-item {% if request.resolver_match.url_name == 'user_upload_document' %}active{% endif %}">
+						<a class="nav-link" href="{% url 'user_upload_document' %}">
+							<i class="la la-upload"></i>
+							Upload Document
+						</a>
+					</div>
+				</nav>
+				<div class="sidebar-user-card" onclick="toggleUserMenu()">
+					<div class="photo">
+						{% if request.user.profile_image %}
+							<img src="{{ request.user.profile_image.url }}" alt="Profile Image">
+						{% else %}
+							<img src="{% static 'img/boss.jpg' %}" alt="Img Profile">
+						{% endif %}
+					</div>
+					<div class="info">
+						<div class="user-row">
+							<span class="username">{{ request.user.username }}</span>
+							<span class="dropdown-arrow" id="userDropdownArrow">&#9650;</span>
+						</div>
+						<span class="user-level">{{ request.user.role|capfirst }}</span>
+						<div class="user-dropdown-menu" id="userMenuDropdown">
+							<ul class="nav">
+								<li><a href="{% url 'user_profile' %}"><span class="link-collapse">My Profile</span></a></li>
+								<li>
+									<a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+										Logout
+									</a>
+									<form id="logout-form" action="{% url 'logout' %}" method="post" style="display:none;">
+										{% csrf_token %}
+									</form>
+								</li>
+							</ul>
+						</div>
+					</div>
 				</div>
-			</div>
+        	</div>
 
 			<!-- MAIN PANEL -->
 			<div class="main-panel">
 				{% block content %}{% endblock %}
-				
 			</div>
 		</div>
     </div>
@@ -173,5 +159,21 @@
 	<script src="{% static 'js/plugin/jquery-scrollbar/jquery.scrollbar.min.js' %}"></script>
 	<script src="{% static 'js/ready.min.js' %}"></script>
     {% block extra_js %}{% endblock %}
+	<script>
+function toggleUserMenu() {
+    var menu = document.getElementById('userMenuDropdown');
+    var arrow = document.getElementById('userDropdownArrow');
+    menu.classList.toggle('show');
+    arrow.classList.toggle('open');
+    // Close on click outside
+    document.addEventListener('click', function handler(e) {
+        if (!menu.contains(e.target) && !arrow.contains(e.target)) {
+            menu.classList.remove('show');
+            arrow.classList.remove('open');
+            document.removeEventListener('click', handler);
+        }
+    });
+}
+</script>
 </body>
 </html>

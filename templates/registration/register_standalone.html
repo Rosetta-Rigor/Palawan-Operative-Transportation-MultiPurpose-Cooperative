@@ -7,66 +7,91 @@
     <title>Register</title>
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900">
-    <link rel="stylesheet" href="{% static 'css/login_custom.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/register_custom.css' %}" />
 </head>
 <body>
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-primary text-white">Register</div>
-                <div class="card-body">
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        {% if form.errors %}
-                            <div class="alert alert-danger">
-                                <ul class="mb-0">
-                                {% for field in form %}
-                                    {% for error in field.errors %}
-                                        <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-                                    {% endfor %}
-                                {% endfor %}
-                                {% for error in form.non_field_errors %}
-                                    <li>{{ error }}</li>
-                                {% endfor %}
-                                </ul>
-                            </div>
-                        {% endif %}
-                        <div class="form-group">
-                            <label for="id_username">Username</label>
-                            {{ form.username }}
-                        </div>
-                        <div class="form-group">
-                            <label for="id_full_name">Full Name</label>
-                            {{ form.full_name }}
-                        </div>
-                        <div class="form-group">
-                            <label for="id_email">Email</label>
-                            {{ form.email }}
-                        </div>
-                        <div class="form-group">
-                            <label for="id_phone_number">Phone Number</label>
-                            {{ form.phone_number }}
-                        </div>
-                        <div class="form-group">
-                            <label for="id_id_image">Valid ID (JPG)</label>
-                            {{ form.id_image }}
-                        </div>
-                        <div class="form-group">
-                            <label for="id_password1">Password</label>
-                            {{ form.password1 }}
-                        </div>
-                        <div class="form-group">
-                            <label for="id_password2">Confirm Password</label>
-                            {{ form.password2 }}
-                        </div>
-                        <button type="submit" class="btn btn-primary">Register</button>
-                    </form>
-                    <a href="{% url 'password_reset' %}" class="btn btn-link mt-2">Forgot Password?</a>
+    <div class="register-road-stripes"></div>
+    <div class="register-overlay"></div>
+    <div class="register-card">
+        <a href="{% url 'login' %}" class="register-back-btn" title="Back to Login">
+            &#8592;
+        </a>
+        <div class="register-title">Register</div>
+        <div class="register-subtitle">Create your account</div>
+        <form method="post" enctype="multipart/form-data" class="register-form">
+            {% csrf_token %}
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            <div class="form-row">
+                <div class="form-group flex-fill">
+                    <label for="id_username">Username</label>
+                    {{ form.username }}
+                </div>
+                <div class="form-group flex-fill">
+                    <label for="id_full_name">Full Name</label>
+                    {{ form.full_name }}
                 </div>
             </div>
-        </div>
+            <div class="form-row">
+                <div class="form-group flex-fill">
+                    <label for="id_email">Email</label>
+                    {{ form.email }}
+                </div>
+                <div class="form-group flex-fill">
+                    <label for="id_phone_number">Phone Number</label>
+                    {{ form.phone_number }}
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group flex-fill">
+                    <label for="id_password1">Password</label>
+                    {{ form.password1 }}
+                </div>
+                <div class="form-group flex-fill">
+                    <label for="id_password2">Confirm Password</label>
+                    {{ form.password2 }}
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="id_id_image">Valid ID (JPG)</label>
+                {{ form.id_image }}
+                <img id="imgPreview" class="img-preview" alt="ID Preview"/>
+            </div>
+            <button type="submit" class="register-btn">Register</button>
+            <a href="{% url 'login' %}" class="btn btn-secondary w-100 mt-2">Cancel</a>
+        </form>
     </div>
-</div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        var fileInput = document.getElementById("id_id_image");
+        var imgPreview = document.getElementById("imgPreview");
+        if(fileInput){
+          fileInput.addEventListener("change", function(e){
+            if (fileInput.files && fileInput.files[0]) {
+              var reader = new FileReader();
+              reader.onload = function (e) {
+                imgPreview.src = e.target.result;
+                imgPreview.style.display = "block";
+              };
+              reader.readAsDataURL(fileInput.files[0]);
+            } else {
+              imgPreview.style.display = "none";
+            }
+          });
+        }
+      });
+    </script>
 </body>
 </html>

@@ -1,8 +1,62 @@
 body {
-    background: url('../img/bg.jpg') no-repeat center center fixed;
-    background-size: cover;
     min-height: 100vh;
     font-family: 'Segoe UI', Arial, sans-serif;
+    position: relative;
+    /* Soft mint-teal gradient background (contrasts with gold) */
+    background: linear-gradient(135deg, #e0f7fa 0%, #f8fafc 100%);
+    overflow-x: hidden;
+}
+
+/* Decorative "road" stripes in teal/mint/white */
+.bg-road-stripes, .register-road-stripes {
+    position: fixed;
+    left: 0; right: 0; top: 0; bottom: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+.bg-road-stripes::before, .register-road-stripes::before {
+    content: "";
+    position: absolute;
+    left: -30vw;
+    top: 20vh;
+    width: 160vw;
+    height: 16px;
+    background: repeating-linear-gradient(
+        90deg,
+        #26c6da 0 32px,
+        #e0f7fa 32px 48px
+    );
+    opacity: 0.13;
+    border-radius: 8px;
+    transform: rotate(-8deg);
+}
+.bg-road-stripes::after, .register-road-stripes::after {
+    content: "";
+    position: absolute;
+    left: -40vw;
+    top: 60vh;
+    width: 180vw;
+    height: 12px;
+    background: repeating-linear-gradient(
+        90deg,
+        #80cbc4 0 24px,
+        #ffffff 24px 40px
+    );
+    opacity: 0.11;
+    border-radius: 8px;
+    transform: rotate(5deg);
+}
+
+/* Grayed overlay for background */
+.bg-gray-overlay,
+.overlay,
+.register-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(60, 72, 88, 0.13); /* subtle blue-gray */
+    z-index: 0;
+    pointer-events: none;
 }
 
 /* Accent colors from logo */
