@@ -6,7 +6,7 @@ from matplotlib.style import context
 from .models import Batch, User, Member
 import json
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, date
 
 from django.db import models
 from django.contrib import messages
@@ -168,6 +168,41 @@ def member_add(request):
         member_form = MemberForm()
         formset = VehicleFormSet()
     return render(request, "member_add.html", {"form": member_form, "formset": formset})
+    
+@login_required
+def member_list(request):
+    """
+    List members with AJAX search + pagination.
+    Returns full page for normal requests and JSON { html, pagination_html } for AJAX.
+    """
+    q = (request.GET.get('q') or '').strip()
+    page_number = request.GET.get('page', 1)
+
+    qs = Member.objects.select_related('user_account', 'batch').prefetch_related('vehicles').order_by('full_name')
+
+    if q:
+        qs = qs.filter(Q(full_name__icontains=q) | Q(vehicles__plate_number__icontains=q)).distinct()
+
+    paginator = Paginator(qs, 10)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'object_list': list(page_obj.object_list),
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'is_paginated': page_obj.has_other_pages(),
+        'start_index': page_obj.start_index(),
+        'end_index': page_obj.end_index(),
+        'q': q,
+    }
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        rows_html = render_to_string('includes/member_table_rows.html', context, request=request)
+        pagination_html = render_to_string('includes/pagination.html', context, request=request)
+        return JsonResponse({'html': rows_html, 'pagination_html': pagination_html})
+
+    # normal render
+    return render(request, 'memberlist.html', context)
 
 # ==== User Views ====
 
@@ -528,6 +563,7 @@ class VehicleDeleteView(DeleteView):
 # ==== Class-based Views: Document ====
 
 from django.db.models import Max, Q
+from .models import DocumentEntry
 
 @method_decorator(login_required, name='dispatch')
 class DocumentListView(ListView):
@@ -879,6 +915,7 @@ def activate_account(request, user_id):
     user.is_active = True
     user.save()
     return redirect('accounts_list')
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -945,6 +982,14 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import Member, Document, DocumentEntry, User
 from .forms import AdminProfileForm
+from datetime import timedelta, date
+
+def _add_years_safe(dt, years=1):
+    try:
+        return dt.replace(year=dt.year + years)
+    except ValueError:
+        # fallback for leap day -> move to Feb 28
+        return dt.replace(month=2, day=28, year=dt.year + years)
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
@@ -1082,52 +1127,87 @@ def home(request):
 
     batch_cards = []
     for batch in Batch.objects.all():
-        members_qs = batch.members.select_related('user_account').all().order_by('full_name')
-        paginator = Paginator(members_qs, 10)
-        page_number = request.GET.get(f'batch_{batch.id}_page', 1)
-        page_obj = paginator.get_page(page_number)
-        members_data = []
+        members_qs = batch.members.select_related('user_account').prefetch_related('vehicles__document__entries').all().order_by('full_name')
+        total_count = members_qs.count()
 
-        for member in page_obj.object_list:
-            vehicle = member.vehicles.first()
-            document = vehicle.document if vehicle and hasattr(vehicle, 'document') else None
+        urgent_count = 0
+        upcoming_count = 0
+        members_preview = []   # for client-side preview (member -> vehicles list)
 
-            expiry_date = None
-            if document:
-                # Only consider approved/manager entries
-                latest_entry = document.entries.filter(
-                    models.Q(status="approved") | models.Q(uploaded_by__isnull=True)
+        for idx, member in enumerate(members_qs):
+            # collect per-vehicle renewal info for this member
+            vehicle_infos = []
+            member_has_urgent = False
+            member_has_upcoming = False
+
+            for vehicle in member.vehicles.all():
+                plate = getattr(vehicle, 'plate_number', 'N/A')
+                latest_entry = DocumentEntry.objects.filter(
+                    document__vehicle=vehicle
+                ).filter(
+                    Q(status="approved") | Q(uploaded_by__isnull=True)
                 ).order_by('-renewal_date').first()
-                if latest_entry and latest_entry.renewal_date:
-                    expiry_date = latest_entry.renewal_date.replace(year=latest_entry.renewal_date.year + 1)
-                    if expiry_date:
-                        days_left = (expiry_date - today).days
-                        if 0 <= days_left <= 15:
-                            urgent_members.append({
-                                'name': member.full_name,
-                                'expiry_date': expiry_date.strftime('%Y-%m-%d'),
-                                'days_left': days_left,
-                            })
-                        elif 16 <= days_left <= 30:
-                            warning_members.append({
-                                'name': member.full_name,
-                                'expiry_date': expiry_date.strftime('%Y-%m-%d'),
-                                'days_left': days_left,
-                            })
 
-            members_data.append({
-                'full_name': member.full_name,
-                'expiry_date': expiry_date.strftime('%Y-%m-%d') if expiry_date else 'N/A'
-            })
+                expiry_date = None
+                if latest_entry and latest_entry.renewal_date:
+                    candidate = latest_entry.renewal_date
+                    # convert to date if datetime
+                    if hasattr(candidate, "date"):
+                        candidate = candidate.date()
+                    # if stored date is in the past, advance year-by-year to next expected expiry
+                    attempts = 0
+                    while candidate < today and attempts < 5:
+                        candidate = _add_years_safe(candidate, 1)
+                        attempts += 1
+                    expiry_date = candidate
+
+                if expiry_date:
+                    days_left = (expiry_date - today).days
+                    status = 'normal'
+                    if 0 <= days_left <= 15:
+                        status = 'urgent'
+                        member_has_urgent = True
+                    elif 30 <= days_left <= 60:
+                        status = 'upcoming'
+                        # only mark upcoming if not already urgent
+                        if not member_has_urgent:
+                            member_has_upcoming = True
+                    vehicle_infos.append({
+                        'plate': plate,
+                        'expiry_date': expiry_date.strftime('%Y-%m-%d'),
+                        'days_left': days_left,
+                        'status': status
+                    })
+                else:
+                    # include vehicle even if no entry so UI shows plate with N/A
+                    vehicle_infos.append({
+                        'plate': plate,
+                        'expiry_date': None,
+                        'days_left': None,
+                        'status': 'none'
+                    })
+
+            # decide member bucket (urgent > upcoming > normal)
+            if member_has_urgent:
+                urgent_count += 1
+                urgent_members.append({'name': member.full_name, 'vehicles': [v for v in vehicle_infos if v['status'] == 'urgent' or v['status']=='upcoming' or v['status']=='normal']})
+            elif member_has_upcoming:
+                upcoming_count += 1
+                warning_members.append({'name': member.full_name, 'vehicles': [v for v in vehicle_infos if v['status'] == 'upcoming' or v['status']=='normal']})
+            # members_preview contains vehicles info for client-side chart fallback
+            if idx < 50:  # keep preview reasonably sized
+                members_preview.append({
+                    'member_name': member.full_name,
+                    'vehicles': vehicle_infos
+                })
 
         batch_cards.append({
             'id': batch.id,
             'number': batch.number,
-            'members': members_data,
-            'has_next': page_obj.has_next(),
-            'has_previous': page_obj.has_previous(),
-            'page_number': page_obj.number,
-            'num_pages': paginator.num_pages,
+            'total': total_count,
+            'urgent': urgent_count,
+            'warning': upcoming_count,
+            'members_preview': members_preview,
         })
 
     context = {
@@ -1140,6 +1220,10 @@ def home(request):
         'urgent_members': urgent_members,
         'warning_members': warning_members,
     }
+    try:
+        context['batch_cards_json'] = json.dumps(batch_cards, default=str)
+    except Exception:
+        context['batch_cards_json'] = '[]'
     return render(request, "home.html", context)
 
 @staff_member_required
@@ -1256,3 +1340,176 @@ def user_document_entry_count_api(request):
         # Count all DocumentEntry objects linked to those documents
         count = DocumentEntry.objects.filter(document__in=documents).count()
     return JsonResponse({"count": count})
+
+# ==== AJAX Views: Pending Counts for Whiteboard ====
+
+from django.http import JsonResponse
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+from django.contrib.admin.views.decorators import staff_member_required
+from .models import DocumentEntry
+
+@staff_member_required
+def pending_counts_api(request):
+    """
+    Returns JSON for whiteboard: counts and links.
+    Only accessible to staff members.
+    """
+    UserModel = get_user_model()
+    # pending accounts: client role and not active
+    accounts_pending = UserModel.objects.filter(role__iexact='client', is_active=False).count()
+
+    # documents pending: entries uploaded by users with status "pending"
+    documents_pending = DocumentEntry.objects.filter(status__iexact="pending", uploaded_by__isnull=False).count()
+
+    # resolve links with reverse (safe fallback)
+    try:
+        accounts_link = reverse('accounts_list')
+    except:
+        accounts_link = '/accounts/'
+    try:
+        documents_link = reverse('approve_documents')
+    except:
+        documents_link = '/approve_documents/'
+
+    counts = {
+        'accounts': accounts_pending,
+        'documents': documents_pending
+    }
+    links = {
+        'accounts': accounts_link,
+        'documents': documents_link
+    }
+
+    return JsonResponse({'counts': counts, 'links': links})
+
+# ==== Batch Views: Member, Vehicle and Renewal Date ==== #
+
+from django.template.loader import render_to_string
+from django.http import JsonResponse
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def batch_detail(request, pk):
+    """
+    Show members in a batch with their vehicles and expiry dates.
+    Supports AJAX search/filter:
+      - GET params: q (search by member name or plate), status ('urgent'|'upcoming'|'normal' or empty), page
+    Returns full page or JSON { html_rows, html_pagination } for AJAX.
+    """
+    batch = get_object_or_404(Batch, pk=pk)
+    q = (request.GET.get('q') or '').strip()
+    status_filter = (request.GET.get('status') or '').strip().lower()
+    page_number = request.GET.get('page', 1)
+
+    today = timezone.localtime(timezone.now()).date()
+
+    members_qs = batch.members.prefetch_related('vehicles__document__entries').order_by('full_name')
+
+    members_list = []
+    for member in members_qs:
+        vehicle_infos = []
+        member_has_urgent = False
+        member_has_upcoming = False
+
+        for vehicle in member.vehicles.all():
+            plate = getattr(vehicle, 'plate_number', 'N/A')
+            latest_entry = DocumentEntry.objects.filter(
+                document__vehicle=vehicle
+            ).filter(
+                Q(status="approved") | Q(uploaded_by__isnull=True)
+            ).order_by('-renewal_date').first()
+
+            expiry_date = None
+            days_left = None
+            status = 'none'
+            if latest_entry and latest_entry.renewal_date:
+                candidate = latest_entry.renewal_date
+                if hasattr(candidate, "date"):
+                    candidate = candidate.date()
+                attempts = 0
+                while candidate < today and attempts < 5:
+                    candidate = _add_years_safe(candidate, 1)
+                    attempts += 1
+                expiry_date = candidate
+                days_left = (expiry_date - today).days
+                if 0 <= days_left <= 15:
+                    status = 'urgent'
+                    member_has_urgent = True
+                elif 30 <= days_left <= 60:
+                    status = 'upcoming'
+                    if not member_has_urgent:
+                        member_has_upcoming = True
+                else:
+                    status = 'normal'
+
+            vehicle_infos.append({
+                'plate': plate,
+                'expiry_date': expiry_date.strftime('%Y-%m-%d') if expiry_date else None,
+                'days_left': days_left,
+                'status': status,
+            })
+
+        # decide member-level bucket (urgent > upcoming > normal)
+        if member_has_urgent:
+            member_status = 'urgent'
+        elif member_has_upcoming:
+            member_status = 'upcoming'
+        else:
+            member_status = 'normal'
+
+        members_list.append({
+            'id': member.id,
+            'name': member.full_name,
+            'vehicles': vehicle_infos,
+            'status': member_status,
+        })
+
+    # apply q filter (name or plate) and status filter
+    def matches_filters(m):
+        if status_filter and status_filter != m['status']:
+            return False
+        if not q:
+            return True
+        qlow = q.lower()
+        if qlow in (m['name'] or '').lower():
+            return True
+        for v in m['vehicles']:
+            if v['plate'] and qlow in v['plate'].lower():
+                return True
+        return False
+
+    filtered = [m for m in members_list if matches_filters(m)]
+
+    # sort so urgent first, upcoming next, normal last (preserve alphabetical within group)
+    priority = {'urgent': 0, 'upcoming': 1, 'normal': 2, 'none': 3}
+    filtered.sort(key=lambda x: (priority.get(x.get('status'), 3), (x.get('name') or '').lower()))
+
+    # paginate
+    paginator = Paginator(filtered, 10)
+    page_obj = paginator.get_page(page_number)
+    members_page = list(page_obj.object_list)
+
+    # batches for dropdown
+    batches = Batch.objects.order_by('number').values('id', 'number')
+
+    context = {
+        'batch': batch,
+        'members': members_page,
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'total_members': len(members_list),
+        'q': q,
+        'status_filter': status_filter,
+        'batches': batches,
+        'selected_batch_id': batch.id,
+        'is_paginated': page_obj.has_other_pages(),
+        'object_list': page_obj.object_list,
+    }
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        rows_html = render_to_string('includes/batch_member_rows.html', context, request=request)
+        pagination_html = render_to_string('includes/pagination.html', context, request=request)
+        return JsonResponse({'html': rows_html, 'pagination': pagination_html})
+
+    return render(request, 'batch_detail.html', context)

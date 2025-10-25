@@ -1,0 +1,44 @@
+{% comment %} Expects `members` in context: [{ name, vehicles: [{plate, expiry_date, days_left, status}], status }] {% endcomment %}
+{% for m in members %}
+  <tr>
+    <td>
+      <strong>{{ m.name }}</strong>
+    </td>
+    <td>
+      <ul class="list-unstyled mb-0">
+        {% for v in m.vehicles %}
+          <li><small class="text-muted">{{ v.plate }}</small></li>
+        {% endfor %}
+      </ul>
+    </td>
+    <td>
+      <ul class="list-unstyled mb-0">
+        {% for v in m.vehicles %}
+          <li>
+            {% if v.expiry_date %}{{ v.expiry_date }}{% else %}<span class="text-muted">N/A</span>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </td>
+    <td>
+      <ul class="list-unstyled mb-0">
+        {% for v in m.vehicles %}
+          <li>
+            {% if v.days_left is not None %}{{ v.days_left }}d{% else %}—{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </td>
+    <td>
+      {% if m.status == 'urgent' %}
+        <span class="badge badge-danger">Urgent</span>
+      {% elif m.status == 'upcoming' %}
+        <span class="badge badge-warning">Upcoming</span>
+      {% else %}
+        <span class="badge badge-primary">Normal</span>
+      {% endif %}
+    </td>
+  </tr>
+{% empty %}
+  <tr><td colspan="5" class="text-muted">No members found.</td></tr>
+{% endfor %}

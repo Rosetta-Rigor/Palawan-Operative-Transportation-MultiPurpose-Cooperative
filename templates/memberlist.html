@@ -1,58 +1,61 @@
-
 {% extends 'base.html' %}
 {% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_all.css' %}">
+{% endblock %}
 {% block content %}
 <br><br>
 <div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>Members</h3>
-    <a href="{% url 'member_add' %}" class="btn btn-success">Add Member</a>
+  <!-- Header with vehicle-themed background -->
+  <div class="members-header card-header-gradient mb-4 d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="members-header-title">Members</h1>
+      <p class="members-header-sub">Manage cooperative members and their vehicles</p>
+    </div>
+    <div class="d-flex align-items-center">
+      <div class="btn-group">
+        <a href="{% url 'member_add' %}" class="btn btn-success">Add Member</a>
+        <a href="/batches/1/" class="btn btn-primary">View Batches</a>
+      </div>
+    </div>
   </div>
 
   <div class="row mb-3">
     <div class="col-md-6">
       <form action="{% url 'member_list' %}">
-        <div class="input-group">
-          <input type="text" id="member-search" name="q" class="form-control form-control-lg" placeholder="Search members..." autocomplete="off" style="border-radius:6px; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
-          <div class="input-group-append">
-            <button type="button" class="btn btn-outline-secondary" id="member-search-clear" title="Clear"><i class="la la-times"></i></button>
-            <span class="input-group-text"><i class="la la-search"></i></span>
-          </div>
+        <div class="search-card p-3 d-flex align-items-center">
+          <input type="text" id="member-search" name="q" class="form-control form-control-lg search-input" placeholder="Search members or plates..." autocomplete="off">
+          <button type="button" class="btn btn-light ml-2" id="member-search-clear" title="Clear"><i class="la la-times"></i></button>
+          <button type="submit" class="btn btn-primary ml-2"><i class="la la-search"></i></button>
         </div>
       </form>
     </div>
   </div>
 
-  <table class="table table-striped table-hover">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Full Name</th>
-        <th>Batch</th>
-        <th>Phone</th>
-        <th>Email</th>
-  <th>Vehicles</th>
-  <th class="text-right">Actions</th>
-      </tr>
-    </thead>
-    <tbody id="member-table-body">
-      {% include 'includes/member_table_rows.html' %}
-    </tbody>
-  </table>
+  <div class="card admin-card material-table">
+    <div class="card-body p-0">
+      <table class="table table-striped table-hover mb-0">
+        <thead class="table-head">
+          <tr>
+            <th>#</th>
+            <th>Full Name</th>
+            <th>Batch</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Vehicles</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="member-table-body" class="material-rows">
+          {% include 'includes/member_table_rows.html' %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-  {% if is_paginated %}
-    <nav>
-      <ul class="pagination">
-        {% if page_obj.has_previous %}
-          <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Prev</a></li>
-        {% endif %}
-        <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
-        {% if page_obj.has_next %}
-          <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
-        {% endif %}
-      </ul>
-    </nav>
-  {% endif %}
+  <div id="pagination-container" class="mt-3">
+    {% include 'includes/pagination.html' %}
+  </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -71,17 +74,21 @@ $(function() {
   }
 
   function fetchMembers(params) {
+    params = params || {};
     $.ajax({
       url: "{% url 'member_list' %}",
       data: params,
       dataType: 'json',
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
       success: function(data) {
-        $('#member-table-body').html(data.html);
-        // If pagination HTML included in response, replace it too
-        if (data.pagination_html) {
-          $('#pagination-container').replaceWith(data.pagination_html);
+        if (data.html !== undefined) {
+          $('#member-table-body').html(data.html);
         }
+        if (data.pagination_html !== undefined) {
+          $('#pagination-container').html(data.pagination_html);
+        }
+        // rebind handlers after replacing HTML
+        bindActionMenus();
       }
     });
   }
@@ -98,25 +105,55 @@ $(function() {
     fetchMembers({ q: '' });
   });
 
-  // Intercept pagination clicks inside the document to load via AJAX
-  $(document).on('click', '#pagination-container a.page-link', function(e) {
-    e.preventDefault();
-    var href = $(this).attr('href');
-    if (!href) return;
-    // Extract query params from href and perform AJAX
-    var params = {};
-    var qIndex = href.indexOf('?');
-    if (qIndex !== -1) {
-      var query = href.substring(qIndex + 1);
-      query.split('&').forEach(function(part) {
-        var kv = part.split('=');
-        if (kv[0]) params[kv[0]] = decodeURIComponent(kv[1] || '');
-      });
-    }
-    // preserve current search term if not in href
-    if (!params.q) params.q = $('#member-search').val();
-    fetchMembers(params);
+  
+  $(document).off('click.memberPagination');
+
+ 
+  $(document).on('click.memberPagination', '#pagination-container .pagination a.page-link', function(e){
+   
   });
+
+  // Action menu behavior (open upwards)
+  function bindActionMenus() {
+    $('.action-toggle').off('click').on('click', function(e){
+      e.preventDefault();
+      var $btn = $(this);
+      var $container = $btn.closest('.action-container');
+      var $menu = $container.find('.action-menu');
+      // close others
+      $('.action-menu').not($menu).removeClass('open').attr('aria-hidden','true');
+      // toggle
+      $menu.toggleClass('open');
+      $menu.attr('aria-hidden', !$menu.hasClass('open'));
+      // if opening, ensure it fits in viewport; if not, flip to open downward
+      if ($menu.hasClass('open')) {
+        var menuRect = $menu[0].getBoundingClientRect();
+        if (menuRect.top < 8) {
+          // flip: open down instead
+          $menu.css({ bottom: 'auto', top: '44px' });
+          $menu.find('::after'); // noop - CSS caret remains acceptable
+        } else {
+          $menu.css({ bottom: '44px', top: 'auto' });
+        }
+      } else {
+        // reset inline style
+        $menu.css({ bottom: '', top: '' });
+      }
+    });
+
+    // close menus on outside click or ESC
+    $(document).off('click.actionMenu').on('click.actionMenu', function(e){
+      if (!$(e.target).closest('.action-container').length) {
+        $('.action-menu.open').removeClass('open').attr('aria-hidden','true');
+      }
+    });
+    $(document).off('keydown.actionMenu').on('keydown.actionMenu', function(e){
+      if (e.key === 'Escape') $('.action-menu.open').removeClass('open').attr('aria-hidden','true');
+    });
+  }
+
+  // bind on initial load
+  bindActionMenus();
 });
 </script>
 {% endblock %}

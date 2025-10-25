@@ -19,6 +19,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", views.home, name="home"),
     
+    # BATCH
+    path('batches/<int:pk>/', views.batch_detail, name='batch_detail'),
 
     # MEMBER CRUD
     path("members/", views.MemberListView.as_view(), name="member_list"),
@@ -67,6 +69,7 @@ urlpatterns = [
     path('members/<int:pk>/view/', views.member_view, name='member_view'),
     path('api/members/search/', views.member_search_api, name='member_search_api'),
     path('api/user/document-entry-count/', views.user_document_entry_count_api, name='user_document_entry_count_api'),
+    path('api/pending_counts/', views.pending_counts_api, name='api_pending_counts'),
     path('api/users/search/', views.user_search_api, name='user_search_api'),
     path('api/vehicle-member-select2/', views.vehicle_member_select2_api, name='vehicle_member_select2_api'),
     path('user/vehicles/', views.user_vehicles, name='user_vehicles'),

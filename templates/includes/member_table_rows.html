@@ -1,57 +1,44 @@
 {% for member in object_list %}
-<tr>
-    {# global index: prefer page_obj.start_index (1-based) + forloop.counter0 -> 1-based global number; fallback to start_index or per-page counter #}
+<tr class="material-row">
     <td>
-        {% if page_obj %}
-            {{ page_obj.start_index|add:forloop.counter0 }}
-        {% elif start_index is defined %}
-            {{ start_index|add:forloop.counter }}
-        {% else %}
-            {{ forloop.counter }}
-        {% endif %}
+        {% if page_obj %}{{ page_obj.start_index|add:forloop.counter0 }}{% else %}{{ forloop.counter }}{% endif %}
     </td>
     <td>{{ member.full_name }}</td>
-    <td>
-        {% if member.batch %}
-            {{ member.batch.number }}
-        {% else %}
-            N/A
-        {% endif %}
-    </td>
-    <td>
-        {% if member.user_account and member.user_account.phone_number %}
-            {{ member.user_account.phone_number }}
-        {% else %}
-            -
-        {% endif %}
-    </td>
-    <td>
-        {% if member.user_account and member.user_account.email %}
-            {{ member.user_account.email }}
-        {% else %}
-            -
-        {% endif %}
-    </td>
-    {# removed batch_monitoring_number column per request #}
+    <td>{% if member.batch %}{{ member.batch.number }}{% else %}N/A{% endif %}</td>
+    <td>{{ member.user_account.phone_number|default:"-" }}</td>
+    <td>{{ member.user_account.email|default:"-" }}</td>
     <td>
         {% with plates=member.vehicles.all %}
             {% if plates %}
+                <ul class="list-unstyled mb-0 small">
                 {% for v in plates %}
-                    {{ v.plate_number }}{% if not forloop.last %}, {% endif %}
+                    <li>{{ v.plate_number }}{% if v.make_brand %} • <small class="text-muted">{{ v.make_brand }}</small>{% endif %}</li>
                 {% endfor %}
+                </ul>
             {% else %}
                 N/A
             {% endif %}
         {% endwith %}
     </td>
     <td class="text-right">
-        <a href="{% url 'member_view' member.pk %}" class="btn btn-sm btn-info">View</a>
-        <a href="{% url 'member_edit' member.pk %}" class="btn btn-sm btn-primary">Edit</a>
-        <a href="{% url 'member_confirm_delete' member.pk %}" class="btn btn-sm btn-danger">Delete</a>
+      <div class="action-container d-inline-block">
+        <button class="btn btn-sm btn-light action-toggle" aria-haspopup="true" aria-expanded="false" title="Actions">
+          <svg width="14" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="5" r="2"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+            <circle cx="12" cy="19" r="2"></circle>
+          </svg>
+        </button>
+        <div class="action-menu shadow-sm" role="menu" aria-hidden="true">
+          <a href="{% url 'member_view' member.pk %}" class="action-item" role="menuitem">View</a>
+          <a href="{% url 'member_edit' member.pk %}" class="action-item" role="menuitem">Edit</a>
+          <a href="{% url 'member_confirm_delete' member.pk %}" class="action-item text-danger" role="menuitem">Delete</a>
+        </div>
+      </div>
     </td>
 </tr>
 {% empty %}
 <tr>
-    <td colspan="7">No members found.</td>
+    <td colspan="7" class="text-muted">No members found.</td>
 </tr>
 {% endfor %}

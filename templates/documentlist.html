@@ -57,7 +57,7 @@
                                         </td>
                                         <td>
                                             {% if doc.latest_approved_renewal %}
-                                                {{ doc.latest_approved_renewal }}
+                                                {{ doc.latest_approved_renewal|date:"Y-m-d" }}
                                             {% else %}
                                                 N/A
                                             {% endif %}

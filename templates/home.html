@@ -1,78 +1,97 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load tz %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/user_home_cards.css' %}">
-<link rel="stylesheet" href="{% static 'css/admin_home_cards.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_all.css' %}">
 {% endblock %}
-{% block title %}Home - POTMPC{% endblock %}
+{% block title %}POTMPC ADMIN{% endblock %}
 {% block content %}
-<div class="container py-5">
 
-  <!-- Urgent Renewals Card -->
-  <h3 class="mb-4 text-danger">⚠️ Urgent Renewals (0–15 Days Left)</h3>
-  <div class="card border-danger mb-4">
-    <div class="card-body">
-      {% if urgent_members %}
-        <ul class="list-group">
-          {% for member in urgent_members %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              <strong>{{ member.name }}</strong>
-              <span class="badge badge-danger">{{ member.days_left }} days left ({{ member.expiry_date }})</span>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p class="text-muted mb-0">No urgent renewals at the moment.</p>
-      {% endif %}
+
+<div class="admin-dashboard container py-5">
+  <div class="members-header card-header-gradient mb-4 d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="members-header-title">Welcome, {{ request.user.username }}</h1>
+      <p class="members-header-sub">Administrator dashboard — at‑a‑glance actions and upcoming renewals.</p>
     </div>
   </div>
 
-  <!-- Warning Renewals Card -->
-  <h3 class="mb-4 text-warning">🕒 Upcoming Renewals (16–30 Days Left)</h3>
-  <div class="card border-warning mb-4">
-    <div class="card-body">
-      {% if warning_members %}
-        <ul class="list-group">
-          {% for member in warning_members %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              <strong>{{ member.name }}</strong>
-              <span class="badge badge-warning">{{ member.days_left }} days left ({{ member.expiry_date }})</span>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p class="text-muted mb-0">No upcoming renewals within 30 days.</p>
-      {% endif %}
-    </div>
-  </div>
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="dashboard-grid">
+        <!-- Calendar column -->
+        <div>
+          <div class="calendar-card" id="renewalCalendar" aria-label="Renewal calendar">
+            <div class="calendar-header">
+              <div class="calendar-title" id="calendarMonthYear">Month Year</div>
+              <div class="calendar-controls">
+                <button type="button" id="calPrev" class="btn btn-sm" aria-label="Previous month">&#9664;</button>
+                <button type="button" id="calNext" class="btn btn-sm" aria-label="Next month">&#9654;</button>
+              </div>
+            </div>
 
-   <div class="row mb-4">
-    <div class="col-12 col-md-6">
-      <div class="calendar-card" id="renewalCalendar">
-        <div class="calendar-header">
-          <div class="calendar-title" id="calendarMonthYear">Month Year</div>
-          <div class="calendar-controls">
-            <button type="button" id="calPrev" aria-label="Previous month">&#9664;</button>
-            <button type="button" id="calNext" aria-label="Next month">&#9654;</button>
+            <div class="calendar-weekdays">
+              <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            </div>
+
+            <div class="calendar-grid" id="calendarGrid" aria-live="polite"></div>
           </div>
         </div>
 
-        <div class="calendar-weekdays">
-          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-        </div>
+        <!-- Whiteboard quick-links column -->
+        <div>
+          <div class="whiteboard-card" id="dashboardWhiteboard" aria-label="Quick actions">
+            <div class="whiteboard-header">
+              <div>Quick Actions</div>
+              <div class="whiteboard-help" title="Items that need action">•</div>
+            </div>
 
-        <div class="calendar-grid" id="calendarGrid" aria-live="polite">
-          <!-- days populated by JS -->
+            <div class="whiteboard-list" id="whiteboardList">
+              <!-- populated by JS -->
+            </div>
+          </div>
         </div>
       </div>
     </div>
+  </div>
 
-  <!-- Replaced: card boards with CSS-driven card grid -->
-  <br><br>
+  <!-- BATCH OVERVIEW -->
+  <div class="mt-4">
+    <h2 class="h4 font-weight-bold mb-3">Batch Overview</h2>
+
+    <div class="batch-grid" id="batchGrid" role="list">
+      {% for batch in batch_cards %}
+        {% if batch.total|default:0 > 0 %}
+        <a class="batch-card admin-card"
+           href="/batches/{{ batch.id }}/"
+           data-batch-index="{{ forloop.counter0 }}"
+           data-total="{{ batch.total }}"
+           data-urgent="{{ batch.urgent }}"
+           data-warning="{{ batch.warning }}"
+           role="listitem"
+           aria-label="Batch {{ batch.number }}: {{ batch.total }} members">
+          <div class="batch-chart" aria-hidden="true">
+            <svg class="batch-svg" width="120" height="120" viewBox="0 0 120 120" preserveAspectRatio="xMidYMid meet"></svg>
+            <div class="batch-center">
+              <div class="batch-count">{{ batch.total }}</div>
+              <div class="batch-label">members</div>
+            </div>
+          </div>
+          <div class="batch-meta">
+            <div class="batch-title">Batch {{ batch.number }}</div>
+            <div class="batch-sub">{% if batch.urgent %}{{ batch.urgent }} urgent{% endif %}{% if batch.warning %}{% if batch.urgent %} · {% endif %}{{ batch.warning }} upcoming{% endif %}</div>
+          </div>
+        </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  
+  <!-- Main quick cards -->
   <div class="row mb-4">
     <div class="col-12">
       <div class="user-card-grid">
-        <a class="user-card" href="{% url 'member_list' %}">
+        <a class="user-card admin-card" href="{% url 'member_list' %}">
           <div class="uc-left"><div class="uc-icon uc-icon-people"><i class="la la-users"></i></div></div>
           <div class="uc-body">
             <div class="uc-title">Members</div>
@@ -81,7 +100,7 @@
           <div class="uc-right"><span class="uc-action">Open</span></div>
         </a>
 
-        <a class="user-card" href="{% url 'accounts_list' %}">
+        <a class="user-card admin-card" href="{% url 'accounts_list' %}">
           <div class="uc-left"><div class="uc-icon uc-icon-user"><i class="la la-user"></i></div></div>
           <div class="uc-body">
             <div class="uc-title">Client Accounts</div>
@@ -90,7 +109,7 @@
           <div class="uc-right"><span class="uc-action">View</span></div>
         </a>
 
-        <a class="user-card" href="{% url 'document_list' %}">
+        <a class="user-card admin-card" href="{% url 'document_list' %}">
           <div class="uc-left"><div class="uc-icon uc-icon-docs"><i class="la la-file"></i></div></div>
           <div class="uc-body">
             <div class="uc-title">Documents</div>
@@ -99,16 +118,7 @@
           <div class="uc-right"><span class="uc-action">Open</span></div>
         </a>
 
-        <a class="user-card" href="{% url 'vehicle_list' %}">
-          <div class="uc-left"><div class="uc-icon uc-icon-car"><i class="la la-car"></i></div></div>
-          <div class="uc-body">
-            <div class="uc-title">Vehicles</div>
-            <div class="uc-sub">{{ vehicles_count|default:0 }} vehicles</div>
-          </div>
-          <div class="uc-right"><span class="uc-action">View</span></div>
-        </a>
-
-         <a class="user-card" href="{% url 'approve_documents' %}">
+        <a class="user-card admin-card" href="{% url 'approve_documents' %}">
           <div class="uc-left"><div class="uc-icon uc-icon-docs"><i class="la la-check-circle"></i></div></div>
           <div class="uc-body">
             <div class="uc-title">Approve Documents</div>
@@ -117,7 +127,7 @@
           <div class="uc-right"><span class="uc-action">Approve</span></div>
         </a>
 
-        <a class="user-card" href="{% url 'broadcast' %}">
+        <a class="user-card admin-card" href="{% url 'broadcast' %}">
           <div class="uc-left"><div class="uc-icon uc-icon-bell"><i class="la la-bell"></i></div></div>
           <div class="uc-body">
             <div class="uc-title">Announcements</div>
@@ -129,51 +139,109 @@
     </div>
   </div>
 
-  <!-- keep the existing Batch Overview section -->
-  <div class="mt-4">
-    <h2 class="h4 font-weight-bold mb-3">Batch Overview</h2>
-    <div class="row">
-      {% for batch in batch_cards %}
-      <div class="col-md-6 mb-4">
-        <div class="card shadow h-100">
-          <div class="card-header bg-light">
-            <h5 class="mb-0">Batch {{ batch.number }}</h5>
-          </div>
-          <ul class="list-group list-group-flush">
-            {% for member in batch.members %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-              <span class="font-weight-bold">{{ member.full_name }}</span>
-              <span class="badge badge-info">Expiry: {{ member.expiry_date }}</span>
+  <!-- Urgent renewals -->
+  <h3 class="mb-3 text-danger">⚠️ Urgent Renewals (0–15 Days Left)</h3>
+  <div class="card border-danger mb-4">
+    <div class="card-body">
+      {% if urgent_members %}
+        <ul class="list-group">
+          {% for m in urgent_members %}
+            <li class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <strong>{{ m.name }}</strong>
+                </div>
+                <div>
+                  <!-- show nearest urgent vehicle summary -->
+                  <span class="badge badge-danger">
+                    {{ m.vehicles|length }} vehicle{% if m.vehicles|length > 1 %}s{% endif %}
+                  </span>
+                </div>
+              </div>
+
+              <ul class="list-unstyled mt-2 mb-0">
+                {% for v in m.vehicles %}
+                  <li class="d-flex justify-content-between">
+                    <div>
+                      <small class="text-muted">{{ v.plate }}</small>
+                      {% if v.expiry_date %}
+                        <span class="ml-2">— <strong>{{ v.expiry_date }}</strong></span>
+                      {% else %}
+                        <span class="ml-2 text-muted">— N/A</span>
+                      {% endif %}
+                    </div>
+                    <div>
+                      {% if v.days_left is not None %}
+                        <span class="badge {% if v.status == 'urgent' %}badge-danger{% elif v.status == 'upcoming' %}badge-warning{% else %}badge-secondary{% endif %}">
+                          {{ v.days_left }}d
+                        </span>
+                      {% endif %}
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
             </li>
-            {% empty %}
-            <li class="list-group-item text-muted">No members in this batch.</li>
-            {% endfor %}
-          </ul>
-          <div class="card-footer bg-white d-flex justify-content-between align-items-center">
-            {% if batch.has_previous %}
-              <a href="?batch_{{ batch.id }}_page={{ batch.page_number|add:"-1" }}" class="btn btn-sm btn-outline-primary">Previous</a>
-            {% else %}
-              <span></span>
-            {% endif %}
-            <span class="small">Page {{ batch.page_number }} of {{ batch.num_pages }}</span>
-            {% if batch.has_next %}
-              <a href="?batch_{{ batch.id }}_page={{ batch.page_number|add:"1" }}" class="btn btn-sm btn-outline-primary">Next</a>
-            {% else %}
-              <span></span>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-      {% endfor %}
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted mb-0">No urgent renewals at the moment.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Upcoming renewals -->
+  <h3 class="mb-3 text-warning">🕒 Upcoming Renewals (30–60 Days Left)</h3>
+  <div class="card border-warning mb-4">
+    <div class="card-body">
+      {% if warning_members %}
+        <ul class="list-group">
+          {% for m in warning_members %}
+            <li class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start">
+                <div><strong>{{ m.name }}</strong></div>
+                <div><span class="badge badge-warning">{{ m.vehicles|length }} vehicle{% if m.vehicles|length > 1 %}s{% endif %}</span></div>
+              </div>
+              <ul class="list-unstyled mt-2 mb-0">
+                {% for v in m.vehicles %}
+                  <li class="d-flex justify-content-between">
+                    <div>
+                      <small class="text-muted">{{ v.plate }}</small>
+                      {% if v.expiry_date %}
+                        <span class="ml-2">— <strong>{{ v.expiry_date }}</strong></span>
+                      {% else %}
+                        <span class="ml-2 text-muted">— N/A</span>
+                      {% endif %}
+                    </div>
+                    <div>
+                      {% if v.days_left is not None %}
+                        <span class="badge badge-warning">{{ v.days_left }}d</span>
+                      {% endif %}
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted mb-0">No upcoming renewals within 30–60 days.</p>
+      {% endif %}
     </div>
   </div>
 </div>
+
 {% endblock %}
+
 {% block extra_js %}
 {{ block.super }}
-<!-- supply events as a global JS object, then load the calendar script -->
 <script>
   window.renewalEvents = {{ renewal_events_json|default:"{}"|safe }};
+  window.pendingCounts = {{ pending_counts_json|default:"{}"|safe }};
+  window.whiteboardLinks = {{ whiteboard_links_json|default:"{}"|safe }};
+  window.batchCards = {{ batch_cards_json|default:"[]"|safe }};
+  window._today_iso = "{% now 'Y-m-d' %}";
 </script>
 <script src="{% static 'js/calendar.js' %}"></script>
+<script src="{% static 'js/whiteboard.js' %}"></script>
+<script src="{% static 'js/batch_charts.js' %}"></script>
 {% endblock %}
