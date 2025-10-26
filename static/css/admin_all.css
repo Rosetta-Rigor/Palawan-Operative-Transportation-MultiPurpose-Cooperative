@@ -259,7 +259,7 @@
 }
 
 /* header text */
-.members-header-title { margin:0; font-size:1.4rem; font-weight:800; }
+.members-header-title { margin:0; font-size:1.8rem; font-weight:800; }
 .members-header-sub { margin:0; opacity:0.95; font-size:0.95rem; }
 
 /* search card gradient */
@@ -288,18 +288,42 @@
   background: linear-gradient(90deg, rgba(255,255,255,0.98), rgba(249,251,252,0.98));
 }
 
-/* action menu - open upwards */
+/* APPROVE DOCUMENT STYLE*/
+.approve-docs-card { max-width: 1100px; margin:28px auto; }
+.approve-docs-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.approve-docs-header h2 { margin:0; color:var(--brand-600); font-weight:800; }
+.approve-docs-header .btn { border-radius:10px; }
+
+.approve-table { background:var(--card-bg); border-radius:12px; box-shadow:var(--card-shadow); overflow:hidden; }
+.approve-table table { margin:0; border-collapse:collapse; width:100%; }
+.approve-table thead th { background: linear-gradient(90deg, rgba(247,250,252,1), rgba(255,255,255,1)); color:var(--brand-600); font-weight:700; padding:12px 14px; border-bottom:1px solid rgba(35,49,58,0.06); text-align:left; }
+.approve-table tbody tr { transition: background .12s, transform .12s; }
+.approve-table tbody tr:hover { background: linear-gradient(90deg, rgba(255,255,255,0.98), rgba(249,251,252,0.98)); transform: translateY(-3px); box-shadow:0 10px 24px rgba(20,32,44,0.04); }
+.approve-table td { padding:12px 14px; vertical-align:middle; color:#2b2b2b; }
+
+.approve-actions { display:flex; gap:8px; align-items:center; justify-content:flex-end; }
+.approve-actions .btn { min-width:100px; border-radius:8px; font-weight:700; color:#fff; }
+.approve-actions .btn-approve { background:var(--success); box-shadow: 0 8px 20px rgba(45,138,99,0.07); }
+.approve-actions .btn-reject { background:var(--danger); box-shadow: 0 8px 20px rgba(214,69,69,0.06); }
+
+.small-note { font-size:0.88rem; color:var(--muted-2); margin-top:6px; }
+
+.approve-filter .select2-container { width: 320px !important; max-width: 40%; }
+@media (max-width:780px) {
+  .approve-docs-header { flex-direction:column; align-items:stretch; gap:8px; }
+  .approve-filter .select2-container { width:100% !important; max-width:100%; }
+}
+
 .action-container { position: relative; }
 .action-toggle { width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid rgba(20,32,44,0.04); background:#fff; padding:6px; }
 .action-toggle svg { color: var(--muted); }
 
-/* default menu hidden (positioned above the button) */
 .action-menu {
   position: absolute;
   right: 0;
-  bottom: 44px;        /* opens upward */
+  bottom: 44px;        
   top: auto;
-  min-width:100px;
+  min-width:110px;
   background:#fff;
   border-radius:8px;
   padding:6px 0;
@@ -314,7 +338,7 @@
 }
 .action-menu.open { display:block; opacity:1; transform: translateY(0); }
 
-/* add a small caret on the menu pointing downwards */
+/* DROPDOWN */
 .action-menu::after {
   content: "";
   position: absolute;
@@ -328,18 +352,17 @@
   filter: drop-shadow(0 -1px 0 rgba(0,0,0,0.02));
 }
 
-/* menu items */
 .action-menu .action-item {
   display:block;
   padding:8px 12px;
   color:#23313a;
+  text-align:center;
   text-decoration:none;
   font-size:0.95rem;
 }
 .action-menu .action-item:hover { background: rgba(59,107,143,0.05); color: var(--brand-600); }
 .action-menu .action-item.text-danger:hover { background: rgba(214,69,69,0.04); color: var(--danger); }
 
-/* Ensure pagination active state is visible and clickable */
 .pagination .page-item .page-link { color: var(--brand-600); border-radius:6px; }
 .pagination .page-item:hover .page-link { background: rgba(59,107,143,0.06); }
 .pagination .page-item.active .page-link {
@@ -349,7 +372,147 @@
   box-shadow: 0 6px 18px rgba(44,88,119,0.12);
 }
 
-/* small screens: make pagination wrap nicely */
+/* responsive - pagination */
 @media (max-width: 480px) {
   .pagination { flex-wrap:wrap; gap:6px; }
+}
+
+.inline-actions {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.inline-actions form { margin: 0; display: inline-block; }
+
+.action-btn {
+  width: 90px;               
+  min-width: 80px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: none;
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(10,25,41,0.06);
+}
+
+.action-btn.edit { background: var(--brand-600); }
+.action-btn.deactivate { background: var(--danger); }
+.action-btn.activate { background: var(--success); }
+
+.action-btn:hover { filter: brightness(0.98); }
+
+@media (max-width: 520px) {
+  .action-btn { width: 88px; min-width: 88px; font-size:0.85rem; }
+}
+
+/* Approve-docs: compact stacked action column */
+.approve-table td .approve-row-form { padding:0; margin:0; }
+.approve-table .manager-notes { font-size:0.86rem; line-height:1.2; }
+
+/* constrain action column */
+.approve-table td { vertical-align:middle; }
+.approve-table td .approve-row-form > div { width:150px; max-width:150px; }
+
+/* compact circular-ish action buttons */
+.approve-btn, .reject-btn {
+  width:44px;
+  height:36px;
+  border-radius:8px;
+  border:0;
+  color:#fff;
+  font-weight:800;
+  font-size:1.05rem;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  box-shadow: 0 8px 20px rgba(10,25,41,0.06);
+}
+
+/* approve (green) and reject (red) */
+.approve-btn { background: var(--success); }
+.reject-btn { background: var(--danger); }
+
+/* hover / focus */
+.approve-btn:hover, .reject-btn:hover { filter: brightness(0.96); outline: none; }
+.approve-btn:focus, .reject-btn:focus { box-shadow: 0 10px 26px rgba(10,25,41,0.10); }
+
+/* keep manager-notes and actions compact on small screens */
+@media (max-width:640px){
+  .approve-table td .approve-row-form > div { width:140px; max-width:140px; }
+  .approve-btn, .reject-btn { width:40px; height:34px; font-size:0.95rem; }
+}
+
+
+
+/* Batch table header gradient (reuses approve-docs style look) */
+.batch-table thead th {
+  background: linear-gradient(90deg, rgba(247,250,252,1), rgba(255,255,255,1));
+  color: var(--brand-600);
+  font-weight:700;
+  padding:12px 14px;
+  border-bottom:1px solid rgba(35,49,58,0.06);
+  text-align:left;
+}
+
+/* Back button (circle) inside gradient header */
+.back-btn {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  background: rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.06);
+  color:#fff;
+  text-decoration:none;
+  box-shadow: none;
+  transition: transform .12s, background .12s;
+}
+.back-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.16); }
+
+/* Ensure search-card inside header contrasts nicely on the gradient */
+.members-header .search-card {
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 6px 18px rgba(20,32,44,0.04);
+}
+
+/* Make batch-select visually consistent */
+#batchSelect.form-control { border-radius:8px; padding:8px 10px; border:1px solid rgba(44,88,119,0.06); }
+
+/* Small responsive tweaks */
+@media (max-width: 767px) {
+  .members-header { padding:12px; }
+  .members-header .members-header-title { font-size:1.15rem; }
+  .members-header .search-card { margin-top:8px; }
+  .back-btn { width:40px; height:40px; }
+}
+
+/* BOOTSTRAP UNDERLINE REMOVAL */
+.admin-dashboard a.user-card,
+.admin-dashboard .user-card.admin-card,
+.admin-dashboard .user-card.admin-card:focus,
+.admin-dashboard .user-card.admin-card:active,
+.admin-dashboard .admin-card a {
+  text-decoration: none !important;
+  color: inherit !important;
+  outline: none !important;
+}
+.admin-dashboard a.user-card:hover,
+.admin-dashboard .user-card.admin-card:hover,
+.admin-dashboard .batch-card a:hover,
+.admin-dashboard .admin-card a:hover {
+  text-decoration: none !important;
+  color: inherit !important;
 }

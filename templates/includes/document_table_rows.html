@@ -1,28 +1,33 @@
 {% for doc in object_list %}
 <tr>
-    <td>{{ doc.tin }}</td>
-    <td>{% if doc.vehicle %}{{ doc.vehicle.plate_number }}{% else %}N/A{% endif %}</td>
-    <td>
-        {% if doc.vehicle and doc.vehicle.member %}
-            {{ doc.vehicle.member.full_name }}
-        {% else %}
-            N/A
-        {% endif %}
-    </td>
-    <td>
-        {% if doc.entries.last %}
-            {{ doc.entries.last.renewal_date }}
-        {% else %}
-            N/A
-        {% endif %}
-    </td>
-    <td>
-        <a href="{% url 'document_detail' doc.pk %}" class="btn btn-sm btn-info">View</a>
-        <a href="{% url 'document_entry_add' doc.pk %}" class="btn btn-sm btn-warning">Renew</a>
-        <a href="{% url 'document_edit' doc.pk %}" class="btn btn-sm btn-warning">Edit</a>
-        <a href="{% url 'document_delete' doc.pk %}" class="btn btn-sm btn-danger">Delete</a>
-    </td>
+  <td>{{ doc.tin }}</td>
+  <td>{% if doc.vehicle %}{{ doc.vehicle.plate_number }}{% else %}N/A{% endif %}</td>
+  <td>{% if doc.vehicle and doc.vehicle.member %}{{ doc.vehicle.member.full_name }}{% else %}N/A{% endif %}</td>
+  <td>
+    {% if doc.latest_approved_renewal %}
+      {{ doc.latest_approved_renewal|date:"Y-m-d" }}
+    {% else %}
+      N/A
+    {% endif %}
+  </td>
+  <td class="text-right">
+    <div class="action-container d-inline-block">
+      <button class="btn btn-sm btn-light action-toggle" aria-haspopup="true" aria-expanded="false" title="Actions">
+        <svg width="14" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="5" r="2"></circle>
+          <circle cx="12" cy="12" r="2"></circle>
+          <circle cx="12" cy="19" r="2"></circle>
+        </svg>
+      </button>
+      <div class="action-menu shadow-sm" role="menu" aria-hidden="true">
+        <a href="{% url 'document_detail' doc.pk %}" class="action-item" role="menuitem">View</a>
+        <a href="{% url 'document_entry_add' doc.pk %}" class="action-item" role="menuitem">Renew</a>
+        <a href="{% url 'document_edit' doc.pk %}" class="action-item" role="menuitem">Edit</a>
+        <a href="{% url 'document_delete' doc.pk %}" class="action-item text-danger" role="menuitem">Delete</a>
+      </div>
+    </div>
+  </td>
 </tr>
 {% empty %}
-<tr><td colspan="5">No documents found.</td></tr>
+<tr><td colspan="5" class="text-muted">No documents found.</td></tr>
 {% endfor %}

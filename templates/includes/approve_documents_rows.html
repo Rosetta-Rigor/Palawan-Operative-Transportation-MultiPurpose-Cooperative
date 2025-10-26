@@ -1,0 +1,56 @@
+{% for entry in documents %}
+{% if entry.status == "pending" and entry.uploaded_by %}
+<tr>
+  <td>{{ entry.document.tin }}</td>
+  <td>{% if entry.document.vehicle %}{{ entry.document.vehicle.plate_number }}{% else %}N/A{% endif %}</td>
+  <td>{% if entry.document.vehicle and entry.document.vehicle.member %}{{ entry.document.vehicle.member.full_name }}{% else %}N/A{% endif %}</td>
+  <td>{{ entry.uploaded_by.get_username }}</td>
+  <td>
+    {% if entry.created_at %}
+      {{ entry.created_at|date:"Y-m-d H:i" }}
+    {% elif entry.approved_at %}
+      {{ entry.approved_at|date:"Y-m-d H:i" }}
+    {% else %}
+      N/A
+    {% endif %}
+  </td>
+  <td>
+    {% if entry.official_receipt %}
+      <a class="btn btn-sm btn-outline-primary mb-1" href="{{ entry.official_receipt.url }}" target="_blank" rel="noopener">View OR</a>
+    {% endif %}
+    {% if entry.certificate_of_registration %}
+      <a class="btn btn-sm btn-outline-secondary mb-1" href="{{ entry.certificate_of_registration.url }}" target="_blank" rel="noopener">View CR</a>
+    {% endif %}
+    {% if not entry.official_receipt and not entry.certificate_of_registration %}
+      <span class="text-muted small">No files</span>
+    {% endif %}
+  </td>
+
+  <td class="text-right" style="width:150px; max-width:150px; vertical-align:middle;">
+    <form method="post" class="approve-row-form" style="display:flex;flex-direction:column;gap:6px;align-items:stretch;">
+      {% csrf_token %}
+      <input type="text" name="manager_notes" class="manager-notes" placeholder="Note (optional)" maxlength="140" style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid rgba(0,0,0,0.06);font-size:0.86rem;">
+
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button type="submit"
+                formaction="{% url 'approve_document' entry.id %}"
+                class="approve-btn"
+                title="Approve">
+          ✓
+        </button>
+
+        <button type="submit"
+                formaction="{% url 'reject_document' entry.id %}"
+                class="reject-btn"
+                title="Reject">
+          ✕
+        </button>
+      </div>
+    </form>
+  </td>
+</tr>
+{% endif %}
+{% endfor %}
+{% if not documents %}
+<tr><td colspan="7" class="text-muted">No pending uploads.</td></tr>
+{% endif %}

@@ -98,6 +98,7 @@ class DocumentEntry(models.Model):
     renewal_date = models.DateField()
     official_receipt = models.ImageField(upload_to=or_upload_path)
     certificate_of_registration = models.ImageField(upload_to=cr_upload_path)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     status = models.CharField(
         max_length=20,
         choices=(("pending", "Pending"), ("approved", "Approved"), ("rejected", "Rejected")),

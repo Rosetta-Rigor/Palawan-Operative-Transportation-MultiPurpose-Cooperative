@@ -45,9 +45,10 @@
       {% endfor %}
 {% endif %}
 
-<form method="post" enctype="multipart/form-data" action="{% url 'user_upload_document' %}">
+<form id="user-upload-form" method="post" enctype="multipart/form-data" action="{% url 'user_upload_document' %}">
         {% csrf_token %}
         {{ form.non_field_errors }}
+        <input type="hidden" id="uploaded-at" name="uploaded_at" value="">
 
         <div class="form-group mb-3">
             {{ form.renewal_date.label_tag }}
@@ -70,5 +71,17 @@
         <button type="submit" class="btn btn-primary">Upload</button>
         <a href="{% url 'user_documents' %}" class="btn btn-secondary">Cancel</a>
     </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var form = document.getElementById('user-upload-form');
+  if (!form) return;
+  form.addEventListener('submit', function(){
+    var nowIso = new Date().toISOString();
+    var el = document.getElementById('uploaded-at');
+    if (el) el.value = nowIso;
+  });
+});
+</script>
 </div>
 {% endblock %}

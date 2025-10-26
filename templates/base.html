@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900">
     <link rel="stylesheet" href="{% static 'css/ready.css' %}">
-    <link rel="stylesheet" href="{% static 'css/demo.css' %}">
     <link rel="stylesheet" href="{% static 'css/user_custom.css' %}">
     <link rel="stylesheet" href="{% static 'css/admin_all.css' %}">
 
@@ -45,17 +44,20 @@
 
     <div class="wrapper">
         <!-- HEADER -->
-        <div class="main-header">
-            <div class="logo-header">
-                <a href="{% url 'home' %}" class="logo">
-                    POTMPC ADMIN
-                </a>
-                <button class="navbar-toggler sidenav-toggler ml-auto" type="button" data-toggle="collapse" data-target="collapse" aria-controls="sidebar" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <button class="topbar-toggler more"><i class="la la-ellipsis-v"></i></button>
-            </div>
-        </div>
+            <div class="main-header">
+				<div class="logo-header d-flex align-items-center justify-content-between" style="display: flex; align-items: center; justify-content: space-between;">
+					<a href="{% url 'home' %}" class="logo" style="flex: 1 0 auto; display: flex; align-items: center; gap: 12px;">
+						<img src="{% static 'img/home.png' %}" alt="Logo" style="height:40px; width:auto;">
+						POTMPC ADMIN
+					</a>
+					<div class="d-flex align-items-center" style="gap: 16px;">
+						<button class="navbar-toggler sidenav-toggler ml-auto" type="button" data-toggle="collapse" data-target="collapse" aria-controls="sidebar" aria-expanded="false" aria-label="Toggle navigation">
+							<span class="navbar-toggler-icon"></span>
+						</button>
+						<button class="topbar-toggler more"><i class="la la-ellipsis-v"></i></button>
+					</div>
+				</div>
+			</div>
 
         <!-- SIDEBAR - styled with user_custom.css, admin links preserved -->
         {% with current=request.resolver_match.url_name %}
@@ -68,7 +70,7 @@
                     </a>
                 </div>
 
-                <!-- Members dropdown: parent no longer gets active by default -->
+                
                 <div class="nav-item has-submenu">
                     <a class="nav-link {% if request.resolver_match.url_name == 'member_list' or request.resolver_match.url_name == 'vehicle_list' or request.resolver_match.url_name == 'document_list' %}open{% endif %}"
                        href="javascript:void(0);"

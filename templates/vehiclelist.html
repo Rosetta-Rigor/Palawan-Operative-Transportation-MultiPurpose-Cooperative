@@ -1,78 +1,132 @@
 {% extends 'base.html' %}
 {% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_all.css' %}">
+{% endblock %}
 {% block content %}
-<div class="content">
-    <div class="container-fluid">
-        <h4 class="page-title">Vehicles</h4>
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">List of Vehicles</div>
-                        <div class="card-category">Page Subtitle</div>
-                    </div>
-                    <br />
-                    <div class="col-md-12 row">
-                        <div class="col-md-6">
-                            <form class="navbar-left navbar-form nav-search mr-md-3" action="{% url 'vehicle_list' %}">
-                                <div class="input-group">
-                                    <input type="text" id="vehicle-search" placeholder="Search ..." class="form-control" name="q" autocomplete="off" />
-                                    <div class="input-group-append">
-                                        <span class="input-group-text">
-                                            <i class="la la-search search-icon"></i>
-                                        </span>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="pull-right">
-                                <a href="{% url 'vehicle_add' %}" class="btn btn-success btn-rounded"> Add Vehicle</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div id="vehicle-table-container">
-                            <table class="table table-striped mt-3">
-                                <thead>
-                                    <tr>
-                                        <th>Plate Number</th>
-                                        <th>Engine Number</th>
-                                        <th>Chassis Number</th>
-                                        <th>Make/Brand</th>
-                                        <th>Series</th>
-                                        <th>Color</th>
-                                        <th>Owner</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="vehicle-table-body">
-                                    {% include 'includes/vehicle_table_rows.html' %}
-                                </tbody>
-                            </table>
-                            {% include 'includes/pagination.html' %}
-                        </div>
-                    </div>
-                </div>
-            </div>
+<br><br>
+<div class="container py-4">
+  <!-- Header re-used from memberlist styles -->
+  <div class="members-header card-header-gradient mb-4 d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="members-header-title">VEHICLES</h1>
+      <p class="members-header-sub">List of cooperative vehicles and owners</p>
+    </div>
+    <div class="d-flex align-items-center">
+      <div class="btn-group">
+        <a href="{% url 'vehicle_add' %}" class="btn btn-success">Add Vehicle</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <form action="{% url 'vehicle_list' %}">
+        <div class="search-card p-3 d-flex align-items-center">
+          <input type="text" id="vehicle-search" name="q" class="form-control form-control-lg search-input" placeholder="Search plates, owner, make..." autocomplete="off" value="{{ q|default:'' }}">
+          <button type="button" class="btn btn-light ml-2" id="vehicle-search-clear" title="Clear"><i class="la la-times"></i></button>
+          <button type="submit" class="btn btn-primary ml-2"><i class="la la-search"></i></button>
         </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card admin-card material-table">
+    <div class="card-body p-0">
+      <div id="vehicle-table-container">
+        <table class="table table-striped table-hover mb-0">
+          <thead class="table-head">
+            <tr>
+              <th>Plate Number</th>
+              <th>Engine Number</th>
+              <th>Chassis Number</th>
+              <th>Make/Brand</th>
+              <th>Series</th>
+              <th>Color</th>
+              <th>Owner</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="vehicle-table-body" class="material-rows">
+            {% include 'includes/vehicle_table_rows.html' %}
+          </tbody>
+        </table>
+
+       
+      </div>
+    </div>
+  </div>
+   <div id="pagination-container" class="mt-3">
+          {% include 'includes/pagination.html' %}
     </div>
 </div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(function() {
-    $('#vehicle-search').on('input', function() {
-        var query = $(this).val();
-        $.ajax({
-            url: "{% url 'vehicle_list' %}",
-            data: { q: query },
-            dataType: 'json',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            success: function(data) {
-                $('#vehicle-table-body').html(data.html);
-            }
-        });
+  function debounce(fn, delay) {
+    var timer = null;
+    return function() {
+      var context = this, args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function() { fn.apply(context, args); }, delay);
+    };
+  }
+
+  function fetchVehicles(params) {
+    params = params || {};
+    $.ajax({
+      url: "{% url 'vehicle_list' %}",
+      data: params,
+      dataType: 'json',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      success: function(data) {
+        if (data.html !== undefined) $('#vehicle-table-body').html(data.html);
+        if (data.pagination_html !== undefined) $('#pagination-container').html(data.pagination_html);
+        bindActionMenus();
+      }
     });
+  }
+
+  var debouncedFetch = debounce(function() { fetchVehicles({ q: $('#vehicle-search').val() }); }, 300);
+  $('#vehicle-search').on('input', debouncedFetch);
+
+  $('#vehicle-search-clear').on('click', function() {
+    $('#vehicle-search').val('');
+    fetchVehicles({ q: '' });
+  });
+
+  // Prefer full page refresh for pagination to avoid CSS/JS conflicts (as with memberlist)
+  $(document).off('click.vehiclePagination');
+  $(document).on('click.vehiclePagination', '#pagination-container .pagination a.page-link', function(e){
+    // allow default navigation (full page refresh)
+  });
+
+  function bindActionMenus() {
+    $('.action-toggle').off('click').on('click', function(e){
+      e.preventDefault();
+      var $btn = $(this);
+      var $container = $btn.closest('.action-container');
+      var $menu = $container.find('.action-menu');
+      $('.action-menu').not($menu).removeClass('open').attr('aria-hidden','true');
+      $menu.toggleClass('open');
+      $menu.attr('aria-hidden', !$menu.hasClass('open'));
+      if ($menu.hasClass('open')) {
+        var menuRect = $menu[0].getBoundingClientRect();
+        if (menuRect.top < 8) { $menu.css({ bottom: 'auto', top: '44px' }); }
+        else { $menu.css({ bottom: '44px', top: 'auto' }); }
+      } else { $menu.css({ bottom: '', top: '' }); }
+    });
+
+    $(document).off('click.actionMenu').on('click.actionMenu', function(e){
+      if (!$(e.target).closest('.action-container').length) $('.action-menu.open').removeClass('open').attr('aria-hidden','true');
+    });
+    $(document).off('keydown.actionMenu').on('keydown.actionMenu', function(e){
+      if (e.key === 'Escape') $('.action-menu.open').removeClass('open').attr('aria-hidden','true');
+    });
+  }
+
+  bindActionMenus();
 });
 </script>
 {% endblock %}

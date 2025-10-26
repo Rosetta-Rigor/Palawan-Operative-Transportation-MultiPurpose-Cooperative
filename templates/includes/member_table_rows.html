@@ -12,7 +12,7 @@
             {% if plates %}
                 <ul class="list-unstyled mb-0 small">
                 {% for v in plates %}
-                    <li>{{ v.plate_number }}{% if v.make_brand %} • <small class="text-muted">{{ v.make_brand }}</small>{% endif %}</li>
+                    <li>{{ v.plate_number }}</li>
                 {% endfor %}
                 </ul>
             {% else %}

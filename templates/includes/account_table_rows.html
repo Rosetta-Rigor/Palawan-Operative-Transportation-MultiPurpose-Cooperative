@@ -1,46 +1,44 @@
 {% for user in users %}
-<tr>
-    <td>{{ user.username }}</td>
-    <td>{{ user.full_name }}</td>
-    <td>{{ user.email }}</td>
-    <td>{{ user.phone_number }}</td>
-    <td>{{ user.role|title }}</td>
-    <td>
-        {% if user.member_profile %}
-            {{ user.member_profile.full_name }}
-        {% else %}
-            N/A
-        {% endif %}
-    </td>
-    <td>
-        {% if user.id_image %}
-            <a href="{{ user.id_image.url }}" target="_blank">
-                <img src="{{ user.id_image.url }}" alt="ID Image" style="max-width:80px;max-height:80px;">
-            </a>
-        {% else %}
-            <span class="text-muted">No ID</span>
-        {% endif %}
-    </td>
-    <td>
-        {# Actions only allowed for client accounts (defensive check) #}
-        {% if user.role|lower == 'client' %}
-            {% if user.is_active %}
-                <form method="post" action="{% url 'deactivate_account' user.id %}" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-warning btn-sm">Deactivate</button>
-                </form>
-            {% else %}
-                <form method="post" action="{% url 'activate_account' user.id %}" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-success btn-sm">Activate</button>
-                </form>
-            {% endif %}
-            <a href="{% url 'edit_account' user.id %}" class="btn btn-primary btn-sm">Edit</a>
-        {% else %}
-            <span class="text-muted">Restricted</span>
-        {% endif %}
-    </td>
+<tr class="material-row">
+  <td>{{ user.username }}</td>
+  <td>{{ user.full_name|default:"-" }}</td>
+  <td>{{ user.email|default:"-" }}</td>
+  <td>{{ user.phone_number|default:"-" }}</td>
+  <td>{{ user.role|title|default:"-" }}</td>
+  <td>
+    {% if user.member_profile %}
+      {{ user.member_profile.full_name }}
+    {% else %}
+      N/A
+    {% endif %}
+  </td>
+  <td>
+    {% if user.id_image %}
+      <a href="{{ user.id_image.url }}" target="_blank">
+        <img src="{{ user.id_image.url }}" alt="ID Image" style="height:36px;border-radius:4px;">
+      </a>
+    {% else %}
+      <span class="text-muted small">No ID</span>
+    {% endif %}
+  </td>
+  <td class="text-center">
+    <div class="inline-actions" style="justify-content:center;">
+      <a href="{% url 'edit_account' user.pk %}" class="action-btn edit" role="button">Edit</a>
+
+      {% if user.is_active %}
+        <form method="post" action="{% url 'deactivate_account' user.pk %}" onsubmit="return confirm('Deactivate this account?');" style="display:inline-block;margin:0;">
+          {% csrf_token %}
+          <button type="submit" class="action-btn deactivate">Deactivate</button>
+        </form>
+      {% else %}
+        <form method="post" action="{% url 'activate_account' user.pk %}" style="display:inline-block;margin:0;">
+          {% csrf_token %}
+          <button type="submit" class="action-btn activate">Activate</button>
+        </form>
+      {% endif %}
+    </div>
+  </td>
 </tr>
 {% empty %}
-<tr><td colspan="8" class="text-center">No accounts found.</td></tr>
+<tr><td colspan="8" class="text-center text-muted">No accounts found.</td></tr>
 {% endfor %}

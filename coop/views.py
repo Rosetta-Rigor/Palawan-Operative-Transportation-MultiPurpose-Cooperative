@@ -348,12 +348,36 @@ from .models import DocumentEntry
 
 @staff_member_required
 def approve_documents(request):
-    # Only show entries submitted by users and pending
-    documents = DocumentEntry.objects.filter(
-        status="pending",
-        uploaded_by__isnull=False
-    ).select_related("document", "document__vehicle", "document__vehicle__member", "uploaded_by").order_by("-id")
-    return render(request, "approve_documents.html", {"documents": documents})
+    q_member = request.GET.get('member') or ''
+    page = request.GET.get('page', 1)
+
+    # Only show pending entries uploaded by users (exclude manager-created entries)
+    qs = DocumentEntry.objects.filter(status='pending', uploaded_by__isnull=False) \
+        .select_related('document__vehicle__member', 'uploaded_by') \
+        .order_by('-id')
+
+    if q_member:
+        qs = qs.filter(
+            Q(document__vehicle__member__id=q_member) |
+            Q(document__vehicle__member__full_name__icontains=q_member)
+        )
+
+    paginator = Paginator(qs, 10)
+    page_obj = paginator.get_page(page)
+
+    context = {
+        'documents': list(page_obj.object_list),
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'is_paginated': page_obj.has_other_pages(),
+    }
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string('includes/approve_documents_rows.html', context, request=request)
+        pagination_html = render_to_string('includes/pagination.html', context, request=request)
+        return JsonResponse({'html': html, 'pagination_html': pagination_html})
+
+    return render(request, 'approve_documents.html', context)
 
 @staff_member_required
 @require_POST
@@ -388,9 +412,30 @@ def user_upload_document(request):
     User view to upload a document (placeholder logic).
     """
     if request.method == "POST":
-        # In real app, save uploaded file and details
-        pass
-    return render(request, "user_upload_document.html")
+        form = DocumentEntryForm(request.POST, request.FILES)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            entry.document = document
+            entry.uploaded_by = user
+            entry.status = "pending"
+
+            # apply client-side timestamp if provided (ISO 8601)
+            uploaded_at_str = request.POST.get('uploaded_at')
+            if uploaded_at_str:
+                from django.utils.dateparse import parse_datetime
+                dt = parse_datetime(uploaded_at_str)
+                if dt:
+                    # make aware if naive
+                    from django.utils import timezone as dj_tz
+                    if dj_tz.is_naive(dt):
+                        dt = dj_tz.make_aware(dt, dj_tz.get_current_timezone())
+                    entry.created_at = dt
+
+            entry.save()
+            messages.success(request, "Document uploaded successfully and is pending manager approval.")
+            return redirect("user_upload_document")
+        else:
+            messages.error(request, "Please fix the errors below.")
 
 # ==== Broadcast View ====
 from django.contrib.admin.views.decorators import staff_member_required
@@ -838,29 +883,43 @@ from .models import User
 
 def accounts_list(request):
     q = (request.GET.get("q") or "").strip()
-    users = User.objects.all()
+    status = (request.GET.get("status") or "all").strip().lower()  # 'all' | 'activated' | 'pending'
+    users_qs = User.objects.filter(role__iexact='client')
+
+    # status filter
+    if status == 'activated':
+        users_qs = users_qs.filter(is_active=True)
+    elif status == 'pending':
+        users_qs = users_qs.filter(is_active=False)
+    # Always order activated users first, then by username
+    users_qs = users_qs.order_by('-is_active', 'username')
+
     if q:
-        users = users.filter(
-            Q(username__icontains=q) |
-            Q(full_name__icontains=q) |
-            Q(email__icontains=q) |
-            Q(phone_number__icontains=q) |
-            Q(role__icontains=q)
-        )
-    users = User.objects.filter(role__iexact='client')
-    if q:
-        users = users.filter(
+        users_qs = users_qs.filter(
             Q(username__icontains=q) |
             Q(full_name__icontains=q) |
             Q(email__icontains=q) |
             Q(phone_number__icontains=q)
         )
-    members = Member.objects.all()
-    available_members = Member.objects.filter(user_account__isnull=True)
-    context = {'users': users, 'members': members, 'available_members': available_members}
+
+    paginator = Paginator(users_qs, 10)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'users': list(page_obj.object_list),
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'is_paginated': page_obj.has_other_pages(),
+        'q': q,
+        'status': status,
+    }
+
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         html = render_to_string('includes/account_table_rows.html', context, request=request)
-        return JsonResponse({'html': html})
+        pagination_html = render_to_string('includes/pagination.html', context, request=request)
+        return JsonResponse({'html': html, 'pagination_html': pagination_html})
+
     return render(request, 'accounts.html', context)
 
 @require_POST
