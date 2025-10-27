@@ -1,46 +1,37 @@
 {% extends 'base.html' %}
+
+{% block title %}Payments for {{ year.year }}{% endblock %}
+
 {% block content %}
 <div class="container py-4">
-  <h2>Payments for {{ year.year }}</h2>
-  <a href="{% url 'add_payment_type' year.id %}" class="btn btn-success mb-3">Add Payment Type</a>
-  <a href="{% url 'add_payment_entry' year.id %}" class="btn btn-primary mb-3">Add Payment Entry</a>
-  <div class="table-responsive">
-    <table class="table table-bordered">
-      <thead>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Payments for {{ year.year }}</h2>
+    <a href="{% url 'add_payment_type' year.id %}" class="btn btn-primary">Add Payment Type</a>
+  </div>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Name</th>
+        {% for month in months %}
+          <th>{{ month }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for payment_type in payment_types %}
         <tr>
-          <th>Payment Type</th>
-          {% for m in months %}
-            <th>{{ m|date:"F" }}</th>
+          <td>{{ payment_type.name }}</td>
+          {% for month in months %}
+            <td>-</td>
           {% endfor %}
         </tr>
-      </thead>
-      <tbody>
-        {% for row in table %}
-          <tr>
-            <td>{{ row.type.name }} <span class="badge badge-info">{{ row.type.get_type_display }}</span></td>
-            {% for entries in row.entries %}
-              <td>
-                {% if entries %}
-                  {% for entry in entries %}
-                    <div>
-                      {% if entry.member %}
-                        <strong>{{ entry.member.full_name }}</strong>:
-                      {% endif %}
-                      ₱{{ entry.amount }}<br>
-                      <small>{{ entry.date_recorded|date:"Y-m-d" }}</small>
-                    </div>
-                  {% endfor %}
-                {% else %}
-                  <span class="text-muted">—</span>
-                {% endif %}
-              </td>
-            {% endfor %}
-          </tr>
-        {% empty %}
-          <tr><td colspan="13">No payment types for this year.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+      {% empty %}
+        <tr>
+          <td colspan="13" class="text-center">No payment types found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endblock %}

@@ -75,8 +75,8 @@ urlpatterns = [
     path('user/vehicles/', views.user_vehicles, name='user_vehicles'),
     path('payments/', views.payment_year_list, name='payment_year_list'),
     path('payments/<int:year_id>/', views.payment_year_detail, name='payment_year_detail'),
-    path('payments/<int:year_id>/add_type/', views.add_payment_type, name='add_payment_type'),
-    path('payments/<int:year_id>/add_entry/', views.add_payment_entry, name='add_payment_entry'),
+    path('payments/<int:year_id>/add-type/', views.add_payment_type, name='add_payment_type'),
+    path('payments/<int:year_id>/add-entry/', views.add_payment_entry, name='add_payment_entry'),
 ]
 
 

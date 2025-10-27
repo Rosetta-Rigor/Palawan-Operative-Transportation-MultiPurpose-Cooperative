@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import User, Member, Vehicle, Batch, Document, DocumentEntry, Announcement, PaymentType, PaymentEntry
+from .models import User, Member, Vehicle, Batch, Document, DocumentEntry, Announcement, PaymentType, PaymentEntry, PaymentYear
 
 User = get_user_model()
 
@@ -122,12 +122,48 @@ class AnnouncementForm(forms.ModelForm):
         UserModel = get_user_model()
         self.fields['recipients'].queryset = UserModel.objects.filter(role__iexact='client')
 
+       
+from .models import PaymentYear, PaymentType, PaymentEntry
+
+class PaymentYearForm(forms.ModelForm):
+    class Meta:
+        model = PaymentYear
+        fields = ['year']
+        widgets = {
+            'year': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter year (e.g., 2025)'}),
+        }
+        labels = {
+            'year': 'Year',
+        }
+
+
 class PaymentTypeForm(forms.ModelForm):
     class Meta:
         model = PaymentType
-        fields = ['name', 'type', 'year']
+        fields = ['name', 'payment_type']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter payment type name'}),
+            'payment_type': forms.Select(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'name': 'Payment Type Name',
+            'payment_type': 'Type of Payment',
+        }
+
 
 class PaymentEntryForm(forms.ModelForm):
     class Meta:
         model = PaymentEntry
-        fields = ['payment_type', 'member', 'month', 'amount']
+        fields = ['payment_type', 'member', 'month', 'amount_paid']
+        widgets = {
+            'payment_type': forms.Select(attrs={'class': 'form-control'}),
+            'member': forms.Select(attrs={'class': 'form-control'}),
+            'month': forms.Select(attrs={'class': 'form-control'}),
+            'amount_paid': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter amount'}),
+        }
+        labels = {
+            'payment_type': 'Payment Type',
+            'member': 'Member',
+            'month': 'Month',
+            'amount_paid': 'Amount Paid',
+        }
