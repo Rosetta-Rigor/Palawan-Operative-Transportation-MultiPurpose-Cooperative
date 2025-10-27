@@ -1584,6 +1584,7 @@ def batch_detail(request, pk):
 
     return render(request, 'batch_detail.html', context)
 
+<<<<<<< HEAD
 def qr_login_view(request, token):
     """
     Visit /qr-login/<token>/ to log in.
@@ -1667,3 +1668,69 @@ def qr_image_login(request):
 
 def qr_scan_page(request):
     return render(request, 'qr_login.html')
+=======
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from .models import PaymentYear, PaymentType, PaymentEntry, Member
+from .forms import PaymentYearForm, PaymentTypeForm, PaymentEntryForm
+
+@login_required
+def payment_year_list(request):
+    years = PaymentYear.objects.order_by('-year')
+    return render(request, 'payments/year_list.html', {'years': years})
+
+
+@login_required
+def payment_year_detail(request, year_id):
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    payment_types = year.payment_types.all()
+    months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    return render(request, 'payments/year_detail.html', {
+        'year': year,
+        'payment_types': payment_types,
+        'months': months,
+    })
+
+
+@login_required
+def add_payment_type(request, year_id):
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    if request.method == 'POST':
+        form = PaymentTypeForm(request.POST)
+        if form.is_valid():
+            payment_type = form.save(commit=False)
+            payment_type.year = year
+            payment_type.save()
+            return redirect('payment_year_detail', year_id=year.id)
+    else:
+        form = PaymentTypeForm()
+    return render(request, 'payments/add_payment_type.html', {'form': form, 'year': year})
+
+
+@login_required
+def add_payment_entry(request, year_id):
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    if request.method == 'POST':
+        form = PaymentEntryForm(request.POST)
+        if form.is_valid():
+            payment_entry = form.save(commit=False)
+            payment_entry.recorded_by = request.user
+            payment_entry.save()
+            return redirect('payment_year_detail', year_id=year.id)
+    else:
+        form = PaymentEntryForm()
+    return render(request, 'payments/add_payment_entry.html', {'form': form, 'year': year})
+
+from .forms import PaymentYearForm
+
+@login_required
+def add_payment_year(request):
+    if request.method == 'POST':
+        form = PaymentYearForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('payment_year_list')
+    else:
+        form = PaymentYearForm()
+    return render(request, 'payments/add_payment_year.html', {'form': form})
+>>>>>>> bb3cead9c2f843fb2fefb3ca1c62ddcd54fc0e1e

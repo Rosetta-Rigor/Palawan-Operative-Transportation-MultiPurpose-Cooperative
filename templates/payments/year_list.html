@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Payments{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Payment Years</h2>
+    <a href="{% url 'add_payment_year' %}" class="btn btn-primary">Add Year</a>
+  </div>
+  {% if years %}
+    <div class="row">
+      {% for year in years %}
+        <div class="col-md-3 mb-3">
+          <a href="{% url 'payment_year_detail' year.id %}" class="card text-center shadow-sm">
+            <div class="card-body">
+              <h4 class="card-title">{{ year.year }}</h4>
+            </div>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info">No payment years created yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

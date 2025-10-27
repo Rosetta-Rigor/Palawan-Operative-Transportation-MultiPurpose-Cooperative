@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Member, Vehicle, Batch, Document, DocumentEntry, Announcement
+from .models import User, Member, Vehicle, Batch, Document, DocumentEntry, Announcement, PaymentYear, PaymentType, PaymentEntry
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -63,3 +63,7 @@ class AnnouncementAdmin(admin.ModelAdmin):
     def recipient_count(self, obj):
         return obj.recipients.count()
     recipient_count.short_description = "Recipients"
+
+admin.site.register(PaymentYear)
+admin.site.register(PaymentType)
+admin.site.register(PaymentEntry)

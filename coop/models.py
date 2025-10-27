@@ -148,6 +148,7 @@ class Announcement(models.Model):
     def __str__(self):
         return f"Announcement by {self.created_by or 'system'} @ {self.created_at:%Y-%m-%d %H:%M}"
 
+<<<<<<< HEAD
 class QRLoginToken(models.Model):
     """
     Stores QR login tokens tied to a Django User.
@@ -177,6 +178,49 @@ class QRLoginToken(models.Model):
             return False
         return True
     
+=======
+class PaymentYear(models.Model):
+    year = models.PositiveIntegerField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.year)
+
+
+class PaymentType(models.Model):
+    TYPE_CHOICES = [
+        ('from_members', 'From Members'),
+        ('other', 'Other'),
+    ]
+
+    name = models.CharField(max_length=100)
+    year = models.ForeignKey(PaymentYear, on_delete=models.CASCADE, related_name='payment_types')
+    payment_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+
+    def __str__(self):
+        return f"{self.name} ({self.year.year})"
+
+
+class PaymentEntry(models.Model):
+    payment_type = models.ForeignKey(PaymentType, on_delete=models.CASCADE, related_name='entries')
+    member = models.ForeignKey('Member', on_delete=models.SET_NULL, null=True, blank=True, related_name='payment_entries')  # Only for "From Members"
+    month = models.PositiveSmallIntegerField(choices=[(i, i) for i in range(1, 13)])  # 1=Jan, 12=Dec
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        if self.member:
+            return f"{self.payment_type.name} - {self.member.full_name} - Month {self.month}"
+        return f"{self.payment_type.name} - Other - Month {self.month}"
+
+    def update_carry_over(self):
+        """Update carry-over based on underpayment."""
+        self.carry_over = max(0, self.amount_due - self.amount_paid)
+        self.save()
+
+>>>>>>> bb3cead9c2f843fb2fefb3ca1c62ddcd54fc0e1e
 # Signals or logic should be added in views/forms to:
 # - Sync Member info to User account
 # - Only show unassigned vehicles in member add/edit forms
