@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 from coop import views
 from coop.views import custom_logout
+from coop import views as coop_views
 
 urlpatterns = [
     path('accounts/<int:user_id>/edit/', views.edit_account, name='edit_account'),
@@ -73,6 +74,13 @@ urlpatterns = [
     path('api/users/search/', views.user_search_api, name='user_search_api'),
     path('api/vehicle-member-select2/', views.vehicle_member_select2_api, name='vehicle_member_select2_api'),
     path('user/vehicles/', views.user_vehicles, name='user_vehicles'),
+
+    # QR
+    path('qr-login/<str:token>/', coop_views.qr_login_view, name='qr-login'),
+    path('my-qr/', coop_views.my_qr_view, name='my-qr'),
+    path('qr-image-login/', coop_views.qr_image_login, name='qr-image-login'),
+    path('qr-scan/', coop_views.qr_scan_page, name='qr_scan'),
+
 ]
 
 

@@ -45,9 +45,31 @@
 
             <div class="mt-3">
               <a href="{% url 'my_profile' %}" class="btn btn-primary">Edit Profile</a>
+              <button class="btn btn-success" id="showQrBtn">Show My QR</button>
             </div>
-        </div>
-    </div>
+            <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content text-center p-3">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title fw-bold w-100 text-center" id="qrModalLabel">My QR Code</h5>
+                    </div>
+                    <div class="modal-body">
+                        <img id="qrImage" src="{% url 'my-qr' %}" alt="My QR Code" class="img-fluid rounded shadow-sm" style="max-width: 250px;">
+                        <p class="mt-3 text-muted">Scan this QR to log in quickly</p>
 
-</div>
+                        <div class="mt-3 d-flex justify-content-center gap-2">
+                        <a id="downloadQrBtn" href="{% url 'my-qr' %}" download="my_qr_code.png" class="btn btn-outline-success">
+                            Download QR
+                        </a>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+<script>
+    document.getElementById("showQrBtn").addEventListener("click", function() {
+    const qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
+    qrModal.show();
+});
+</script>
 {% endblock %}

@@ -42,6 +42,11 @@
             <button type="submit" class="login-btn">Sign In</button>
         </form>
         <div class="text-center mt-3">
+            <a href="{% url 'qr_scan' %}" class="login-btn" style="margin-top: 12px; background: var(--potmpc-green);">
+                <i class="fas fa-qrcode"></i> Scan QR Code
+            </a>
+        </div>
+        <div class="text-center mt-3">
             <a href="{% url 'register' %}">Don't have an account? Register here</a>
         </div>
     </div>
@@ -54,6 +59,72 @@
                 pwd.type = 'password';
             }
         }
+
+        document.addEventListener("DOMContentLoaded", function(){
+            const startBtn = document.getElementById("start-scan-btn");
+            const stopBtn = document.getElementById("stop-scan-btn");
+            const qrReaderDiv = document.getElementById("qr-reader");
+            const qrResult = document.getElementById("qr-result");
+            let html5QrCode = null;
+
+            startBtn.addEventListener("click", function(){
+                qrReaderDiv.style.display = "block";
+                startBtn.style.display = "none";
+                stopBtn.style.display = "inline-block";
+                html5QrCode = new Html5Qrcode("qr-reader");
+
+                Html5Qrcode.getCameras().then(cameras => {
+                if (cameras && cameras.length) {
+                    const cameraId = cameras[0].id;
+                    html5QrCode.start(
+                    cameraId,
+                    { fps: 10, qrbox: 250 },
+                    (decodedText, decodedResult) => {
+                        // decodedText will be the scanned URL (or token string)
+                        qrResult.innerText = "QR scanned: " + decodedText;
+                        // if the QR encodes the direct login URL (recommended), redirect to it:
+                        if (decodedText.startsWith("http")) {
+                        html5QrCode.stop().then(() => {
+                            window.location.href = decodedText;
+                        }).catch(err => {
+                            // fallback: set location
+                            window.location.href = decodedText;
+                        });
+                        } else {
+                        // if the QR only contains token, build the URL and go
+                        const token = decodedText.trim();
+                        const url = "/qr-login/" + encodeURIComponent(token) + "/";
+                        html5QrCode.stop().then(() => {
+                            window.location.href = url;
+                        }).catch(err => { window.location.href = url; });
+                        }
+                    },
+                    (errorMessage) => {
+                        // decode errors or partial scans can be ignored
+                    })
+                    .catch(err => {
+                    qrResult.innerText = "Unable to start camera: " + err;
+                    });
+                } else {
+                    qrResult.innerText = "No camera found.";
+                }
+                }).catch(err => {
+                qrResult.innerText = "Camera access error: " + err;
+                });
+            });
+
+            stopBtn.addEventListener("click", function(){
+                if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    qrReaderDiv.style.display = "none";
+                    startBtn.style.display = "inline-block";
+                    stopBtn.style.display = "none";
+                }).catch(err => {
+                    console.error(err);
+                });
+                }
+            });
+        });
     </script>
     <script src="{% static 'js/core/jquery.3.2.1.min.js' %}"></script>
     <script src="{% static 'js/plugin/jquery-ui-1.12.1.custom/jquery-ui.min.js' %}"></script>

@@ -1,0 +1,185 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>QR Code Login</title>
+    <link rel="stylesheet" href="{% static 'css/login_custom.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+</head>
+<body>
+<div class="bg-road-stripes"></div>
+<div class="overlay"></div>
+
+<div class="login-card">
+    <a href="{% url 'login' %}" class="register-back-btn" title="Back to Login">
+            &#8592;
+        </a>
+    <h2 class="login-title">Scan Your QR Code</h2>
+    <button id="start-scan-btn" type="button" class="btn btn-primary">OPEN CAMERA</button>
+    <button id="stop-scan-btn" type="button" class="btn btn-secondary" style="display:none;">Stop Scanner</button>
+    <div id="qr-reader" style="margin-top:10px;">
+        <video id="qr-video" width="400" height="300" autoplay playsinline style="border:1px solid #ccc; display:none;"></video>
+        <canvas id="qr-canvas" width="400" height="300" style="display:none;"></canvas>
+        <div id="qr-result" style="margin-top:10px;"></div>
+    </div>
+    <h2 class="login-title">OR</h2>
+    <form method="post" enctype="multipart/form-data" action="{% url 'qr-image-login' %}">
+        {% csrf_token %}
+        <label for="qr_image" class="upload-label">Upload QR Code Image</label>
+        <input type="file" name="qr_image" id="qr_image" accept="image/*" required>
+        <button type="submit" id="qr-login-btn" class="btn-custom" disabled>Login with QR Image</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const fileInput = document.getElementById("qr_image");
+        const loginButton = document.getElementById("qr-login-btn");
+
+        // Enable the button only when a file is selected
+        fileInput.addEventListener("change", function() {
+            if (fileInput.files.length > 0) {
+                loginButton.disabled = false;
+            } else {
+                loginButton.disabled = true;
+            }
+        });
+    });
+
+    (function() {
+  // DOM refs
+  const startBtn = document.getElementById("start-scan-btn");
+  const stopBtn = document.getElementById("stop-scan-btn");
+  const video = document.getElementById("qr-video");
+  const canvas = document.getElementById("qr-canvas");
+  const qrResult = document.getElementById("qr-result");
+  const ctx = canvas.getContext("2d");
+
+  let stream = null;
+  let detector = null;
+  let processing = false;
+  let scanning = false;
+  let processInterval = null;
+
+  // Wait until OpenCV is ready
+  function onOpenCvReady(cb) {
+    if (typeof cv !== "undefined" && cv && cv['QRCodeDetector']) {
+      cb();
+    } else {
+      // poll for opencv load
+      const t = setInterval(() => {
+        if (typeof cv !== "undefined" && cv && cv['QRCodeDetector']) {
+          clearInterval(t);
+          cb();
+        }
+      }, 100);
+    }
+  }
+
+  function startCamera() {
+    return navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then(s => {
+        stream = s;
+        video.srcObject = stream;
+        video.style.display = "block";
+        return video.play();
+      });
+  }
+
+  function stopCamera() {
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+    video.pause();
+    video.srcObject = null;
+    video.style.display = "none";
+  }
+
+  function startProcessingFrames() {
+    if (!detector) detector = new cv.QRCodeDetector();
+    scanning = true;
+    // process at an interval (approx ~10 fps); requestAnimationFrame would also work
+    processInterval = setInterval(processFrame, 100);
+  }
+
+  function stopProcessingFrames() {
+    scanning = false;
+    if (processInterval) { clearInterval(processInterval); processInterval = null; }
+  }
+
+  function processFrame() {
+    if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+    try {
+      // draw current video frame to canvas
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      // read canvas into OpenCV mat
+      let src = cv.imread(canvas);
+      // decode QR
+      let points = new cv.Mat();
+      let straight = new cv.Mat();
+      // detectAndDecode returns a string (decoded text) in OpenCV.js
+      let decoded = detector.detectAndDecode(src, points, straight);
+      src.delete();
+      points.delete();
+      straight.delete();
+
+      if (decoded && decoded.length > 0) {
+        // found QR content
+        qrResult.innerText = "QR detected: " + decoded;
+        stopProcessingFrames();
+        stopCamera();
+        // redirect logic: if decoded contains http, go there; otherwise assume it's token
+        if (decoded.startsWith("http://") || decoded.startsWith("https://")) {
+          window.location.href = decoded;
+        } else {
+          // token only
+          const token = encodeURIComponent(decoded.trim());
+          window.location.href = "/qr-login/" + token + "/";
+        }
+      }
+    } catch (err) {
+      console.error("QR processing error:", err);
+    }
+  }
+
+  // Start handler
+  startBtn.addEventListener("click", () => {
+    // Avoid double-start
+    if (scanning) return;
+    qrResult.innerText = "Starting camera...";
+    // ensure we wait for OpenCV lib to be available
+    onOpenCvReady(() => {
+      startCamera().then(() => {
+        qrResult.innerText = "Camera started. Point at QR...";
+        startProcessingFrames();
+        startBtn.style.display = "none";
+        stopBtn.style.display = "inline-block";
+      }).catch(err => {
+        qrResult.innerText = "Camera error: " + err;
+        console.error(err);
+      });
+    });
+  });
+
+  // Stop handler
+  stopBtn.addEventListener("click", () => {
+    stopProcessingFrames();
+    stopCamera();
+    startBtn.style.display = "inline-block";
+    stopBtn.style.display = "none";
+    qrResult.innerText = "";
+  });
+
+  // Ensure cleanup when navigating away or closing
+  window.addEventListener("beforeunload", () => {
+    stopProcessingFrames();
+    stopCamera();
+  });
+})();
+</script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+<script async src="https://docs.opencv.org/4.x/opencv.js" type="text/javascript"></script>
+</body>
+</html>

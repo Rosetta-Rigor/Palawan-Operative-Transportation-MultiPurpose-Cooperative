@@ -14,7 +14,18 @@ from .models import Announcement
 from .forms import AnnouncementForm
 from django.db.models import Q
 
-
+from django.contrib.auth import get_user_model, login as auth_login
+from django.shortcuts import HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.http import Http404
+import qrcode
+from io import BytesIO
+from .models import QRLoginToken
+from pyzbar.pyzbar import decode
+from PIL import Image
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.shortcuts import render
+from django.http import HttpResponse
 
 @user_passes_test(lambda u: u.is_staff)
 def user_approvals(request):
@@ -1572,3 +1583,87 @@ def batch_detail(request, pk):
         return JsonResponse({'html': rows_html, 'pagination': pagination_html})
 
     return render(request, 'batch_detail.html', context)
+
+def qr_login_view(request, token):
+    """
+    Visit /qr-login/<token>/ to log in.
+    Token is validated and, if valid, user is logged in and redirected.
+    """
+    try:
+        qr = QRLoginToken.objects.get(token=token)
+    except QRLoginToken.DoesNotExist:
+        # token not found
+        raise Http404("Invalid or expired QR code")
+
+    if not qr.is_valid():
+        raise Http404("Token invalid or expired")
+
+    user = qr.user
+    # Log user in
+    auth_login(request, user)
+
+    # If single-use, deactivate it now
+    if qr.single_use:
+        qr.is_active = False
+        qr.save(update_fields=["is_active"])
+
+    # redirect depending on staff / role logic used in your site
+    if user.is_staff:
+        return redirect("home")
+    else:
+        return redirect("user_home")
+
+# View to render user's QR as PNG on demand (requires login)
+@login_required
+def my_qr_view(request):
+    """
+    Renders the logged-in user's active QR token as an image.
+    If none exists (or expired), create a new one with a default TTL.
+    """
+    user = request.user
+    # Try to get a currently valid token
+    token_qs = user.qr_tokens.filter(is_active=True)
+    valid_token = None
+    for t in token_qs:
+        if t.is_valid():
+            valid_token = t
+            break
+    if not valid_token:
+        # create one: TTL 24 hours, single-use by default
+        valid_token = QRLoginToken.create_token_for_user(user, ttl_hours=24, single_use=True)
+
+    login_url = request.build_absolute_uri(f"/qr-login/{valid_token.token}/")
+    # create qr PNG
+    img = qrcode.make(login_url)
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return HttpResponse(buf.getvalue(), content_type="image/png")
+
+def qr_image_login(request):
+    """
+    Accepts an uploaded image, decodes the QR code,
+    and logs the user in if the token/URL is valid.
+    """
+    if request.method == "POST" and request.FILES.get("qr_image"):
+        img_file: InMemoryUploadedFile = request.FILES["qr_image"]
+        img = Image.open(img_file)
+        decoded = decode(img)
+        if not decoded:
+            messages.error(request, "No QR code found in the image.")
+            return redirect("login")
+        # If there are multiple results, use the first
+        qr_text = decoded[0].data.decode("utf-8").strip()
+
+        # If the QR contains a full URL, redirect there.
+        # If it only contains the token, build the URL.
+        if qr_text.startswith("http"):
+            return redirect(qr_text)
+        else:
+            return redirect(reverse("qr-login", args=[qr_text]))
+
+    # GET requests or errors just go back to login page
+    return redirect("login")
+
+def qr_scan_page(request):
+    return render(request, 'qr_login.html')

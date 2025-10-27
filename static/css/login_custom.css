@@ -160,3 +160,163 @@ body {
 .login-btn:hover {
     background: var(--potmpc-green);
 }
+.back-to-login {
+    width: auto;
+    padding: 8px 16px;
+    font-size: 1rem;
+    text-align: center;
+    background: var(--potmpc-green);
+    color: #fff;
+    border-radius: 6px;
+    display: inline-block;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.back-to-login:hover {
+    background: var(--potmpc-brown);
+}
+/* Style for the upload label */
+.upload-label {
+    display: block;
+    margin: 12px auto 8px;
+    font-size: 1rem;
+    color: var(--potmpc-brown);
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Style for the buttons */
+.btn-custom {
+    width: auto;
+    padding: 8px 16px;
+    font-size: 1rem;
+    text-align: center;
+    background: var(--potmpc-green);
+    color: #fff;
+    border-radius: 6px;
+    display: inline-block;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 12px;
+}
+
+.btn-custom:hover {
+    background: var(--potmpc-brown);
+}
+
+/* Align all buttons to the center */
+form, .back-to-login {
+    text-align: center;
+}
+
+.register-back-btn {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    background: #fffbe6;
+    border: 1px solid #6B2F13;
+    color: #6B2F13;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    z-index: 2;
+}
+.register-back-btn:hover {
+    background: #ffe066;
+    color: #3A7A3A;
+}
+
+/* Style for the "OPEN CAMERA" and "CHOOSE FILE" buttons */
+#start-scan-btn, #qr_image {
+    width: auto;
+    padding: 8px 16px;
+    font-size: 1rem;
+    text-align: center;
+    background: var(--potmpc-green);
+    color: #fff;
+    border-radius: 6px;
+    display: inline-block;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 12px;
+    border: none; /* Remove default border */
+}
+
+#start-scan-btn:hover, #qr_image:hover {
+    background: var(--potmpc-brown);
+}
+
+/* Ensure the "CHOOSE FILE" input matches the design */
+#qr_image {
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+    padding: 8px 16px;
+    font-size: 1rem;
+    background: var(--potmpc-green);
+    color: #fff;
+    border-radius: 6px;
+    border: none;
+    transition: background 0.2s;
+}
+
+#qr_image:hover {
+    background: var(--potmpc-brown);
+}
+
+/* Style for the "OPEN CAMERA", "STOP SCANNER", and "CHOOSE FILE" buttons */
+#start-scan-btn, #stop-scan-btn, #qr_image {
+    width: auto;
+    padding: 8px 16px;
+    font-size: 1rem;
+    text-align: center;
+    background: var(--potmpc-green);
+    color: #fff;
+    border-radius: 6px;
+    display: inline-block;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 12px;
+    border: none; /* Remove default border */
+}
+
+#start-scan-btn:hover, #stop-scan-btn:hover, #qr_image:hover {
+    background: var(--potmpc-brown);
+}
+
+/* Ensure the "CHOOSE FILE" input matches the design */
+#qr_image {
+    display: inline-block;
+    text-align: center;
+    cursor: pointer;
+    padding: 8px 16px;
+    font-size: 1rem;
+    background: var(--potmpc-green);
+    color: #fff;
+    border-radius: 6px;
+    border: none;
+    transition: background 0.2s;
+}
+
+#qr_image:hover {
+    background: var(--potmpc-brown);
+}
+
+/* Style for the "STOP SCANNER" button */
+#stop-scan-btn {
+    display: none; /* Initially hidden */
+}
+
+/* Style for the "Login with QR Image" button when disabled */
+#qr-login-btn:disabled {
+    background: #ccc; /* Gray background for disabled state */
+    color: #666; /* Gray text for disabled state */
+    cursor: not-allowed; /* Change cursor to indicate disabled state */
+}

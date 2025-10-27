@@ -2,6 +2,9 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.utils import timezone
 from django.conf import settings
+from django.contrib.auth.models import User
+import secrets
+from datetime import timedelta
 
 def document_upload_path(instance, filename, doc_type):
     """
@@ -145,6 +148,35 @@ class Announcement(models.Model):
     def __str__(self):
         return f"Announcement by {self.created_by or 'system'} @ {self.created_at:%Y-%m-%d %H:%M}"
 
+class QRLoginToken(models.Model):
+    """
+    Stores QR login tokens tied to a Django User.
+    Token can be single-use or have an expiry.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="qr_tokens")
+    token = models.CharField(max_length=64, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    single_use = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"QRToken({self.user.username}, active={self.is_active})"
+
+    @classmethod
+    def create_token_for_user(cls, user, ttl_hours=24, single_use=True):
+        token = secrets.token_urlsafe(32)
+        expires = timezone.now() + timedelta(hours=ttl_hours) if ttl_hours else None
+        obj = cls.objects.create(user=user, token=token, expires_at=expires, single_use=single_use)
+        return obj
+
+    def is_valid(self):
+        if not self.is_active:
+            return False
+        if self.expires_at and timezone.now() > self.expires_at:
+            return False
+        return True
+    
 # Signals or logic should be added in views/forms to:
 # - Sync Member info to User account
 # - Only show unassigned vehicles in member add/edit forms
