@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import User, Member, Vehicle, Batch, Document, DocumentEntry, Announcement
+from .models import User, Member, Vehicle, Batch, Document, DocumentEntry, Announcement, PaymentType, PaymentEntry
 
 User = get_user_model()
 
@@ -121,3 +121,13 @@ class AnnouncementForm(forms.ModelForm):
         # limit recipients queryset to client role users
         UserModel = get_user_model()
         self.fields['recipients'].queryset = UserModel.objects.filter(role__iexact='client')
+
+class PaymentTypeForm(forms.ModelForm):
+    class Meta:
+        model = PaymentType
+        fields = ['name', 'type', 'year']
+
+class PaymentEntryForm(forms.ModelForm):
+    class Meta:
+        model = PaymentEntry
+        fields = ['payment_type', 'member', 'month', 'amount']

@@ -44,22 +44,22 @@
 
     <div class="wrapper">
         <!-- HEADER -->
-            <div class="main-header">
-				<div class="logo-header d-flex align-items-center justify-content-between" style="display: flex; align-items: center; justify-content: space-between;">
-					<a href="{% url 'home' %}" class="logo" style="flex: 1 0 auto; display: flex; align-items: center; gap: 12px;">
-						<img src="{% static 'img/home.png' %}" alt="Logo" style="height:40px; width:auto;">
-						POTMPC ADMIN
-					</a>
-					<div class="d-flex align-items-center" style="gap: 16px;">
-						<button class="navbar-toggler sidenav-toggler ml-auto" type="button" data-toggle="collapse" data-target="collapse" aria-controls="sidebar" aria-expanded="false" aria-label="Toggle navigation">
-							<span class="navbar-toggler-icon"></span>
-						</button>
-						<button class="topbar-toggler more"><i class="la la-ellipsis-v"></i></button>
-					</div>
-				</div>
-			</div>
+        <div class="main-header">
+            <div class="logo-header d-flex align-items-center justify-content-between" style="display: flex; align-items: center; justify-content: space-between;">
+                <a href="{% url 'home' %}" class="logo" style="flex: 1 0 auto; display: flex; align-items: center; gap: 12px;">
+                    <img src="{% static 'img/home.png' %}" alt="Logo" style="height:40px; width:auto;">
+                    POTMPC ADMIN
+                </a>
+                <div class="d-flex align-items-center" style="gap: 16px;">
+                    <button class="navbar-toggler sidenav-toggler ml-auto" type="button" data-toggle="collapse" data-target="collapse" aria-controls="sidebar" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <button class="topbar-toggler more"><i class="la la-ellipsis-v"></i></button>
+                </div>
+            </div>
+        </div>
 
-        <!-- SIDEBAR - styled with user_custom.css, admin links preserved -->
+        <!-- SIDEBAR -->
         {% with current=request.resolver_match.url_name %}
         <div class="sidebar">
             <nav class="sidebar-nav">
@@ -70,29 +70,27 @@
                     </a>
                 </div>
 
-                
                 <div class="nav-item has-submenu">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'member_list' or request.resolver_match.url_name == 'vehicle_list' or request.resolver_match.url_name == 'document_list' %}open{% endif %}"
+                    <a class="nav-link {% if current == 'member_list' or current == 'vehicle_list' or current == 'document_list' %}open{% endif %}"
                        href="javascript:void(0);"
                        onclick="toggleSubmenu('membersSubmenu', this)">
                         <i class="la la-users"></i>
                         <p>Members</p>
                     </a>
-
-                    <div id="membersSubmenu" class="submenu {% if request.resolver_match.url_name == 'member_list' or request.resolver_match.url_name == 'vehicle_list' or request.resolver_match.url_name == 'document_list' %}open{% endif %}">
-                        <div class="nav-item {% if request.resolver_match.url_name == 'member_list' %}active{% endif %}">
+                    <div id="membersSubmenu" class="submenu {% if current == 'member_list' or current == 'vehicle_list' or current == 'document_list' %}open{% endif %}">
+                        <div class="nav-item {% if current == 'member_list' %}active{% endif %}">
                             <a class="nav-link" href="{% url 'member_list' %}">
                                 <i class="la la-user"></i>
                                 <span>Members List</span>
                             </a>
                         </div>
-                        <div class="nav-item {% if request.resolver_match.url_name == 'vehicle_list' %}active{% endif %}">
+                        <div class="nav-item {% if current == 'vehicle_list' %}active{% endif %}">
                             <a class="nav-link" href="{% url 'vehicle_list' %}">
                                 <i class="la la-car"></i>
                                 <span>Vehicles</span>
                             </a>
                         </div>
-                        <div class="nav-item {% if request.resolver_match.url_name == 'document_list' %}active{% endif %}">
+                        <div class="nav-item {% if current == 'document_list' %}active{% endif %}">
                             <a class="nav-link" href="{% url 'document_list' %}">
                                 <i class="la la-file"></i>
                                 <span>Documents</span>
@@ -121,9 +119,16 @@
                         <p>Accounts</p>
                     </a>
                 </div>
+
+                <div class="nav-item {% if current == 'payment_year_list' or current == 'payment_year_detail' %}active{% endif %}">
+                    <a class="nav-link" href="{% url 'payment_year_list' %}">
+                        <i class="la la-money"></i>
+                        <p>Payments</p>
+                    </a>
+                </div>
             </nav>
 
-            <!-- user card at bottom - behavior mirrors user_base.html -->
+            <!-- user card at bottom -->
             <div class="sidebar-user-card" onclick="toggleUserMenu()">
                 <div class="photo">
                   {% if user.is_authenticated and user.profile_image %}
@@ -174,11 +179,10 @@
     <script src="{% static 'js/plugin/jquery-mapael/maps/world_countries.min.js' %}"></script>
     <script src="{% static 'js/plugin/chart-circle/circles.min.js' %}"></script>
     <script src="{% static 'js/plugin/jquery-scrollbar/jquery.scrollbar.min.js' %}"></script>
-        <script src="{% static 'js/ready.min.js' %}"></script>
-        {% block extra_js %}{% endblock %}
+    <script src="{% static 'js/ready.min.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 
     <script>
-    // dropdown toggle - same logic used in user_base.html
     function handleUserMenuClickOutside(e) {
         var menu = document.getElementById('userMenuDropdown');
         var arrow = document.getElementById('userDropdownArrow');
@@ -205,13 +209,9 @@
         var el = document.getElementById(id);
         if (!el) return;
         var isOpen = el.classList.toggle('open');
-
-        // toggle .open on trigger link (so server-side initial open reflects arrow state)
         if (trigger) {
             trigger.classList.toggle('open', isOpen);
         }
-
-        // close other open submenus and clear their trigger .open
         document.querySelectorAll('.submenu').forEach(function(s) {
             if (s.id !== id) {
                 s.classList.remove('open');

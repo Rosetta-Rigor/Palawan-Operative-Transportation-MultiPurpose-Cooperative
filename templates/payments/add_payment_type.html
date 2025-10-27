@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+  <h2>Add Payment Type for {{ year.year }}</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">Add Payment Type</button>
+    <a href="{% url 'payment_year_detail' year.id %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

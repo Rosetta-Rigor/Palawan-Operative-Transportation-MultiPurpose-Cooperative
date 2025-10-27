@@ -1572,3 +1572,56 @@ def batch_detail(request, pk):
         return JsonResponse({'html': rows_html, 'pagination': pagination_html})
 
     return render(request, 'batch_detail.html', context)
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import PaymentYear, PaymentType, PaymentEntry, Member
+from .forms import PaymentTypeForm, PaymentEntryForm
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def payment_year_list(request):
+    years = PaymentYear.objects.order_by('-year')
+    return render(request, 'payments/year_list.html', {'years': years})
+
+@login_required
+def payment_year_detail(request, year_id):
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    payment_types = year.payment_types.all()
+    months = range(1, 13)
+    # Build table: payment_types x months
+    table = []
+    for pt in payment_types:
+        row = {'type': pt, 'entries': []}
+        for m in months:
+            entries = pt.entries.filter(month=m)
+            row['entries'].append(entries)
+        table.append(row)
+    return render(request, 'payments/year_detail.html', {'year': year, 'table': table, 'months': months})
+
+@login_required
+def add_payment_type(request, year_id):
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    if request.method == 'POST':
+        form = PaymentTypeForm(request.POST)
+        if form.is_valid():
+            pt = form.save(commit=False)
+            pt.year = year
+            pt.save()
+            return redirect('payment_year_detail', year_id=year.id)
+    else:
+        form = PaymentTypeForm(initial={'year': year})
+    return render(request, 'payments/add_payment_type.html', {'form': form, 'year': year})
+
+@login_required
+def add_payment_entry(request, year_id):
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    if request.method == 'POST':
+        form = PaymentEntryForm(request.POST)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            entry.recorded_by = request.user
+            entry.save()
+            return redirect('payment_year_detail', year_id=year.id)
+    else:
+        form = PaymentEntryForm()
+    return render(request, 'payments/add_payment_entry.html', {'form': form, 'year': year})

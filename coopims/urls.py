@@ -73,6 +73,10 @@ urlpatterns = [
     path('api/users/search/', views.user_search_api, name='user_search_api'),
     path('api/vehicle-member-select2/', views.vehicle_member_select2_api, name='vehicle_member_select2_api'),
     path('user/vehicles/', views.user_vehicles, name='user_vehicles'),
+    path('payments/', views.payment_year_list, name='payment_year_list'),
+    path('payments/<int:year_id>/', views.payment_year_detail, name='payment_year_detail'),
+    path('payments/<int:year_id>/add_type/', views.add_payment_type, name='add_payment_type'),
+    path('payments/<int:year_id>/add_entry/', views.add_payment_entry, name='add_payment_entry'),
 ]
 
 

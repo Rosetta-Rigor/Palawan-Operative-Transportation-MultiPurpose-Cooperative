@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-4">
+  <h2>Payments for {{ year.year }}</h2>
+  <a href="{% url 'add_payment_type' year.id %}" class="btn btn-success mb-3">Add Payment Type</a>
+  <a href="{% url 'add_payment_entry' year.id %}" class="btn btn-primary mb-3">Add Payment Entry</a>
+  <div class="table-responsive">
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Payment Type</th>
+          {% for m in months %}
+            <th>{{ m|date:"F" }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in table %}
+          <tr>
+            <td>{{ row.type.name }} <span class="badge badge-info">{{ row.type.get_type_display }}</span></td>
+            {% for entries in row.entries %}
+              <td>
+                {% if entries %}
+                  {% for entry in entries %}
+                    <div>
+                      {% if entry.member %}
+                        <strong>{{ entry.member.full_name }}</strong>:
+                      {% endif %}
+                      ₱{{ entry.amount }}<br>
+                      <small>{{ entry.date_recorded|date:"Y-m-d" }}</small>
+                    </div>
+                  {% endfor %}
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+        {% empty %}
+          <tr><td colspan="13">No payment types for this year.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

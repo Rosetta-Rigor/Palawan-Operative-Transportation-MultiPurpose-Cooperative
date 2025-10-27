@@ -145,6 +145,35 @@ class Announcement(models.Model):
     def __str__(self):
         return f"Announcement by {self.created_by or 'system'} @ {self.created_at:%Y-%m-%d %H:%M}"
 
+class PaymentYear(models.Model):
+    year = models.PositiveIntegerField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    def __str__(self):
+        return str(self.year)
+
+class PaymentType(models.Model):
+    TYPE_CHOICES = (
+        ('from_member', 'From Member'),
+        ('other', 'Other'),
+    )
+    name = models.CharField(max_length=100)
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    year = models.ForeignKey(PaymentYear, on_delete=models.CASCADE, related_name='payment_types')
+    def __str__(self):
+        return f"{self.name} ({self.get_type_display()})"
+
+class PaymentEntry(models.Model):
+    payment_type = models.ForeignKey(PaymentType, on_delete=models.CASCADE, related_name='entries')
+    member = models.ForeignKey('Member', on_delete=models.SET_NULL, null=True, blank=True, related_name='payment_entries')
+    month = models.PositiveSmallIntegerField(choices=[(i, i) for i in range(1, 13)])  # 1=Jan, 12=Dec
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    date_recorded = models.DateTimeField(auto_now_add=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    def __str__(self):
+        member_name = self.member.full_name if self.member else "Other"
+        return f"{self.payment_type.name} - {member_name} - {self.get_month_display()} - {self.amount}"
+
 # Signals or logic should be added in views/forms to:
 # - Sync Member info to User account
 # - Only show unassigned vehicles in member add/edit forms
