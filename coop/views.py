@@ -1624,3 +1624,16 @@ def add_payment_entry(request, year_id):
     else:
         form = PaymentEntryForm()
     return render(request, 'payments/add_payment_entry.html', {'form': form, 'year': year})
+
+from .forms import PaymentYearForm
+
+@login_required
+def add_payment_year(request):
+    if request.method == 'POST':
+        form = PaymentYearForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('payment_year_list')
+    else:
+        form = PaymentYearForm()
+    return render(request, 'payments/add_payment_year.html', {'form': form})

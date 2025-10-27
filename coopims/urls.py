@@ -74,6 +74,7 @@ urlpatterns = [
     path('api/vehicle-member-select2/', views.vehicle_member_select2_api, name='vehicle_member_select2_api'),
     path('user/vehicles/', views.user_vehicles, name='user_vehicles'),
     path('payments/', views.payment_year_list, name='payment_year_list'),
+    path('payments/add-year/', views.add_payment_year, name='add_payment_year'),
     path('payments/<int:year_id>/', views.payment_year_detail, name='payment_year_detail'),
     path('payments/<int:year_id>/add-type/', views.add_payment_type, name='add_payment_type'),
     path('payments/<int:year_id>/add-entry/', views.add_payment_entry, name='add_payment_entry'),
