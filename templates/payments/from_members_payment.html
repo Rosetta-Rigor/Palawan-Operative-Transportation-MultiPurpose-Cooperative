@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}From Members Payments{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h2>From Members Payments for {{ year.year }}</h2>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Member</th>
+        <th>Payment Type</th>
+        <th>Month</th>
+        <th>Amount Paid</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for member in members %}
+        {% for entry in member.payment_entries.all %}
+          <tr>
+            <td>{{ member.full_name }}</td>
+            <td>{{ entry.payment_type.name }}</td>
+            <td>{{ entry.month }}</td>
+            <td>{{ entry.amount_paid }}</td>
+          </tr>
+        {% endfor %}
+      {% empty %}
+        <tr>
+          <td colspan="4" class="text-center">No payments found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% include 'includes/pagination.html' %}
+</div>
+{% endblock %}

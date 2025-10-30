@@ -37,6 +37,7 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='client')
     full_name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    dormant = models.IntegerField(default=0)  # 0 = Pending, 1 = Not Dormant
     id_image = models.ImageField(upload_to=id_upload_path, null=True, blank=True)
     profile_image = models.ImageField(upload_to=profile_upload_path, null=True, blank=True)
     email = models.EmailField(unique=True)
@@ -148,7 +149,6 @@ class Announcement(models.Model):
     def __str__(self):
         return f"Announcement by {self.created_by or 'system'} @ {self.created_at:%Y-%m-%d %H:%M}"
 
-<<<<<<< HEAD
 class QRLoginToken(models.Model):
     """
     Stores QR login tokens tied to a Django User.
@@ -178,7 +178,6 @@ class QRLoginToken(models.Model):
             return False
         return True
     
-=======
 class PaymentYear(models.Model):
     year = models.PositiveIntegerField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -220,7 +219,6 @@ class PaymentEntry(models.Model):
         self.carry_over = max(0, self.amount_due - self.amount_paid)
         self.save()
 
->>>>>>> bb3cead9c2f843fb2fefb3ca1c62ddcd54fc0e1e
 # Signals or logic should be added in views/forms to:
 # - Sync Member info to User account
 # - Only show unassigned vehicles in member add/edit forms

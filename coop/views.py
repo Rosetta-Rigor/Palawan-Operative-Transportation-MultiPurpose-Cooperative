@@ -26,6 +26,7 @@ from PIL import Image
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.shortcuts import redirect
 
 @user_passes_test(lambda u: u.is_staff)
 def user_approvals(request):
@@ -941,7 +942,6 @@ def deactivate_account(request, user_id):
     return redirect('accounts_list')
 
 @login_required
-@login_required
 def edit_account(request, user_id):
     user = get_object_or_404(User, pk=user_id)
     members = Member.objects.all()
@@ -979,9 +979,15 @@ def edit_account(request, user_id):
         return redirect('accounts_list')
     return render(request, "account_edit.html", {"edited_user": user, "members": members})
 
+@staff_member_required
 @require_POST
 def activate_account(request, user_id):
     user = get_object_or_404(User, pk=user_id)
+
+    # If the account is being activated for the first time, set dormant=1
+    if user.dormant == 0:
+        user.dormant = 1
+
     user.is_active = True
     user.save()
     return redirect('accounts_list')
@@ -1427,7 +1433,7 @@ def pending_counts_api(request):
     """
     UserModel = get_user_model()
     # pending accounts: client role and not active
-    accounts_pending = UserModel.objects.filter(role__iexact='client', is_active=False).count()
+    accounts_pending = UserModel.objects.filter(is_active=False, dormant=0).count()
 
     # documents pending: entries uploaded by users with status "pending"
     documents_pending = DocumentEntry.objects.filter(status__iexact="pending", uploaded_by__isnull=False).count()
@@ -1584,7 +1590,6 @@ def batch_detail(request, pk):
 
     return render(request, 'batch_detail.html', context)
 
-<<<<<<< HEAD
 def qr_login_view(request, token):
     """
     Visit /qr-login/<token>/ to log in.
@@ -1668,7 +1673,6 @@ def qr_image_login(request):
 
 def qr_scan_page(request):
     return render(request, 'qr_login.html')
-=======
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import PaymentYear, PaymentType, PaymentEntry, Member
@@ -1676,21 +1680,89 @@ from .forms import PaymentYearForm, PaymentTypeForm, PaymentEntryForm
 
 @login_required
 def payment_year_list(request):
+    filter_type = request.GET.get('filter', 'from_members')  # Default to "From Members"
     years = PaymentYear.objects.order_by('-year')
-    return render(request, 'payments/year_list.html', {'years': years})
 
+    context = {
+        'years': years,
+        'filter_type': filter_type,
+    }
+    return render(request, 'payments/year_list.html', context)
+
+@login_required
+def from_members_payment_view(request, year_id):
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    members = Member.objects.prefetch_related('payment_entries').all()
+
+    paginator = Paginator(members, 10)  # Paginate 10 members per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'year': year,
+        'members': page_obj,
+        'paginator': paginator,
+        'page_obj': page_obj,
+    }
+    return render(request, 'payments/from_members_payment.html', context)
+
+@login_required
+def other_payments_view(request, year_id):
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    payments = PaymentEntry.objects.filter(payment_type__payment_type='other', payment_type__year=year)
+
+    paginator = Paginator(payments, 10)  # Paginate 10 payments per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'year': year,
+        'payments': page_obj,
+        'paginator': paginator,
+        'page_obj': page_obj,
+    }
+    return render(request, 'payments/other_payments.html', context)
 
 @login_required
 def payment_year_detail(request, year_id):
     year = get_object_or_404(PaymentYear, pk=year_id)
-    payment_types = year.payment_types.all()
+    filter_type = request.GET.get('filter', 'all')  # Default to 'all'
+
+    # Redirect to the From Members view if the filter is set to 'from_members'
+    if filter_type == 'from_members':
+        return redirect('year_list_members', year_id=year_id)
+
+    # Filter payment types based on the selected filter
+    if filter_type == 'other':
+        payment_types = year.payment_types.filter(payment_type='other')
+    else:
+        payment_types = year.payment_types.all()
+
     months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
     return render(request, 'payments/year_detail.html', {
         'year': year,
         'payment_types': payment_types,
         'months': months,
+        'filter_type': filter_type,
     })
 
+
+@login_required
+def from_members_payment_view(request, year_id):
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    members = Member.objects.prefetch_related('payment_entries').all()
+
+    paginator = Paginator(members, 10)  # Paginate 10 members per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'payments/from_members_payment.html', {
+        'year': year,
+        'members': page_obj,
+        'paginator': paginator,
+        'page_obj': page_obj,
+    })
 
 @login_required
 def add_payment_type(request, year_id):
@@ -1733,4 +1805,3 @@ def add_payment_year(request):
     else:
         form = PaymentYearForm()
     return render(request, 'payments/add_payment_year.html', {'form': form})
->>>>>>> bb3cead9c2f843fb2fefb3ca1c62ddcd54fc0e1e

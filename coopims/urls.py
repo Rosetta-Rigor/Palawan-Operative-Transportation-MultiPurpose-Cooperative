@@ -74,7 +74,6 @@ urlpatterns = [
     path('api/users/search/', views.user_search_api, name='user_search_api'),
     path('api/vehicle-member-select2/', views.vehicle_member_select2_api, name='vehicle_member_select2_api'),
     path('user/vehicles/', views.user_vehicles, name='user_vehicles'),
-<<<<<<< HEAD
 
     # QR
     path('qr-login/<str:token>/', coop_views.qr_login_view, name='qr-login'),
@@ -82,13 +81,13 @@ urlpatterns = [
     path('qr-image-login/', coop_views.qr_image_login, name='qr-image-login'),
     path('qr-scan/', coop_views.qr_scan_page, name='qr_scan'),
 
-=======
     path('payments/', views.payment_year_list, name='payment_year_list'),
     path('payments/add-year/', views.add_payment_year, name='add_payment_year'),
     path('payments/<int:year_id>/', views.payment_year_detail, name='payment_year_detail'),
+    path('payments/<int:year_id>/from-members/', views.from_members_payment_view, name='year_list_members'),
+    path('payments/<int:year_id>/other/', views.other_payments_view, name='year_list_other'),
     path('payments/<int:year_id>/add-type/', views.add_payment_type, name='add_payment_type'),
     path('payments/<int:year_id>/add-entry/', views.add_payment_entry, name='add_payment_entry'),
->>>>>>> bb3cead9c2f843fb2fefb3ca1c62ddcd54fc0e1e
 ]
 
 
