@@ -27,6 +27,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.shortcuts import redirect
+from django.db.models import Sum, Q
 
 @user_passes_test(lambda u: u.is_staff)
 def user_approvals(request):
@@ -1689,18 +1690,36 @@ def payment_year_list(request):
     }
     return render(request, 'payments/year_list.html', context)
 
+from django.db.models import Q
+
 @login_required
 def from_members_payment_view(request, year_id):
     year = get_object_or_404(PaymentYear, pk=year_id)
-    members = Member.objects.prefetch_related('payment_entries').all()
+    q = (request.GET.get('q') or '').strip()
+    page_number = request.GET.get('page', 1)
+
+    # Fetch members with related data
+    members = Member.objects.select_related('user_account', 'batch').prefetch_related('payment_entries').order_by('full_name')
+
+    # Filter members based on search query
+    if q:
+        members = members.filter(Q(full_name__icontains=q) | Q(batch__number__icontains=q)).distinct()
+
+    # Annotate members with monthly totals for the selected year
+    for member in members:
+        # Calculate totals for each month, defaulting to 0 if no payments exist
+        member.monthly_totals = [
+            member.payment_entries.filter(payment_type__year=year, month=month).aggregate(total=Sum('amount_paid'))['total'] or 0
+            for month in range(1, 13)
+        ]
 
     paginator = Paginator(members, 10)  # Paginate 10 members per page
-    page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
 
     context = {
         'year': year,
         'members': page_obj,
+        'months': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
         'paginator': paginator,
         'page_obj': page_obj,
     }
@@ -1726,27 +1745,14 @@ def other_payments_view(request, year_id):
 @login_required
 def payment_year_detail(request, year_id):
     year = get_object_or_404(PaymentYear, pk=year_id)
-    filter_type = request.GET.get('filter', 'all')  # Default to 'all'
-
-    # Redirect to the From Members view if the filter is set to 'from_members'
-    if filter_type == 'from_members':
-        return redirect('year_list_members', year_id=year_id)
-
-    # Filter payment types based on the selected filter
-    if filter_type == 'other':
-        payment_types = year.payment_types.filter(payment_type='other')
-    else:
-        payment_types = year.payment_types.all()
-
+    payment_types = year.payment_types.all()
     months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
     return render(request, 'payments/year_detail.html', {
         'year': year,
         'payment_types': payment_types,
         'months': months,
-        'filter_type': filter_type,
     })
-
 
 @login_required
 def from_members_payment_view(request, year_id):
@@ -1773,7 +1779,20 @@ def add_payment_type(request, year_id):
             payment_type = form.save(commit=False)
             payment_type.year = year
             payment_type.save()
+
+            if payment_type.payment_type == 'from_members':
+                members = Member.objects.all()
+                for member in members:
+                    for month in range(1, 13):  # January to December
+                        PaymentEntry.objects.create(
+                            payment_type=payment_type,
+                            member=member,
+                            month=month,
+                            amount_paid=0.00,  # Default to 0
+                        )
+
             return redirect('payment_year_detail', year_id=year.id)
+
     else:
         form = PaymentTypeForm()
     return render(request, 'payments/add_payment_type.html', {'form': form, 'year': year})
@@ -1788,10 +1807,14 @@ def add_payment_entry(request, year_id):
             payment_entry = form.save(commit=False)
             payment_entry.recorded_by = request.user
             payment_entry.save()
-            return redirect('payment_year_detail', year_id=year.id)
+            messages.success(request, "Payment entry added successfully.")
+            return redirect('from_members_payment_view', year_id=year.id)
+        else:
+            messages.error(request, "There was an error adding the payment entry.")
     else:
         form = PaymentEntryForm()
     return render(request, 'payments/add_payment_entry.html', {'form': form, 'year': year})
+
 
 from .forms import PaymentYearForm
 
@@ -1805,3 +1828,38 @@ def add_payment_year(request):
     else:
         form = PaymentYearForm()
     return render(request, 'payments/add_payment_year.html', {'form': form})
+
+from .models import PaymentYear, PaymentType, PaymentEntry, Member
+from .forms import PaymentEntryForm
+
+@login_required
+def member_payment_list(request, year_id, member_id):
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    member = get_object_or_404(Member, pk=member_id)
+    payment_types = PaymentType.objects.filter(year=year)
+
+    # Prepare data for the template
+    months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    payment_data = []
+
+    for payment_type in payment_types:
+        monthly_totals = []
+        for month in range(1, 13):  # January to December
+            total = member.payment_entries.filter(payment_type=payment_type, month=month).aggregate(total=Sum('amount_paid'))['total'] or 0
+            monthly_totals.append(total)
+        payment_data.append({
+            'payment_type': payment_type,
+            'monthly_totals': monthly_totals,
+        })
+
+    # Initialize the PaymentEntryForm
+    form = PaymentEntryForm(initial={'member': member})
+
+    context = {
+        'year': year,
+        'member': member,
+        'payment_data': payment_data,
+        'months': months,
+        'form': form,
+    }
+    return render(request, 'payments/member_payment_list.html', context)

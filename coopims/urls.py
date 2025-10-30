@@ -84,10 +84,12 @@ urlpatterns = [
     path('payments/', views.payment_year_list, name='payment_year_list'),
     path('payments/add-year/', views.add_payment_year, name='add_payment_year'),
     path('payments/<int:year_id>/', views.payment_year_detail, name='payment_year_detail'),
-    path('payments/<int:year_id>/from-members/', views.from_members_payment_view, name='year_list_members'),
-    path('payments/<int:year_id>/other/', views.other_payments_view, name='year_list_other'),
+    path('payments/<int:year_id>/from-members/', views.from_members_payment_view, name='from_members_payment_view'),
+    path('payments/<int:year_id>/other/', views.other_payments_view, name='other_payments_view'),
     path('payments/<int:year_id>/add-type/', views.add_payment_type, name='add_payment_type'),
+    path('payments/<int:year_id>/from-members/add-entry/', views.add_payment_entry, name='add_payment_entry'),
     path('payments/<int:year_id>/add-entry/', views.add_payment_entry, name='add_payment_entry'),
+    path('payments/<int:year_id>/from-members/<int:member_id>/', views.member_payment_list, name='member_payment_list'),
 ]
 
 

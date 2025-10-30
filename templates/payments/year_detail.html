@@ -10,8 +10,8 @@
   </div>
   
   <div class="mb-3">
-    <a href="?filter=from_members" class="btn btn-secondary {% if filter_type == 'from_members' %}active{% endif %}">From Members</a>
-    <a href="?filter=other" class="btn btn-secondary {% if filter_type == 'other' %}active{% endif %}">Other Payments</a>
+    <a href="{% url 'from_members_payment_view' year.id %}" class="btn btn-secondary">From Members</a>
+    <a href="{% url 'other_payments_view' year.id %}" class="btn btn-secondary">Other Payments</a>
   </div>
 
   <table class="table table-striped">

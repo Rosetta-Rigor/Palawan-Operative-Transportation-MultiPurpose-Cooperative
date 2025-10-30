@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Payments for {{ member.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Payments for {{ member.full_name }} ({{ year.year }})</h2>
+    <a href="{% url 'add_payment_entry' year.id %}" class="btn btn-primary">Add Payment Entry</a>
+  </div>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Payment Type</th>
+        {% for month in months %}
+          <th>{{ month }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for data in payment_data %}
+        <tr>
+          <td>{{ data.payment_type.name }}</td>
+          {% for total in data.monthly_totals %}
+            <td>{{ total }}</td>
+          {% endfor %}
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="13" class="text-center">No payment types found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

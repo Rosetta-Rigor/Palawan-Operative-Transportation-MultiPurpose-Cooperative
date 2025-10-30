@@ -196,6 +196,7 @@ class PaymentType(models.Model):
     name = models.CharField(max_length=100)
     year = models.ForeignKey(PaymentYear, on_delete=models.CASCADE, related_name='payment_types')
     payment_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    members = models.ManyToManyField(Member, related_name='payment_types', blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.year.year})"
@@ -206,7 +207,7 @@ class PaymentEntry(models.Model):
     member = models.ForeignKey('Member', on_delete=models.SET_NULL, null=True, blank=True, related_name='payment_entries')  # Only for "From Members"
     month = models.PositiveSmallIntegerField(choices=[(i, i) for i in range(1, 13)])  # 1=Jan, 12=Dec
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
-    recorded_at = models.DateTimeField(auto_now_add=True)
+    recorded_at = models.DateTimeField(auto_now_add=True)  # Ensure this field exists
     recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
