@@ -154,14 +154,10 @@ class PaymentTypeForm(forms.ModelForm):
 class PaymentEntryForm(forms.ModelForm):
     class Meta:
         model = PaymentEntry
-        fields = ['payment_type', 'month', 'amount_paid']
+        fields = ['payment_type', 'member', 'month', 'amount_paid']  # Ensure 'member' is included
         widgets = {
             'payment_type': forms.Select(attrs={'class': 'form-control'}),
+            'member': forms.Select(attrs={'class': 'form-control'}),
             'month': forms.Select(attrs={'class': 'form-control'}),
             'amount_paid': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Enter amount'}),
-        }
-        labels = {
-            'payment_type': 'Payment Type',
-            'month': 'Month',
-            'amount_paid': 'Amount Paid',
         }

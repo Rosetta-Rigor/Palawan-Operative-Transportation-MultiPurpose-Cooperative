@@ -1707,9 +1707,9 @@ def from_members_payment_view(request, year_id):
 
     # Annotate members with monthly totals for the selected year
     for member in members:
-        # Calculate totals for each month, defaulting to 0 if no payments exist
+        # Calculate totals for each month, defaulting to None if no payments exist (will show as "-")
         member.monthly_totals = [
-            member.payment_entries.filter(payment_type__year=year, month=month).aggregate(total=Sum('amount_paid'))['total'] or 0
+            member.payment_entries.filter(payment_type__year=year, month=month).aggregate(total=Sum('amount_paid'))['total']
             for month in range(1, 13)
         ]
 
@@ -1755,22 +1755,6 @@ def payment_year_detail(request, year_id):
     })
 
 @login_required
-def from_members_payment_view(request, year_id):
-    year = get_object_or_404(PaymentYear, pk=year_id)
-    members = Member.objects.prefetch_related('payment_entries').all()
-
-    paginator = Paginator(members, 10)  # Paginate 10 members per page
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
-
-    return render(request, 'payments/from_members_payment.html', {
-        'year': year,
-        'members': page_obj,
-        'paginator': paginator,
-        'page_obj': page_obj,
-    })
-
-@login_required
 def add_payment_type(request, year_id):
     year = get_object_or_404(PaymentYear, pk=year_id)
     if request.method == 'POST':
@@ -1799,21 +1783,53 @@ def add_payment_type(request, year_id):
 
 
 @login_required
-def add_payment_entry(request, year_id):
+def add_payment_entry(request, year_id, member_id=None):
     year = get_object_or_404(PaymentYear, pk=year_id)
+    member = None
+    if member_id:
+        member = get_object_or_404(Member, pk=member_id)
+    
     if request.method == 'POST':
         form = PaymentEntryForm(request.POST)
+        # Filter payment types for the current year
+        form.fields['payment_type'].queryset = PaymentType.objects.filter(year=year)
+        
+        # If member is pre-selected, force it in the form and disable the field
+        if member:
+            form.fields['member'].disabled = True
+            form.fields['member'].widget.attrs['class'] = 'form-control'
+        
         if form.is_valid():
             payment_entry = form.save(commit=False)
+            # If member was pre-selected, ensure it's set (since disabled fields don't POST)
+            if member:
+                payment_entry.member = member
+            if not payment_entry.member:  # Ensure the member is set
+                messages.error(request, "Please select a member for the payment entry.")
+                return render(request, 'payments/add_payment_entry.html', {'form': form, 'year': year, 'member': member})
             payment_entry.recorded_by = request.user
             payment_entry.save()
             messages.success(request, "Payment entry added successfully.")
-            return redirect('from_members_payment_view', year_id=year.id)
+            # Redirect to the specific member's payment table
+            return redirect('member_payment_list', year_id=year.id, member_id=payment_entry.member.id)
         else:
             messages.error(request, "There was an error adding the payment entry.")
     else:
-        form = PaymentEntryForm()
-    return render(request, 'payments/add_payment_entry.html', {'form': form, 'year': year})
+        # Pre-populate form with member if provided
+        initial_data = {}
+        if member:
+            initial_data['member'] = member
+        form = PaymentEntryForm(initial=initial_data)
+        # Filter payment types for the current year
+        form.fields['payment_type'].queryset = PaymentType.objects.filter(year=year)
+        
+        # If member is pre-selected, disable the field and style it as grayed out
+        if member:
+            form.fields['member'].disabled = True
+            form.fields['member'].widget.attrs['class'] = 'form-control'
+            form.fields['member'].widget.attrs['style'] = 'background-color: #e9ecef; cursor: not-allowed;'
+    
+    return render(request, 'payments/add_payment_entry.html', {'form': form, 'year': year, 'member': member})
 
 
 from .forms import PaymentYearForm
@@ -1838,6 +1854,12 @@ def member_payment_list(request, year_id, member_id):
     member = get_object_or_404(Member, pk=member_id)
     payment_types = PaymentType.objects.filter(year=year)
 
+    # Debug: Print all payment entries for this member
+    all_entries = member.payment_entries.all()
+    print(f"DEBUG: Member {member.full_name} has {all_entries.count()} payment entries")
+    for entry in all_entries:
+        print(f"  - Payment Type: {entry.payment_type.name}, Month: {entry.month}, Amount: {entry.amount_paid}")
+
     # Prepare data for the template
     months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
     payment_data = []
@@ -1845,8 +1867,18 @@ def member_payment_list(request, year_id, member_id):
     for payment_type in payment_types:
         monthly_totals = []
         for month in range(1, 13):  # January to December
-            total = member.payment_entries.filter(payment_type=payment_type, month=month).aggregate(total=Sum('amount_paid'))['total'] or 0
-            monthly_totals.append(total)
+            # Fetch the total amount paid for the specific member, payment type, and month
+            # Note: payment_type already filtered by year above, so no need to filter again
+            entries = member.payment_entries.filter(
+                payment_type=payment_type,
+                month=month
+            )
+            total = entries.aggregate(total=Sum('amount_paid'))['total']
+            # Debug: Print what we found
+            if total is not None:
+                print(f"DEBUG: Found payment for {payment_type.name}, month {month}: {total}")
+            # Append None if no payment exists, otherwise append the total
+            monthly_totals.append(total if total is not None else None)
         payment_data.append({
             'payment_type': payment_type,
             'monthly_totals': monthly_totals,

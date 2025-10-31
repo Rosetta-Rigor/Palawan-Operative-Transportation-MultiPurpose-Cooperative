@@ -1,12 +1,16 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container py-4">
-  <h2>Add Payment Entry for {{ year.year }}</h2>
+  <h2>Add Payment Entry for {{ year.year }}{% if member %} - {{ member.full_name }}{% endif %}</h2>
   <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit" class="btn btn-primary">Record Payment</button>
-    <a href="{% url 'payment_year_detail' year.id %}" class="btn btn-secondary">Cancel</a>
+    {% if member %}
+      <a href="{% url 'member_payment_list' year.id member.id %}" class="btn btn-secondary">Cancel</a>
+    {% else %}
+      <a href="{% url 'from_members_payment_view' year.id %}" class="btn btn-secondary">Cancel</a>
+    {% endif %}
   </form>
 </div>
 {% endblock %}

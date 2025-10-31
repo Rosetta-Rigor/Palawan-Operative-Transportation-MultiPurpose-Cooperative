@@ -6,7 +6,7 @@
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Payments for {{ member.full_name }} ({{ year.year }})</h2>
-    <a href="{% url 'add_payment_entry' year.id %}" class="btn btn-primary">Add Payment Entry</a>
+    <a href="{% url 'add_payment_entry_member' year.id member.id %}" class="btn btn-primary">Add Payment Entry</a>
   </div>
 
   <table class="table table-striped">
@@ -23,7 +23,7 @@
         <tr>
           <td>{{ data.payment_type.name }}</td>
           {% for total in data.monthly_totals %}
-            <td>{{ total }}</td>
+            <td>{{ total|default:"-" }}</td>
           {% endfor %}
         </tr>
       {% empty %}

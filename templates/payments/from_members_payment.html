@@ -25,7 +25,7 @@
           <td>{{ forloop.counter }}</td>
           <td>{{ member.full_name }}</td>
           {% for total in member.monthly_totals %}
-            <td>{{ total }}</td>
+            <td>{{ total|default:"-" }}</td>
           {% endfor %}
           <td class="text-right">
             <a href="{% url 'member_payment_list' year.id member.id %}" class="btn btn-primary">View Payments</a>
