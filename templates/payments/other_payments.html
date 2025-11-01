@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Other Payments{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Other Payments for {{ year.year }}</h2>
+    <div>
+      <a href="{% url 'payment_year_detail' year.id %}" class="btn btn-secondary">Back to Year Detail</a>
+      <a href="{% url 'add_payment_entry' year.id %}" class="btn btn-primary">Add Payment Entry</a>
+    </div>
+  </div>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Payment Type</th>
+        <th>Month</th>
+        <th>Amount Paid</th>
+        <th>Recorded By</th>
+        <th>Recorded At</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for payment in payments %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ payment.payment_type.name }}</td>
+          <td>{{ payment.get_month_display }}</td>
+          <td>₱{{ payment.amount_paid }}</td>
+          <td>{{ payment.recorded_by.username }}</td>
+          <td>{{ payment.recorded_at|date:"M d, Y h:i A" }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" class="text-center">No payment records found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% include 'includes/pagination.html' %}
+</div>
+{% endblock %}

@@ -9,6 +9,7 @@
 {% block content %}
 <div class="admin-dashboard container py-5">
   <!-- Header: back button + batch dropdown -->
+   <br>
   <div class="members-header card-header-gradient mb-4 d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between">
     <div class="d-flex align-items-center w-100">
       <a href="{% url 'member_list' %}" class="back-btn mr-3" title="Back to Members">
@@ -16,7 +17,6 @@
           <path d="M15 18l-6-6 6-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </a>
-
       <div>
         <h1 class="members-header-title mb-1">MEMBERS — BATCH {{ batch.number }}</h1>
       </div>

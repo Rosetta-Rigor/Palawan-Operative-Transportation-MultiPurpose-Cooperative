@@ -6,6 +6,7 @@
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>From Members Payments for {{ year.year }}</h2>
+    <a href="{% url 'payment_year_detail' year.id %}" class="btn btn-secondary">Back to Year Detail</a>
   </div>
 
   <table class="table table-striped">

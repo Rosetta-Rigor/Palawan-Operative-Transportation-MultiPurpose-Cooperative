@@ -6,7 +6,10 @@
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Payments for {{ year.year }}</h2>
-    <a href="{% url 'add_payment_type' year.id %}" class="btn btn-primary">Add Payment Type</a>
+    <div>
+      <a href="{% url 'payment_year_list' %}" class="btn btn-secondary">Back to Years</a>
+      <a href="{% url 'add_payment_type' year.id %}" class="btn btn-primary">Add Payment Type</a>
+    </div>
   </div>
   
   <div class="mb-3">

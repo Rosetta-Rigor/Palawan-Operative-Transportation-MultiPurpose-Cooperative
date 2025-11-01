@@ -12,12 +12,19 @@
     <link rel="stylesheet" href="{% static 'css/login_custom.css' %}" />
 </head>
 <body>
-    <div class="bg-road-stripes"></div>
+    <!-- Carousel Background -->
+    <div class="carousel-background">
+        <img src="{% static 'img/bg.jpg' %}" class="carousel-img active" alt="Background 1">
+        <img src="{% static 'img/bg2.jpg' %}" class="carousel-img" alt="Background 2">
+        <img src="{% static 'img/bg3.jpg' %}" class="carousel-img" alt="Background 3">
+        <img src="{% static 'img/bg4.jpg' %}" class="carousel-img" alt="Background 4">
+    </div>
     <div class="overlay"></div>
+    
     <div class="login-card">
+        <div class="login-header-title">Palawan Operative Transportation<br>Multi-Purpose Cooperative</div>
         <img src="{% static 'img/home.png' %}" onerror="this.style.display='none'">
-        <div class="login-title">POTMPC</div>
-        <div class="login-subtitle">Palawan Operative Transportation Multi-Purpose Cooperative</div>
+        <div class="login-subtitle">Secure Login Portal</div>
         {% if messages %}
             <div class="mt-2">
                 {% for message in messages %}
@@ -53,12 +60,30 @@
     <script>
         function togglePassword() {
             var pwd = document.getElementById('password');
+            var toggleIcon = document.querySelector('.toggle-password');
             if (pwd.type === 'password') {
                 pwd.type = 'text';
+                toggleIcon.innerHTML = '&#128064;'; // Open eye
             } else {
                 pwd.type = 'password';
+                toggleIcon.innerHTML = '&#128065;'; // Closed eye
             }
         }
+
+        // Carousel functionality
+        document.addEventListener("DOMContentLoaded", function() {
+            const carouselImages = document.querySelectorAll('.carousel-img');
+            let currentIndex = 0;
+
+            function showNextImage() {
+                carouselImages[currentIndex].classList.remove('active');
+                currentIndex = (currentIndex + 1) % carouselImages.length;
+                carouselImages[currentIndex].classList.add('active');
+            }
+
+            // Change image every 7 seconds
+            setInterval(showNextImage, 7000);
+        });
 
         document.addEventListener("DOMContentLoaded", function(){
             const startBtn = document.getElementById("start-scan-btn");
