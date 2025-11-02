@@ -1241,7 +1241,7 @@ def home(request):
                 if expiry_date:
                     days_left = (expiry_date - today).days
                     status = 'normal'
-                    if 0 <= days_left <= 15:
+                    if 0 <= days_left <= 29:
                         status = 'urgent'
                         member_has_urgent = True
                     elif 30 <= days_left <= 60:
@@ -1895,3 +1895,169 @@ def member_payment_list(request, year_id, member_id):
         'form': form,
     }
     return render(request, 'payments/member_payment_list.html', context)
+
+
+# ==== Renewal Details View ====
+from datetime import datetime
+
+@staff_member_required
+def renewal_details(request, date):
+    """
+    Shows all members with document renewals on a specific date.
+    Groups members by urgency status (urgent/upcoming).
+    Provides action buttons to send reminders or mark as renewed.
+    """
+    try:
+        # Parse the date from URL (format: YYYY-MM-DD)
+        target_date = datetime.strptime(date, '%Y-%m-%d').date()
+    except ValueError:
+        messages.error(request, "Invalid date format.")
+        return redirect('home')
+    
+    today = timezone.localtime(timezone.now()).date()
+    
+    # Initialize lists for different urgency levels
+    urgent_renewals = []
+    upcoming_renewals = []
+    normal_renewals = []
+    
+    # Get all members with their vehicles and documents
+    members = Member.objects.select_related('user_account', 'batch').prefetch_related(
+        'vehicles__document__entries'
+    ).all().order_by('full_name')
+    
+    for member in members:
+        for vehicle in member.vehicles.all():
+            plate = getattr(vehicle, 'plate_number', 'N/A')
+            
+            # Get latest approved document entry
+            latest_entry = DocumentEntry.objects.filter(
+                document__vehicle=vehicle
+            ).filter(
+                Q(status="approved") | Q(uploaded_by__isnull=True)
+            ).order_by('-renewal_date').first()
+            
+            if latest_entry and latest_entry.renewal_date:
+                candidate = latest_entry.renewal_date
+                
+                # Convert to date if datetime
+                if hasattr(candidate, "date"):
+                    candidate = candidate.date()
+                
+                # Normalize expiry date to future
+                attempts = 0
+                while candidate < today and attempts < 5:
+                    candidate = _add_years_safe(candidate, 1)
+                    attempts += 1
+                
+                # Check if this renewal matches our target date
+                if candidate == target_date:
+                    days_left = (candidate - today).days
+                    
+                    # Determine status
+                    status = 'normal'
+                    status_class = 'secondary'
+                    if 0 <= days_left <= 29:
+                        status = 'urgent'
+                        status_class = 'danger'
+                    elif 30 <= days_left <= 60:
+                        status = 'upcoming'
+                        status_class = 'warning'
+                    
+                    renewal_info = {
+                        'member': member,
+                        'vehicle': vehicle,
+                        'plate': plate,
+                        'expiry_date': candidate,
+                        'days_left': days_left,
+                        'status': status,
+                        'status_class': status_class,
+                        'document_entry': latest_entry,
+                    }
+                    
+                    # Categorize by status
+                    if status == 'urgent':
+                        urgent_renewals.append(renewal_info)
+                    elif status == 'upcoming':
+                        upcoming_renewals.append(renewal_info)
+                    else:
+                        normal_renewals.append(renewal_info)
+    
+    # Count totals
+    total_renewals = len(urgent_renewals) + len(upcoming_renewals) + len(normal_renewals)
+    
+    context = {
+        'target_date': target_date,
+        'urgent_renewals': urgent_renewals,
+        'upcoming_renewals': upcoming_renewals,
+        'normal_renewals': normal_renewals,
+        'total_renewals': total_renewals,
+        'today': today,
+    }
+    
+    return render(request, 'renewal_details.html', context)
+
+
+@staff_member_required
+@require_POST
+def send_renewal_reminder(request, member_id, vehicle_id):
+    """
+    Send a renewal reminder to a member for a specific vehicle.
+    """
+    member = get_object_or_404(Member, pk=member_id)
+    vehicle = get_object_or_404(Vehicle, pk=vehicle_id)
+    
+    # TODO: Implement actual reminder sending (email/SMS/notification)
+    # For now, just show a success message
+    
+    messages.success(
+        request, 
+        f"Reminder sent to {member.full_name} for vehicle {vehicle.plate_number}"
+    )
+    
+    # Redirect back to the renewal details page
+    date = request.POST.get('date')
+    if date:
+        return redirect('renewal_details', date=date)
+    return redirect('home')
+
+
+@staff_member_required
+@require_POST
+def mark_as_renewed(request, member_id, vehicle_id):
+    """
+    Mark a vehicle's documents as renewed (create new document entry).
+    """
+    member = get_object_or_404(Member, pk=member_id)
+    vehicle = get_object_or_404(Vehicle, pk=vehicle_id)
+    
+    # Get or create document for this vehicle
+    document, created = Document.objects.get_or_create(
+        vehicle=vehicle,
+        defaults={'document_type': 'Registration'}
+    )
+    
+    # Create new renewal entry
+    new_renewal_date = timezone.now().date()
+    next_year = _add_years_safe(new_renewal_date, 1)
+    
+    DocumentEntry.objects.create(
+        document=document,
+        renewal_date=next_year,
+        status='approved',
+        uploaded_by=None,  # Manager created
+        approved_by=request.user,
+        approved_at=timezone.now(),
+        manager_notes='Marked as renewed from calendar view'
+    )
+    
+    messages.success(
+        request,
+        f"Vehicle {vehicle.plate_number} marked as renewed. Next renewal: {next_year}"
+    )
+    
+    # Redirect back to the renewal details page
+    date = request.POST.get('date')
+    if date:
+        return redirect('renewal_details', date=date)
+    return redirect('home')

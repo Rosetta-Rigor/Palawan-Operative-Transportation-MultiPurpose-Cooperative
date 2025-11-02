@@ -90,6 +90,11 @@ urlpatterns = [
     path('payments/<int:year_id>/add-entry/', views.add_payment_entry, name='add_payment_entry'),
     path('payments/<int:year_id>/from-members/<int:member_id>/', views.member_payment_list, name='member_payment_list'),
     path('payments/<int:year_id>/from-members/<int:member_id>/add-entry/', views.add_payment_entry, name='add_payment_entry_member'),
+
+    # RENEWAL TRACKING
+    path('renewals/<str:date>/', views.renewal_details, name='renewal_details'),
+    path('renewals/<int:member_id>/<int:vehicle_id>/send-reminder/', views.send_renewal_reminder, name='send_renewal_reminder'),
+    path('renewals/<int:member_id>/<int:vehicle_id>/mark-renewed/', views.mark_as_renewed, name='mark_as_renewed'),
 ]
 
 

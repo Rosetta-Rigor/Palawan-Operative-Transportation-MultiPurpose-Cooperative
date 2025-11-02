@@ -1,8 +1,0 @@
-/* Renewal Buffer Zone Styles */
-#renewal-member-list li, #renewed-member-list li {
-    font-size: 1rem;
-    padding: 0.5rem 1rem;
-}
-#renewal-member-list li button {
-    margin-left: 1rem;
-}

@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="{% static 'css/ready.css' %}">
     <link rel="stylesheet" href="{% static 'css/user_custom.css' %}">
     <link rel="stylesheet" href="{% static 'css/admin_all.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_responsive.css' %}">
 
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -61,7 +62,13 @@
                 <div class="container-fluid">
                     <ul class="navbar-nav topbar-nav ml-md-auto align-items-center">
                         <li class="nav-item dropdown">
-                            <a href="#" class="dropdown-toggle profile-pic" id="userAvatarDropdown" data-toggle="dropdown" aria-expanded="false" style="text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                            <a href="#" class="dropdown-toggle profile-pic" id="userAvatarDropdown" data-toggle="dropdown" aria-expanded="false" style="text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                                <!-- User Name -->
+                                <div class="user-name-display" style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 4px;">
+                                    <span style="color: white; font-weight: 600; font-size: 0.95rem; line-height: 1.2;">{{ user.username }}</span>
+                                    <span style="color: rgba(255,255,255,0.8); font-size: 0.75rem; line-height: 1.2;">Administrator</span>
+                                </div>
+                                <!-- Avatar -->
                                 <div class="avatar-wrapper" style="width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s; display: flex; align-items: center; justify-content: center;">
                                     {% if user.is_authenticated and user.profile_image %}
                                         <img src="{{ user.profile_image.url }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">
@@ -71,6 +78,23 @@
                                 </div>
                             </a>
                             <ul class="dropdown-menu dropdown-user animated fadeIn" aria-labelledby="userAvatarDropdown">
+                                <!-- User Card at Top -->
+                                <li class="dropdown-user-card" style="padding: 15px; border-bottom: 1px solid rgba(31,62,39,0.1); margin-bottom: 5px;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; border: 2px solid #C99E35; flex-shrink: 0;">
+                                            {% if user.is_authenticated and user.profile_image %}
+                                                <img src="{{ user.profile_image.url }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                            {% else %}
+                                                <img src="{% static 'img/boss.jpg' %}" alt="Default Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                            {% endif %}
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="font-weight: 700; color: #1F3E27; font-size: 0.95rem; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ user.username }}</div>
+                                            <div style="font-size: 0.8rem; color: #5C3A21; line-height: 1.3;">Administrator</div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <!-- Menu Items -->
                                 <li>
                                     <a class="dropdown-item" href="{% url 'admin_profile_edit' %}">
                                         <i class="la la-user" style="margin-right: 8px;"></i> Edit Admin Profile
@@ -96,23 +120,6 @@
         {% with current=request.resolver_match.url_name %}
         <div class="sidebar">
             <nav class="sidebar-nav">
-                <!-- User Profile Card -->
-                <a href="{% url 'admin_profile_edit' %}" class="sidebar-user-card" style="text-decoration: none; color: inherit; display: block; padding: 20px 26px; transition: background 0.2s;">
-                    <div class="d-flex align-items-center" style="gap: 12px;">
-                        <div class="photo" style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; border: 2px solid var(--brand-600); flex-shrink: 0;">
-                            {% if user.is_authenticated and user.profile_image %}
-                                <img src="{{ user.profile_image.url }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
-                            {% else %}
-                                <img src="{% static 'img/boss.jpg' %}" alt="Default Profile" style="width: 100%; height: 100%; object-fit: cover;">
-                            {% endif %}
-                        </div>
-                        <div class="info" style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 700; color: var(--brand-600); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ user.username }}</div>
-                            <div style="font-size: 0.8rem; color: var(--muted-2); margin-top: 2px;">Administrator</div>
-                        </div>
-                    </div>
-                </a>
-
                 <div class="nav-item {% if current == 'home' %}active{% endif %}">
                     <a class="nav-link" href="{% url 'home' %}">
                         <i class="la la-dashboard"></i>

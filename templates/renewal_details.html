@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_all.css' %}">
+<link rel="stylesheet" href="{% static 'css/renewal_detail.css' %}">
+{% endblock %}
+
+{% block title %}Renewals for {{ target_date|date:"F d, Y" }}{% endblock %}
+
+{% block content %}
+<br><br>
+<div class="renewal-details-container">
+  <div class="page-header">
+    <h1>DOCUMENT RENEWALS</h1>
+    <div class="subtitle">{{ target_date|date:"l, F d, Y" }}</div>
+    
+    <div class="stats-bar">
+      <div class="stat-box">
+        <div class="label">TOTAL RENEWALS</div>
+        <div class="value">{{ total_renewals }}</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">🔴 URGENT</div>
+        <div class="value">{{ urgent_renewals|length }}</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">🟡 UPCOMING</div>
+        <div class="value">{{ upcoming_renewals|length }}</div>
+      </div>
+    </div>
+  </div>
+  <a href="{% url 'home' %}" class="back-button">
+    <i class="la la-arrow-left"></i>
+    Back to Dashboard
+  </a>
+
+  {% if messages %}
+    <div class="messages mb-4">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Urgent Renewals Section -->
+  {% if urgent_renewals %}
+    <div class="section-header">
+      <h2>🔴 Urgent Renewals</h2>
+      <span class="badge badge-danger">{{ urgent_renewals|length }}</span>
+    </div>
+
+    {% for renewal in urgent_renewals %}
+      <div class="renewal-card urgent">
+        <div class="renewal-card-header">
+          <div class="member-info">
+            <h3>{{ renewal.member.full_name }}</h3>
+            <div class="batch-label">
+              {% if renewal.member.batch %}
+                Batch {{ renewal.member.batch.number }}
+              {% else %}
+                No Batch Assigned
+              {% endif %}
+            </div>
+          </div>
+          <span class="badge badge-{{ renewal.status_class }} badge-lg">
+            {{ renewal.days_left }} day{% if renewal.days_left != 1 %}s{% endif %} left
+          </span>
+        </div>
+
+        <div class="vehicle-info">
+          <div class="info-item">
+            <span class="label">Vehicle Plate</span>
+            <span class="value">{{ renewal.plate }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Expiry Date</span>
+            <span class="value">{{ renewal.expiry_date|date:"M d, Y" }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Status</span>
+            <span class="value text-{{ renewal.status_class }}">
+              {{ renewal.status|upper }}
+            </span>
+          </div>
+          <div class="info-item">
+            <span class="label">Document Type</span>
+            <span class="value">
+              {% if renewal.document_entry.document %}
+                {{ renewal.document_entry.document.document_type }}
+              {% else %}
+                Registration
+              {% endif %}
+            </span>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <form method="post" action="{% url 'send_renewal_reminder' renewal.member.id renewal.vehicle.id %}" style="display: inline;">
+            {% csrf_token %}
+            <input type="hidden" name="date" value="{{ target_date|date:'Y-m-d' }}">
+            <button type="submit" class="btn-action btn-send-reminder">
+              <i class="la la-bell"></i> Send Reminder
+            </button>
+          </form>
+
+        <!--<form method="post" action="{% url 'mark_as_renewed' renewal.member.id renewal.vehicle.id %}" style="display: inline;">
+            {% csrf_token %}
+            <input type="hidden" name="date" value="{{ target_date|date:'Y-m-d' }}">
+            <button type="submit" class="btn-action btn-mark-renewed" onclick="return confirm('Mark this vehicle as renewed?');">
+              <i class="la la-check-circle"></i> Mark as Renewed
+            </button>
+          </form>-->
+
+          <a href="{% url 'member_view' renewal.member.id %}" class="btn-action btn-view-member">
+            <i class="la la-user"></i> View Member
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Upcoming Renewals Section -->
+  {% if upcoming_renewals %}
+    <div class="section-header mt-5">
+      <h2>🟡 Upcoming Renewals</h2>
+      <span class="badge badge-warning">{{ upcoming_renewals|length }}</span>
+    </div>
+
+    {% for renewal in upcoming_renewals %}
+      <div class="renewal-card upcoming">
+        <div class="renewal-card-header">
+          <div class="member-info">
+            <h3>{{ renewal.member.full_name }}</h3>
+            <div class="batch-label">
+              {% if renewal.member.batch %}
+                Batch {{ renewal.member.batch.number }}
+              {% else %}
+                No Batch Assigned
+              {% endif %}
+            </div>
+          </div>
+          <span class="badge badge-{{ renewal.status_class }} badge-lg">
+            {{ renewal.days_left }} day{% if renewal.days_left != 1 %}s{% endif %} left
+          </span>
+        </div>
+
+        <div class="vehicle-info">
+          <div class="info-item">
+            <span class="label">Vehicle Plate</span>
+            <span class="value">{{ renewal.plate }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Expiry Date</span>
+            <span class="value">{{ renewal.expiry_date|date:"M d, Y" }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Status</span>
+            <span class="value text-{{ renewal.status_class }}">
+              {{ renewal.status|upper }}
+            </span>
+          </div>
+          <div class="info-item">
+            <span class="label">Document Type</span>
+            <span class="value">
+              {% if renewal.document_entry.document %}
+                {{ renewal.document_entry.document.document_type }}
+              {% else %}
+                Registration
+              {% endif %}
+            </span>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <form method="post" action="{% url 'send_renewal_reminder' renewal.member.id renewal.vehicle.id %}" style="display: inline;">
+            {% csrf_token %}
+            <input type="hidden" name="date" value="{{ target_date|date:'Y-m-d' }}">
+            <button type="submit" class="btn-action btn-send-reminder">
+              <i class="la la-bell"></i> Send Reminder
+            </button>
+          </form>
+
+          <form method="post" action="{% url 'mark_as_renewed' renewal.member.id renewal.vehicle.id %}" style="display: inline;">
+            {% csrf_token %}
+            <input type="hidden" name="date" value="{{ target_date|date:'Y-m-d' }}">
+            <button type="submit" class="btn-action btn-mark-renewed" onclick="return confirm('Mark this vehicle as renewed?');">
+              <i class="la la-check-circle"></i> Mark as Renewed
+            </button>
+          </form>
+
+          <a href="{% url 'member_view' renewal.member.id %}" class="btn-action btn-view-member">
+            <i class="la la-user"></i> View Member
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Normal Renewals Section -->
+  {% if normal_renewals %}
+    <div class="section-header mt-5">
+      <h2>✅ Other Renewals</h2>
+      <span class="badge badge-secondary">{{ normal_renewals|length }}</span>
+    </div>
+
+    {% for renewal in normal_renewals %}
+      <div class="renewal-card">
+        <div class="renewal-card-header">
+          <div class="member-info">
+            <h3>{{ renewal.member.full_name }}</h3>
+            <div class="batch-label">
+              {% if renewal.member.batch %}
+                Batch {{ renewal.member.batch.number }}
+              {% else %}
+                No Batch Assigned
+              {% endif %}
+            </div>
+          </div>
+          <span class="badge badge-{{ renewal.status_class }} badge-lg">
+            {{ renewal.days_left }} day{% if renewal.days_left != 1 %}s{% endif %} left
+          </span>
+        </div>
+
+        <div class="vehicle-info">
+          <div class="info-item">
+            <span class="label">Vehicle Plate</span>
+            <span class="value">{{ renewal.plate }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Expiry Date</span>
+            <span class="value">{{ renewal.expiry_date|date:"M d, Y" }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Status</span>
+            <span class="value text-{{ renewal.status_class }}">
+              {{ renewal.status|upper }}
+            </span>
+          </div>
+          <div class="info-item">
+            <span class="label">Document Type</span>
+            <span class="value">
+              {% if renewal.document_entry.document %}
+                {{ renewal.document_entry.document.document_type }}
+              {% else %}
+                Registration
+              {% endif %}
+            </span>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <form method="post" action="{% url 'send_renewal_reminder' renewal.member.id renewal.vehicle.id %}" style="display: inline;">
+            {% csrf_token %}
+            <input type="hidden" name="date" value="{{ target_date|date:'Y-m-d' }}">
+            <button type="submit" class="btn-action btn-send-reminder">
+              <i class="la la-bell"></i> Send Reminder
+            </button>
+          </form>
+
+          <form method="post" action="{% url 'mark_as_renewed' renewal.member.id renewal.vehicle.id %}" style="display: inline;">
+            {% csrf_token %}
+            <input type="hidden" name="date" value="{{ target_date|date:'Y-m-d' }}">
+            <button type="submit" class="btn-action btn-mark-renewed" onclick="return confirm('Mark this vehicle as renewed?');">
+              <i class="la la-check-circle"></i> Mark as Renewed
+            </button>
+          </form>
+
+          <a href="{% url 'member_view' renewal.member.id %}" class="btn-action btn-view-member">
+            <i class="la la-user"></i> View Member
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Empty State -->
+  {% if not urgent_renewals and not upcoming_renewals and not normal_renewals %}
+    <div class="empty-state">
+      <i class="la la-calendar-check"></i>
+      <h3>No Renewals on This Date</h3>
+      <p>There are no document renewals scheduled for {{ target_date|date:"F d, Y" }}.</p>
+      <a href="{% url 'home' %}" class="btn btn-primary mt-3">
+        <i class="la la-arrow-left"></i> Back to Dashboard
+      </a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

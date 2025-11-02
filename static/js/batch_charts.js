@@ -137,7 +137,7 @@
   }
 
   // compute counts from members_preview, using new thresholds:
-  // URGENT: 0-15 days before renewal
+  // URGENT: 0-29 days before renewal
   // UPCOMING: 30-60 days before renewal
   function computeCountsFromPreview(batchObj) {
     var total = 0, urgent = 0, upcoming = 0;
@@ -173,8 +173,11 @@
         var diffMs = expiryMid - todayMid;
         var daysLeft = Math.ceil(diffMs / MS_PER_DAY);
 
-        if (daysLeft >= 0 && daysLeft <= 15) memberUrgent = true;
-        else if (daysLeft >= 30 && daysLeft <= 60 && !memberUrgent) memberUpcoming = true;
+        if (daysLeft >= 0 && daysLeft <= 29) {
+          memberUrgent = true;
+        } else if (daysLeft >= 30 && daysLeft <= 60) {
+          if (!memberUrgent) memberUpcoming = true;
+        }
       });
 
       if (memberUrgent) urgent++;

@@ -1,0 +1,304 @@
+/* Tablet and Small Desktop - 991px and below */
+@media (max-width: 991px) {
+  /* Sidebar Toggle Button */
+  .main-header .logo-header .navbar-toggler {
+    display: block !important;
+    opacity: 1 !important;
+    background: transparent;
+    border: none;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    position: relative;
+  }
+
+  .main-header .logo-header .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(44, 88, 119, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    display: block;
+    width: 24px;
+    height: 24px;
+    background-size: 100%;
+  }
+
+  /* Header Logo - Left Aligned on Mobile */
+  .main-header .logo-header {
+    width: 100% !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px !important;
+  }
+
+  .main-header .logo-header .logo {
+    flex: 1;
+    justify-content: flex-start;
+    margin-left: 10px;
+  }
+
+  .main-header .logo-header .logo-text {
+    font-size: 16px;
+  }
+
+  /* Avatar Dropdown - Right Side on Mobile */
+  .navbar-header {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    left: auto !important;
+    padding-right: 15px;
+    background: transparent;
+    border: none;
+  }
+
+  .navbar-header .container-fluid {
+    padding: 0;
+  }
+
+  /* Sidebar Responsive */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 260px;
+    z-index: 1050;
+    transform: translate3d(-270px, 0, 0);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar .sidebar-wrapper {
+    padding-top: 55px;
+  }
+
+  .nav_open .sidebar {
+    transform: translate3d(0, 0, 0) !important;
+  }
+
+  /* Main Panel Adjustments */
+  .main-panel {
+    width: 100%;
+    margin-left: 0;
+    padding-top: 70px; /* Maintain padding on mobile */
+  }
+
+  .nav_open .main-panel {
+    transform: translate3d(260px, 0, 0);
+  }
+
+  .nav_open .main-header {
+    transform: translate3d(260px, 0, 0);
+  }
+
+  /* Overlay for mobile sidebar */
+  .nav_open::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+    animation: fadeIn 0.3s;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Admin Dashboard Responsive */
+  .admin-dashboard .dashboard-grid {
+    display: block;
+  }
+
+  .admin-dashboard .calendar-card,
+  .admin-dashboard .whiteboard-card {
+    width: 100%;
+    margin-bottom: 18px;
+  }
+
+  .admin-dashboard .user-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Hide toggle button on desktop */
+  .navbar-toggler {
+    display: none;
+  }
+}
+
+/* Tablet - 767px and below */
+@media (max-width: 767px) {
+  /* Dashboard Layout */
+  .admin-dashboard .dashboard-grid { 
+    display:block; 
+  }
+  
+  .admin-dashboard .user-card-grid { 
+    grid-template-columns: 1fr 1fr; 
+  }
+  
+  .admin-dashboard .calendar-card, 
+  .admin-dashboard .whiteboard-card { 
+    width:100% !important; 
+    max-width:100%; 
+  }
+
+  /* Header Layout */
+  .members-header { 
+    padding:12px; 
+  }
+  
+  .members-header .members-header-title { 
+    font-size:1.15rem; 
+  }
+  
+  .members-header .search-card { 
+    margin-top:8px; 
+  }
+  
+  .back-btn { 
+    width:40px; 
+    height:40px; 
+  }
+  
+  /* Navbar Mobile Adjustments */
+  .navbar-header .user-name-display {
+    display: none !important;
+  }
+
+  .navbar-header .profile-pic {
+    padding: 4px !important;
+  }
+
+  .dropdown-menu.dropdown-user {
+    min-width: 220px !important;
+  }
+
+  .main-header .logo-header .logo-text {
+    font-size: 14px;
+  }
+
+  .main-header .logo-header img {
+    height: 32px !important;
+  }
+
+  .navbar-header .profile-pic .avatar-wrapper {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .admin-dashboard .members-header-title {
+    font-size: 1.25rem !important;
+  }
+
+  .admin-dashboard .batch-card {
+    min-height: 80px;
+  }
+
+  .admin-dashboard .batch-chart {
+    width: 80px !important;
+    height: 80px !important;
+  }
+}
+
+/* Mobile - 640px and below */
+@media (max-width: 640px) {
+  /* Batch Cards */
+  .admin-dashboard .batch-card { 
+    flex-direction:row; 
+    padding:10px; 
+    min-height:96px; 
+  }
+  
+  .admin-dashboard .batch-chart { 
+    width:88px; 
+    height:88px; 
+    flex:0 0 88px; 
+  }
+  
+  .admin-dashboard .batch-svg { 
+    width:88px; 
+    height:88px; 
+  }
+  
+  .admin-dashboard .batch-center .batch-count { 
+    font-size:1rem; 
+  }
+
+  /* Approval Actions */
+  .approve-table td .approve-row-form > div { 
+    width:140px; 
+    max-width:140px; 
+  }
+  
+  .approve-btn, .reject-btn { 
+    width:40px; 
+    height:34px; 
+    font-size:0.95rem; 
+  }
+}
+
+/* Mobile - 520px and below */
+@media (max-width: 520px) {
+  .action-btn { 
+    width: 88px; 
+    min-width: 88px; 
+    font-size:0.85rem; 
+  }
+}
+
+/* Mobile - 480px and below */
+@media (max-width: 480px) {
+  /* Dashboard Cards */
+  .admin-dashboard .user-card-grid { 
+    grid-template-columns: 1fr; 
+  }
+  
+  .admin-dashboard .calendar-day { 
+    min-height:52px; 
+    padding:6px; 
+    font-size:0.85rem; 
+  }
+
+  /* Pagination */
+  .pagination { 
+    flex-wrap:wrap; 
+    gap:6px; 
+  }
+}
+
+/* Document Approval - 780px and below */
+@media (max-width: 780px) {
+  .approve-docs-header { 
+    flex-direction:column; 
+    align-items:stretch; 
+    gap:8px; 
+  }
+  
+  .approve-filter .select2-container { 
+    width:100% !important; 
+    max-width:100%; 
+  }
+}
+
+/* Desktop - 992px and above */
+@media (min-width: 992px) {
+  /* Desktop - ensure toggle is hidden */
+  .navbar-toggler {
+    display: none !important;
+  }
+
+  .main-header .logo-header {
+    width: 260px;
+  }
+
+  .navbar-header {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+}

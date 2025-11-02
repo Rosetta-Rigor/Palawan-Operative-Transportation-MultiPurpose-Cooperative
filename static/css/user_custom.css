@@ -37,13 +37,13 @@ body {
     top: 0;
     width: 259px;
     height: 100vh;
-    background: #fffbe6;
+    background: #315743;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     z-index: 1000;
     border: none;
-    box-shadow: 2px 0 8px rgba(166, 124, 82, 0.04);
+    box-shadow: 2px 0 8px rgba(76, 107, 74, 0.15);
     margin: 0;
     padding: 0;
 }
@@ -51,7 +51,7 @@ body {
 /* --- Nav Section --- */
 .sidebar-nav {
     flex: 1 1 auto;
-    padding-top: 61px;
+    padding-top: 69px;
     padding-bottom: 0;
     display: flex;
     flex-direction: column;
@@ -68,7 +68,7 @@ body {
     font-size: 1rem;
     font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
     font-weight: 600;
-    color: #4e3a21;
+    color: #ffffff;
     background: transparent;
     border: none;
     border-radius: 0;
@@ -85,9 +85,9 @@ body {
 .sidebar-nav .nav-item.active .nav-link,
 .sidebar-nav .nav-link.active,
 .sidebar-nav .nav-link[aria-current="page"] {
-    background: #ffecb3 !important;
-    color: #a67c52 !important;
-    border-left: 3px solid #a67c52;
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    border-left: 3px solid #C99E35;
     font-weight: 700;
     border-radius: 0;
     box-shadow: none;
@@ -98,13 +98,13 @@ body {
 .sidebar-nav .nav-link i {
     font-size: 1.35em;
     min-width: 28px;
-    color: #a67c52;
+    color: #ffffff;
 }
 
 /* --- User Card at Bottom --- */
 .sidebar-user-card {
-    background: #ffffff;
-    border-top: 2px solid #e0cfa2;
+    background: rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
     border-left: none;
     border-right: none;
     border-bottom: none;
@@ -125,7 +125,7 @@ body {
     height: 48px;
     object-fit: cover;
     border-radius: 50%;
-    border: 2px solid #a67c52;
+    border: 2px solid #C99E35;
 }
 .sidebar-user-card .info {
     flex: 1 1 auto;
@@ -145,13 +145,13 @@ body {
     font-size: 1.1rem;
     font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
     font-weight: 700;
-    color: #4e3a21;
+    color: #ffffff;
     margin-right: 8px;
 }
 .sidebar-user-card .dropdown-arrow {
     display: inline-block;
     font-size: 1.2em;
-    color: #a67c52;
+    color: #ffffff;
     rotate: 180deg;
     transition: transform 0.2s;
     margin-left: 8px;
@@ -162,7 +162,7 @@ body {
 }
 .sidebar-user-card .user-level {
     font-size: 0.8rem;
-    color: #a67c52;
+    color: rgba(255, 255, 255, 0.85);
     font-weight: 600;
     margin-top: 2px;
     margin-left: 0;
@@ -176,12 +176,12 @@ body {
     bottom: 60px;
     left: 18px;
     width: 210px;
-    background: #f3e7c2;
+    background: #4C6B4A;
     border-radius: 12px;
-    box-shadow: 0 6px 24px rgba(166, 124, 82, 0.13);
+    box-shadow: 0 6px 24px rgba(76, 107, 74, 0.3);
     padding: 10px 0;
     z-index: 1001;
-    border: 1px solid #e0cfa2;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 .sidebar-user-card .user-dropdown-menu.show {
     display: block;
@@ -196,7 +196,7 @@ body {
 .sidebar-user-card .user-dropdown-menu ul.nav li a {
     display: block;
     padding: 12px 22px;
-    color: #4e3a21;
+    color: #ffffff;
     font-size: 1.08rem;
     font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
     font-weight: 600;
@@ -205,8 +205,8 @@ body {
     transition: background 0.15s, color 0.15s;
 }
 .sidebar-user-card .user-dropdown-menu ul.nav li a:hover {
-    background: #ffe9b3;
-    color: #a67c52;
+    background: rgba(255, 255, 255, 0.15);
+    color: #C99E35;
 }
 
 /* make icon + text align consistently */
@@ -230,7 +230,7 @@ body {
 .parent-arrow {
     margin-left: auto;
     font-size: 1.05rem;
-    color: #a67c52;
+    color: #ffffff;
     transform: rotate(180deg); /* show down when CLOSED (▲ rotated) */
     transition: transform .18s ease;
     display: inline-block;
@@ -250,9 +250,9 @@ body {
 /* active child: sharp left border and full width highlight */
 .submenu .nav-item.active .nav-link,
 .submenu .nav-link.active {
-    background: #ffecb3 !important;
-    color: #a67c52 !important;
-    border-left: 3px solid #a67c52;
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    border-left: 3px solid #C99E35;
     border-radius: 0;
 }
 
@@ -276,8 +276,8 @@ body {
 .sidebar-nav .nav-link:focus,
 .sidebar-nav .nav-link:active,
 .sidebar-nav .nav-link:hover {
-    background: #ffe9b3 !important;
-    color: #6B2F13 !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
     text-decoration: none !important;
 }
 
@@ -342,15 +342,15 @@ body {
 /* CODE FOR REMOVAL OF BOOTSTRAP HIGHLIGHT */
 .sidebar-nav .nav-link:focus,
 .sidebar-nav .nav-link:active {
-    background: #ffe9b3 !important;
-    color: #6B2F13 !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
     box-shadow: none !important;
     outline: none !important;
     text-decoration: none !important;
 }
 
 .sidebar-nav .nav-link:hover {
-    background: #ffe9b3 !important;
-    color: #6B2F13 !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
     text-decoration: none !important;
 }

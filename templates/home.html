@@ -6,8 +6,6 @@
 {% endblock %}
 {% block title %}POTMPC ADMIN{% endblock %}
 {% block content %}
-
-
 <div class="admin-dashboard container py-5">
   <div class="members-header card-header-gradient mb-4 d-flex justify-content-between align-items-center">
     <div>
@@ -244,4 +242,29 @@
 <script src="{% static 'js/calendar.js' %}"></script>
 <script src="{% static 'js/whiteboard.js' %}"></script>
 <script src="{% static 'js/batch_charts.js' %}"></script>
+<script>
+  // Auto-refresh dashboard data every 5 minutes
+  (function() {
+    const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
+    
+    function refreshDashboard() {
+      // Refresh the entire page to get updated data
+      window.location.reload();
+    }
+    
+    // Set up auto-refresh
+    let refreshTimer = setTimeout(refreshDashboard, REFRESH_INTERVAL);
+    
+    // Clear timer when user is about to leave the page
+    window.addEventListener('beforeunload', function() {
+      if (refreshTimer) clearTimeout(refreshTimer);
+    });
+    
+    // Show last updated time
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    console.log('Dashboard loaded at: ' + timeStr);
+    console.log('Next auto-refresh in 5 minutes');
+  })();
+</script>
 {% endblock %}
