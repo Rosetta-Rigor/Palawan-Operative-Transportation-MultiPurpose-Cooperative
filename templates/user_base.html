@@ -4,176 +4,215 @@
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
     <title>{% block title %}Coop Management{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no"/>
+	<meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
+    
+    <!-- Bootstrap + Fonts -->
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900">
     <link rel="stylesheet" href="{% static 'css/ready.css' %}">
     <link rel="stylesheet" href="{% static 'css/demo.css' %}">
+    <link rel="stylesheet" href="{% static 'css/user_responsive.css' %}">
     <link rel="stylesheet" href="{% static 'css/user_custom.css' %}">
-    <link rel="stylesheet" href="{% static 'css/user_navbar.css' %}">
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <div id="app">
-        {% if messages %}
-			<div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-								z-index: 99999; width: auto; max-width: 90%; text-align: center; pointer-events: none;">
-				{% for message in messages %}
-					<div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-lg"
-							 role="alert"
-							 style="display: inline-block; pointer-events: auto; max-width: 90%; margin: 10px auto; border-radius: 8px; padding: 15px; background-color: #f8f9fa; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);">
-						<div style="font-size: 1rem; color: #333;">
-							{{ message }}
-						</div>
-						<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-							<span aria-hidden="true" style="font-weight: bold;">&times;</span>
-						</button>
-					</div>
-				{% endfor %}
-			</div>
-		{% endif %}
+    {% if messages %}
+      <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                  z-index: 99999; width: auto; max-width: 90%; text-align: center; pointer-events: none;">
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-lg"
+                 role="alert"
+                 style="display: inline-block; pointer-events: auto; max-width: 90%; margin: 10px auto; border-radius: 8px; padding: 15px; background-color: #f8f9fa; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);">
+              <div style="font-size: 1rem; color: #333;">
+                {{ message }}
+              </div>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true" style="font-weight: bold;">&times;</span>
+              </button>
+            </div>
+          {% endfor %}
+      </div>
+    {% endif %}
 
-		<!-- Notification Bell - Fixed Top Right -->
-		<div id="user-notif-bell" style="position: fixed; top: 18px; right: 32px; z-index: 9999;">
-				<div class="dropdown" style="position: relative;">
-						<a href="#" class="dropdown-toggle" id="notifDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="position: relative;">
-								<i class="la la-bell" style="font-size: 1.8rem;"></i>
-								<span class="badge badge-danger" style="position: absolute; top: 2px; right: -8px; font-size: 0.7rem;">3</span>
-						</a>
-						<div class="dropdown-menu dropdown-menu-right" aria-labelledby="notifDropdown" style="min-width: 300px;">
-								<h6 class="dropdown-header">Notifications</h6>
-								<a class="dropdown-item" href="#">
-										<strong>Document Approved</strong><br>
-										Your vehicle registration document has been approved.
-										<span class="text-muted" style="font-size: 0.85em;">2 hours ago</span>
-								</a>
-								<a class="dropdown-item" href="#">
-										<strong>Renewal Reminder</strong><br>
-										Your membership renewal is due next month.
-										<span class="text-muted" style="font-size: 0.85em;">1 day ago</span>
-								</a>
-								<a class="dropdown-item" href="#">
-										<strong>New Announcement</strong><br>
-										Please check the latest cooperative updates.
-										<span class="text-muted" style="font-size: 0.85em;">3 days ago</span>
-								</a>
-						</div>
-				</div>
-		</div>
+    <div class="wrapper">
+        <!-- HEADER -->
+        <div class="main-header">
+            <div class="logo-header d-flex align-items-center" style="padding: 0 20px;">
+                <!-- Mobile Sidebar Toggle Button -->
+                <button class="navbar-toggler" type="button" id="sidebarToggle">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <a href="{% url 'user_home' %}" class="logo" style="display: flex; align-items: center; gap: 12px;">
+                    <img src="{% static 'img/home.png' %}" alt="Logo" style="height:40px; width:auto;">
+                    <span class="logo-text">POTMPC PORTAL</span>
+                </a>
+            </div>
+            
+            <!-- Nav Right - User Avatar Dropdown -->
+            <nav class="navbar navbar-header navbar-expand-lg">
+                <div class="container-fluid">
+                    <ul class="navbar-nav topbar-nav ml-md-auto align-items-center">
+                        <li class="nav-item dropdown">
+                            <a href="#" class="dropdown-toggle profile-pic" id="userAvatarDropdown" data-toggle="dropdown" aria-expanded="false" style="text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                                <!-- User Name -->
+                                <div class="user-name-display" style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 4px;">
+                                    <span style="color: white; font-weight: 600; font-size: 0.95rem; line-height: 1.2;">{{ user.username }}</span>
+                                    <span style="color: rgba(255,255,255,0.8); font-size: 0.75rem; line-height: 1.2;">{{ user.role|capfirst }}</span>
+                                </div>
+                                <!-- Avatar -->
+                                <div class="avatar-wrapper" style="width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s; display: flex; align-items: center; justify-content: center;">
+                                    {% if user.is_authenticated and user.profile_image %}
+                                        <img src="{{ user.profile_image.url }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                    {% else %}
+                                        <img src="{% static 'img/boss.jpg' %}" alt="Default Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                    {% endif %}
+                                </div>
+                            </a>
+                            <ul class="dropdown-menu dropdown-user animated fadeIn" aria-labelledby="userAvatarDropdown">
+                                <!-- User Card at Top -->
+                                <li class="dropdown-user-card" style="padding: 15px; border-bottom: 1px solid rgba(31,62,39,0.1); margin-bottom: 5px;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; border: 2px solid #C99E35; flex-shrink: 0;">
+                                            {% if user.is_authenticated and user.profile_image %}
+                                                <img src="{{ user.profile_image.url }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                            {% else %}
+                                                <img src="{% static 'img/boss.jpg' %}" alt="Default Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                            {% endif %}
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <div style="font-weight: 700; color: #1F3E27; font-size: 0.95rem; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ user.username }}</div>
+                                            <div style="font-size: 0.8rem; color: #5C3A21; line-height: 1.3;">{{ user.role|capfirst }}</div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <!-- Menu Items -->
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'user_profile' %}">
+                                        <i class="la la-user" style="margin-right: 8px;"></i> My Profile
+                                    </a>
+                                </li>
+                                <li class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                        <i class="la la-sign-out" style="margin-right: 8px;"></i> Logout
+                                    </a>
+                                    <form id="logout-form" action="{% url 'logout' %}" method="post" style="display:none;">
+                                        {% csrf_token %}
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
 
-		<div class="wrapper">
-			<!-- HEADER -->
-			<div class="main-header">
-				<div class="logo-header d-flex align-items-center justify-content-between" style="display: flex; align-items: center; justify-content: space-between;">
-					<a href="{% url 'user_home' %}" class="logo" style="flex: 1 0 auto; display: flex; align-items: center; gap: 12px;">
-						<img src="{% static 'img/home.png' %}" alt="Logo" style="height:40px; width:auto;">
-						POTMPC PORTAL
-					</a>
-					<div class="d-flex align-items-center" style="gap: 16px;">
-						<button class="navbar-toggler sidenav-toggler ml-auto" type="button" data-toggle="collapse" data-target="collapse" aria-controls="sidebar" aria-expanded="false" aria-label="Toggle navigation">
-							<span class="navbar-toggler-icon"></span>
-						</button>
-						<button class="topbar-toggler more"><i class="la la-ellipsis-v"></i></button>
-					</div>
-				</div>
-			</div>
+        <!-- SIDEBAR -->
+        {% with current=request.resolver_match.url_name %}
+        <div class="sidebar">
+            <!-- User Info Card at Top -->
+            <a href="{% url 'user_profile' %}" class="sidebar-user-info">
+                <img src="{% if user.is_authenticated and user.profile_image %}{{ user.profile_image.url }}{% else %}{% static 'img/boss.jpg' %}{% endif %}" 
+                     alt="User Avatar" 
+                     class="user-avatar">
+                <div class="user-details">
+                    <div class="username">{{ user.username }}</div>
+                    <div class="user-role">{{ user.role|capfirst }}</div>
+                </div>
+                <i class="la la-angle-right profile-arrow"></i>
+            </a>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-item {% if current == 'user_home' %}active{% endif %}">
+                    <a class="nav-link" href="{% url 'user_home' %}">
+                        <i class="la la-dashboard"></i>
+                        <p>Home</p>
+                    </a>
+                </div>
+                <div class="nav-item {% if current == 'user_documents' %}active{% endif %}">
+                    <a class="nav-link" href="{% url 'user_documents' %}">
+                        <i class="la la-file"></i>
+                        <p>Documents</p>
+                    </a>
+                </div>
+                <div class="nav-item {% if current == 'user_announcements' %}active{% endif %}">
+                    <a class="nav-link" href="{% url 'user_announcements' %}">
+                        <i class="la la-bell"></i>
+                        <p>Announcements</p>
+                    </a>
+                </div>
+                <div class="nav-item {% if current == 'user_upload_document' %}active{% endif %}">
+                    <a class="nav-link" href="{% url 'user_upload_document' %}">
+                        <i class="la la-upload"></i>
+                        <p>Upload Document</p>
+                    </a>
+                </div>
+            </nav>
+        </div>
+        {% endwith %}
 
-			<!-- SIDEBAR -->
-			<div class="sidebar">
-				<nav class="sidebar-nav">
-					<div class="nav-item {% if request.resolver_match.url_name == 'user_home' %}active{% endif %}">
-						<a class="nav-link" href="{% url 'user_home' %}">
-							<i class="la la-dashboard"></i>
-							Home
-						</a>
-					</div>
-					<div class="nav-item {% if request.resolver_match.url_name == 'user_documents' %}active{% endif %}">
-						<a class="nav-link" href="{% url 'user_documents' %}">
-							<i class="la la-file"></i>
-							Documents
-						</a>
-					</div>
-					<div class="nav-item {% if request.resolver_match.url_name == 'user_announcements' %}active{% endif %}">
-						<a class="nav-link" href="{% url 'user_announcements' %}">
-							<i class="la la-bell"></i>
-							Announcements
-						</a>
-					</div>
-					<div class="nav-item {% if request.resolver_match.url_name == 'user_upload_document' %}active{% endif %}">
-						<a class="nav-link" href="{% url 'user_upload_document' %}">
-							<i class="la la-upload"></i>
-							Upload Document
-						</a>
-					</div>
-				</nav>
-				<div class="sidebar-user-card" onclick="toggleUserMenu()">
-					<div class="photo">
-						{% if request.user.profile_image %}
-							<img src="{{ request.user.profile_image.url }}" alt="Profile Image">
-						{% else %}
-							<img src="{% static 'img/boss.jpg' %}" alt="Img Profile">
-						{% endif %}
-					</div>
-					<div class="info">
-						<div class="user-row">
-							<span class="username">{{ request.user.username }}</span>
-							<span class="dropdown-arrow" id="userDropdownArrow">&#9650;</span>
-						</div>
-						<span class="user-level">{{ request.user.role|capfirst }}</span>
-						<div class="user-dropdown-menu" id="userMenuDropdown">
-							<ul class="nav">
-								<li><a href="{% url 'user_profile' %}"><span class="link-collapse">My Profile</span></a></li>
-								<li>
-									<a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-										Logout
-									</a>
-									<form id="logout-form" action="{% url 'logout' %}" method="post" style="display:none;">
-										{% csrf_token %}
-									</form>
-								</li>
-							</ul>
-						</div>
-					</div>
-				</div>
-        	</div>
-
-			<!-- MAIN PANEL -->
-			<div class="main-panel">
-				{% block content %}{% endblock %}
-			</div>
-		</div>
+        <!-- MAIN PANEL -->
+        <div class="main-panel">
+            {% block content %}{% endblock %}
+        </div>
     </div>
 
-    <!-- JS -->
+    <!-- JS Core -->
     <script src="{% static 'js/core/jquery.3.2.1.min.js' %}"></script>
-	<script src="{% static 'js/core/popper.min.js' %}"></script>
-	<script src="{% static 'js/core/bootstrap.min.js' %}"></script>
-	<script src="{% static 'js/plugin/jquery-ui-1.12.1.custom/jquery-ui.min.js' %}"></script>
-	<script src="{% static 'js/plugin/chartist/chartist.min.js' %}"></script>
-	<script src="{% static 'js/plugin/chartist/plugin/chartist-plugin-tooltip.min.js' %}"></script>
-	<script src="{% static 'js/plugin/bootstrap-notify/bootstrap-notify.min.js' %}"></script>
-	<script src="{% static 'js/plugin/bootstrap-toggle/bootstrap-toggle.min.js' %}"></script>
-	<script src="{% static 'js/plugin/jquery-mapael/jquery.mapael.min.js' %}"></script>
-	<script src="{% static 'js/plugin/jquery-mapael/maps/world_countries.min.js' %}"></script>
-	<script src="{% static 'js/plugin/chart-circle/circles.min.js' %}"></script>
-	<script src="{% static 'js/plugin/jquery-scrollbar/jquery.scrollbar.min.js' %}"></script>
-	<script src="{% static 'js/ready.min.js' %}"></script>
+    <script src="{% static 'js/core/popper.min.js' %}"></script>
+    <script src="{% static 'js/core/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/plugin/jquery-ui-1.12.1.custom/jquery-ui.min.js' %}"></script>
+    <script src="{% static 'js/plugin/chartist/chartist.min.js' %}"></script>
+    <script src="{% static 'js/plugin/chartist/plugin/chartist-plugin-tooltip.min.js' %}"></script>
+    <script src="{% static 'js/plugin/bootstrap-notify/bootstrap-notify.min.js' %}"></script>
+    <script src="{% static 'js/plugin/bootstrap-toggle/bootstrap-toggle.min.js' %}"></script>
+    <script src="{% static 'js/plugin/jquery-mapael/jquery.mapael.min.js' %}"></script>
+    <script src="{% static 'js/plugin/jquery-mapael/maps/world_countries.min.js' %}"></script>
+    <script src="{% static 'js/plugin/chart-circle/circles.min.js' %}"></script>
+    <script src="{% static 'js/plugin/jquery-scrollbar/jquery.scrollbar.min.js' %}"></script>
+    <script src="{% static 'js/ready.min.js' %}"></script>
     {% block extra_js %}{% endblock %}
-	<script>
-function toggleUserMenu() {
-    var menu = document.getElementById('userMenuDropdown');
-    var arrow = document.getElementById('userDropdownArrow');
-    menu.classList.toggle('show');
-    arrow.classList.toggle('open');
-    // Close on click outside
-    document.addEventListener('click', function handler(e) {
-        if (!menu.contains(e.target) && !arrow.contains(e.target)) {
-            menu.classList.remove('show');
-            arrow.classList.remove('open');
-            document.removeEventListener('click', handler);
+
+    <script>
+    // Mobile Sidebar Toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        var sidebarToggle = document.getElementById('sidebarToggle');
+        var body = document.body;
+        var sidebar = document.querySelector('.sidebar');
+        
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                body.classList.toggle('nav_open');
+            });
         }
+
+        // Close sidebar when clicking outside on mobile (on the overlay)
+        document.addEventListener('click', function(e) {
+            if (window.innerWidth <= 991 && body.classList.contains('nav_open')) {
+                var sidebarToggle = document.getElementById('sidebarToggle');
+                var mainHeader = document.querySelector('.main-header');
+                
+                // Close if clicking outside sidebar, toggle button, and header
+                if (sidebar && !sidebar.contains(e.target) && 
+                    e.target !== sidebarToggle && 
+                    !sidebarToggle.contains(e.target) &&
+                    !mainHeader.contains(e.target)) {
+                    body.classList.remove('nav_open');
+                }
+            }
+        });
+        
+        // Close sidebar on window resize if going to desktop size
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 991 && body.classList.contains('nav_open')) {
+                body.classList.remove('nav_open');
+            }
+        });
     });
-}
-</script>
+    </script>
 </body>
 </html>

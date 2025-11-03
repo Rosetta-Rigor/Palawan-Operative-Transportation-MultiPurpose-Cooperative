@@ -1,0 +1,213 @@
+/* User Responsive Styles (user_responsive.css)
+   - Responsive breakpoints for user interface
+   - Import this BEFORE user_custom.css in templates
+   - Handles mobile, tablet, and desktop layouts
+*/
+
+/* ========================================
+   RESPONSIVE STYLES
+   ======================================== */
+
+/* Tablet and Small Desktop - 991px and below */
+@media (max-width: 991px) {
+  /* Sidebar Toggle Button */
+  .main-header .logo-header .navbar-toggler {
+    display: block !important;
+    opacity: 1 !important;
+    background: transparent;
+    border: none;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    position: relative;
+  }
+
+  .main-header .logo-header .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    display: block;
+    width: 24px;
+    height: 24px;
+    background-size: 100%;
+  }
+
+  /* Header Logo - Left Aligned on Mobile */
+  .main-header .logo-header {
+    width: 100% !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px !important;
+  }
+
+  .main-header .logo-header .logo {
+    flex: 1;
+    justify-content: flex-start;
+    margin-left: 10px;
+  }
+
+  .main-header .logo-header .logo-text {
+    font-size: 16px;
+  }
+
+  /* Avatar Dropdown - Right Side on Mobile */
+  .navbar-header {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    left: auto !important;
+    padding-right: 15px;
+    background: transparent;
+    border: none;
+  }
+
+  .navbar-header .container-fluid {
+    padding: 0;
+  }
+
+  /* Show sidebar user card only on mobile */
+  .sidebar-user-info {
+    display: flex !important;
+  }
+
+  /* Sidebar Responsive */
+  .sidebar {
+    position: fixed;
+    top: 70px; /* Below header - match header height */
+    bottom: 0;
+    left: 0;
+    width: 260px;
+    height: calc(100vh - 70px);
+    z-index: 1050;
+    transform: translate3d(-270px, 0, 0);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+  }
+
+  .sidebar .sidebar-wrapper {
+    padding-top: 0; /* No extra padding needed, sidebar already below header */
+  }
+
+  .nav_open .sidebar {
+    transform: translate3d(0, 0, 0) !important;
+  }
+
+  /* Main Panel Adjustments */
+  .main-panel {
+    width: 100%;
+    margin-left: 0 !important;
+    padding-top: 85px; /* Below header on mobile */
+  }
+
+  /* Keep main panel in place when sidebar opens */
+  .nav_open .main-panel {
+    transform: none;
+  }
+
+  /* Keep header in place - DO NOT MOVE */
+  .nav_open .main-header {
+    transform: none;
+    position: fixed;
+    width: 100%;
+  }
+  
+  /* Prevent body scroll when sidebar is open */
+  body.nav_open {
+    overflow: hidden;
+  }
+
+  /* Overlay for mobile sidebar */
+  body.nav_open::before {
+    content: '';
+    position: fixed;
+    top: 70px; /* Below header */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+    animation: fadeIn 0.3s;
+    pointer-events: auto;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Hide toggle button on desktop */
+  .navbar-toggler {
+    display: none;
+  }
+  
+  /* Ensure sidebar is above overlay but below header */
+  .nav_open .sidebar {
+    z-index: 1050 !important;
+  }
+}
+
+/* Tablet - 767px and below */
+@media (max-width: 767px) {
+  /* Navbar Mobile Adjustments */
+  .navbar-header .user-name-display {
+    display: none !important;
+  }
+
+  .navbar-header .profile-pic {
+    padding: 4px !important;
+  }
+
+  .dropdown-menu.dropdown-user {
+    min-width: 220px !important;
+  }
+
+  .main-header .logo-header .logo-text {
+    font-size: 14px;
+  }
+
+  .main-header .logo-header img {
+    height: 32px !important;
+  }
+
+  .navbar-header .profile-pic .avatar-wrapper {
+    width: 36px !important;
+    height: 36px !important;
+  }
+}
+
+/* Mobile - 640px and below */
+@media (max-width: 640px) {
+  .main-header .logo-header .logo {
+    font-size: 0.9rem;
+  }
+}
+
+/* Mobile - 480px and below */
+@media (max-width: 480px) {
+  .main-header .logo-header img {
+    height: 28px !important;
+  }
+
+  .main-header .logo-header .logo-text {
+    font-size: 12px;
+  }
+}
+
+/* Desktop - 992px and above */
+@media (min-width: 992px) {
+  /* Desktop - ensure toggle is hidden */
+  .navbar-toggler {
+    display: none !important;
+  }
+
+  .main-header .logo-header {
+    width: 260px;
+  }
+
+  .navbar-header {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+}
