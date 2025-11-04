@@ -22,18 +22,54 @@
       </tr>
     </thead>
     <tbody>
-      {% for data in payment_data %}
-        <tr>
-          <td>{{ data.payment_type.name }}</td>
-          {% for total in data.monthly_totals %}
-            <td>{{ total|default:"-" }}</td>
-          {% endfor %}
+      {% if from_members_data %}
+        <!-- From Members Section -->
+        <tr class="table-secondary">
+          <td colspan="13" class="font-weight-bold">FROM MEMBERS</td>
         </tr>
-      {% empty %}
+        {% for data in from_members_data %}
+          <tr>
+            <td>{{ data.payment_type.name }}</td>
+            {% for total in data.monthly_totals %}
+              <td>{{ total|default:"-" }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      {% endif %}
+
+      {% if other_data %}
+        <!-- Check if any other payment has been logged -->
+        {% for data in other_data %}
+          {% for total in data.monthly_totals %}
+            {% if total %}
+              <!-- Other Payments Section Header (shown only once) -->
+              {% if forloop.parentloop.first and forloop.first %}
+                <tr class="table-secondary">
+                  <td colspan="13" class="font-weight-bold">OTHER PAYMENTS</td>
+                </tr>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+        
+        <!-- Display other payment types that have logged amounts -->
+        {% for data in other_data %}
+          {% if data.monthly_totals|join:"" %}
+            <tr>
+              <td>{{ data.payment_type.name }}</td>
+              {% for total in data.monthly_totals %}
+                <td>{{ total|default:"-" }}</td>
+              {% endfor %}
+            </tr>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+      {% if not from_members_data and not other_data %}
         <tr>
           <td colspan="13" class="text-center">No payment types found.</td>
         </tr>
-      {% endfor %}
+      {% endif %}
     </tbody>
   </table>
 </div>

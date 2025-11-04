@@ -302,3 +302,81 @@
     transform: translateY(-50%);
   }
 }
+
+/* Multi-Step Form Responsive Adjustments */
+@media (max-width: 767px) {
+  .form-progress-bar {
+    padding: 20px 15px;
+  }
+
+  .form-progress-bar::before {
+    display: none;
+  }
+
+  .progress-step .step-circle {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+
+  .progress-step .step-label {
+    font-size: 0.75rem;
+  }
+
+  .form-carousel-container {
+    padding: 0 60px;
+  }
+
+  .form-carousel-wrapper {
+    padding: 30px 20px;
+  }
+
+  .form-nav-arrow {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    font-size: 26px;
+  }
+
+  .form-nav-arrow.left-arrow {
+    left: -26px;
+  }
+
+  .form-nav-arrow.right-arrow {
+    right: -26px;
+  }
+
+  .form-step-title {
+    font-size: 1.2rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-carousel-container {
+    padding: 0 50px;
+  }
+
+  .form-nav-arrow {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    font-size: 22px;
+  }
+
+  .form-nav-arrow.left-arrow {
+    left: -22px;
+  }
+
+  .form-nav-arrow.right-arrow {
+    right: -22px;
+  }
+}

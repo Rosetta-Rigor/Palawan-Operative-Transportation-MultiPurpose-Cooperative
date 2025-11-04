@@ -79,12 +79,12 @@
   background: var(--bg-100); /* Ivory Mist */
   color: var(--muted); /* Graphite */
   padding-bottom: 36px;
-  padding-top: 20px; /* Add top padding to account for fixed header */
+  padding-top: 5px; /* Reduced top padding for tighter spacing */
 }
 
 /* Main panel adjustment for fixed header */
 .main-panel {
-  padding-top: 70px; /* Match header height */
+  padding-top: 60px; /* Header height (70px) + 20px gap */
 }
 
 /* Header / title */
@@ -327,6 +327,7 @@
   align-items:center;
   justify-content:space-between;
   box-shadow: 0 8px 28px rgba(31,62,39,0.2);
+  padding: 20px 24px;
 }
 
 /* header text */
@@ -605,7 +606,7 @@
 .dropdown-menu.dropdown-user {
   min-width: 260px;
   border-radius: 12px;
-  margin-top: 12px;
+  margin-top: 6px;
   border: 1px solid rgba(31,62,39,0.1);
   box-shadow: 0 8px 24px rgba(31,62,39,0.15);
   right: 0;
@@ -656,5 +657,7 @@
   text-decoration: none !important;
   color: inherit !important;
 }
+
+
 
 

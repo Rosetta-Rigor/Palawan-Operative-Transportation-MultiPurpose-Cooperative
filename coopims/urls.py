@@ -88,6 +88,7 @@ urlpatterns = [
     path('payments/<int:year_id>/other/', views.other_payments_view, name='other_payments_view'),
     path('payments/<int:year_id>/add-type/', views.add_payment_type, name='add_payment_type'),
     path('payments/<int:year_id>/add-entry/', views.add_payment_entry, name='add_payment_entry'),
+    path('payments/<int:year_id>/other/add-entry/', views.add_other_payment_entry, name='add_other_payment_entry'),
     path('payments/<int:year_id>/from-members/<int:member_id>/', views.member_payment_list, name='member_payment_list'),
     path('payments/<int:year_id>/from-members/<int:member_id>/add-entry/', views.add_payment_entry, name='add_payment_entry_member'),
 

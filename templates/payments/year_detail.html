@@ -20,25 +20,48 @@
   <table class="table table-striped">
     <thead>
       <tr>
-        <th>Name</th>
+        <th>Payment Type</th>
         {% for month in months %}
           <th>{{ month }}</th>
         {% endfor %}
       </tr>
     </thead>
     <tbody>
-      {% for payment_type in payment_types %}
-        <tr>
-          <td>{{ payment_type.name }}</td>
-          {% for month in months %}
-            <td>-</td>
-          {% endfor %}
+      {% if from_members_data %}
+        <!-- From Members Section -->
+        <tr class="table-secondary">
+          <td colspan="13" class="font-weight-bold">FROM MEMBERS</td>
         </tr>
-      {% empty %}
+        {% for data in from_members_data %}
+          <tr>
+            <td>{{ data.payment_type.name }}</td>
+            {% for total in data.monthly_totals %}
+              <td>{{ total|default:"-" }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      {% endif %}
+
+      {% if other_data %}
+        <!-- Other Payments Section -->
+        <tr class="table-secondary">
+          <td colspan="13" class="font-weight-bold">OTHER PAYMENTS</td>
+        </tr>
+        {% for data in other_data %}
+          <tr>
+            <td>{{ data.payment_type.name }}</td>
+            {% for total in data.monthly_totals %}
+              <td>{{ total|default:"-" }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      {% endif %}
+
+      {% if not from_members_data and not other_data %}
         <tr>
           <td colspan="13" class="text-center">No payment types found.</td>
         </tr>
-      {% endfor %}
+      {% endif %}
     </tbody>
   </table>
 </div>

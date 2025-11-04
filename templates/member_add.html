@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+<link rel="stylesheet" href="{% static 'css/admin_forms.css' %}">
 {% load widget_tweaks %}
 {% block content %}
 <style>
@@ -7,115 +8,193 @@ label[for$="-DELETE"], input[name$="-DELETE"] {
     display: none !important;
 }
 </style>
-<div class="content">
+<div class="content admin-dashboard">
     <div class="container-fluid">
-        <h4 class="page-title">{{ title|default:"Add Member" }}</h4>
         <div class="row">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Member Information</div>
+            <div class="col-12">
+                <div class="multi-form-card">
+                    <!-- Form Progress Indicators -->
+                    <div class="form-progress-bar">
+                        <div class="progress-step active" data-step="1">
+                            <div class="step-circle">
+                                <i class="la la-user"></i>
+                            </div>
+                            <div class="step-label">Member Info</div>
+                        </div>
+                        <div class="progress-step" data-step="2">
+                            <div class="step-circle">
+                                <i class="la la-car"></i>
+                            </div>
+                            <div class="step-label">Vehicle Info</div>
+                        </div>
+                        <div class="progress-step" data-step="3">
+                            <div class="step-circle">
+                                <i class="la la-file"></i>
+                            </div>
+                            <div class="step-label">Document Info</div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <form method="POST" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            {% if form.non_field_errors %}
-                              <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-                            {% endif %}
 
-                            <div class="form-group">
-                                <label for="{{ form.full_name.id_for_label }}">Full Name</label>
-                                {{ form.full_name|add_class:"form-control" }}
-                                {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors }}</div>{% endif %}
-                            </div>
-
-                            <div class="form-group">
-                                <label for="{{ form.batch.id_for_label }}">Batch</label>
-                                {{ form.batch|add_class:"form-control" }}
-                                {% if form.batch.errors %}<div class="text-danger small">{{ form.batch.errors }}</div>{% endif %}
-                            </div>
-
-                            <div class="form-group">
-                                <label for="{{ form.batch_monitoring_number.id_for_label }}">Batch Monitoring Number</label>
-                                {{ form.batch_monitoring_number|add_class:"form-control" }}
-                                {% if form.batch_monitoring_number.errors %}<div class="text-danger small">{{ form.batch_monitoring_number.errors }}</div>{% endif %}
-                            </div>
-
-                            {% if form.user_account %}
-                            <div class="form-group">
-                                <label for="userAccountSelect">User Account</label>
-                                <select id="userAccountSelect" name="user_account" class="form-control" style="width:100%">
-                                    {% if form.instance and form.instance.user_account %}
-                                        <option value="{{ form.instance.user_account.id }}" selected>{{ form.instance.user_account.full_name|default:form.instance.user_account.username }}</option>
+                    <!-- Form Container with Navigation Arrows -->
+                    <div class="form-carousel-container">
+                        <!-- Form Wrapper -->
+                        <div class="form-carousel-wrapper">
+                            <form method="POST" enctype="multipart/form-data" id="multiStepForm">
+                                {% csrf_token %}
+                                
+                                <!-- Step 1: Member Information -->
+                                <div class="form-step active" data-step="1">
+                                    <div class="form-step-header">
+                                        <h5 class="form-step-title">Member Information</h5>
+                                        <p class="form-step-desc">Enter the member's basic information</p>
+                                    </div>
+                                    
+                                    {% if form.non_field_errors %}
+                                      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
                                     {% endif %}
-                                </select>
-                                {% if form.user_account.errors %}<div class="text-danger small">{{ form.user_account.errors }}</div>{% endif %}
-                            </div>
-                            {% endif %}
 
-                            <h5 class="mt-4">Vehicle Information (optional)</h5>
-                            {{ formset.management_form }}
-                            {% for vehicle_form in formset %}
-                                <div class="card mb-2 p-3 bg-light">
-                                    {% if vehicle_form.non_field_errors %}
-                                      <div class="alert alert-danger">{{ vehicle_form.non_field_errors }}</div>
-                                    {% endif %}
-                                    <div class="form-row">
-                                        <div class="form-group col-md-6">
-                                            <label for="{{ vehicle_form.plate_number.id_for_label }}">Plate Number</label>
-                                            {{ vehicle_form.plate_number|add_class:"form-control" }}
-                                            {% if vehicle_form.plate_number.errors %}<div class="text-danger small">{{ vehicle_form.plate_number.errors }}</div>{% endif %}
-                                        </div>
-                                        <div class="form-group col-md-6">
-                                            <label for="{{ vehicle_form.engine_number.id_for_label }}">Engine Number</label>
-                                            {{ vehicle_form.engine_number|add_class:"form-control" }}
-                                            {% if vehicle_form.engine_number.errors %}<div class="text-danger small">{{ vehicle_form.engine_number.errors }}</div>{% endif %}
-                                        </div>
+                                    <div class="form-group">
+                                        <label for="{{ form.full_name.id_for_label }}">Full Name <span class="text-danger">*</span></label>
+                                        {{ form.full_name|add_class:"form-control" }}
+                                        {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors }}</div>{% endif %}
                                     </div>
-                                    <div class="form-row">
-                                        <div class="form-group col-md-6">
-                                            <label for="{{ vehicle_form.chassis_number.id_for_label }}">Chassis Number</label>
-                                            {{ vehicle_form.chassis_number|add_class:"form-control" }}
-                                            {% if vehicle_form.chassis_number.errors %}<div class="text-danger small">{{ vehicle_form.chassis_number.errors }}</div>{% endif %}
-                                        </div>
-                                        <div class="form-group col-md-6">
-                                            <label for="{{ vehicle_form.make_brand.id_for_label }}">Make/Brand</label>
-                                            {{ vehicle_form.make_brand|add_class:"form-control" }}
-                                            {% if vehicle_form.make_brand.errors %}<div class="text-danger small">{{ vehicle_form.make_brand.errors }}</div>{% endif %}
-                                        </div>
+
+                                    <div class="form-group">
+                                        <label for="{{ form.batch.id_for_label }}">Batch <span class="text-danger">*</span></label>
+                                        {{ form.batch|add_class:"form-control" }}
+                                        {% if form.batch.errors %}<div class="text-danger small">{{ form.batch.errors }}</div>{% endif %}
                                     </div>
-                                    <div class="form-row">
-                                        <div class="form-group col-md-4">
-                                            <label for="{{ vehicle_form.year_model.id_for_label }}">Year Model</label>
-                                            {{ vehicle_form.year_model|add_class:"form-control" }}
-                                            {% if vehicle_form.year_model.errors %}<div class="text-danger small">{{ vehicle_form.year_model.errors }}</div>{% endif %}
-                                        </div>
-                                        <div class="form-group col-md-4">
-                                            <label for="{{ vehicle_form.series.id_for_label }}">Series</label>
-                                            {{ vehicle_form.series|add_class:"form-control" }}
-                                            {% if vehicle_form.series.errors %}<div class="text-danger small">{{ vehicle_form.series.errors }}</div>{% endif %}
-                                        </div>
+
+                                    <div class="form-group">
+                                        <label for="{{ form.batch_monitoring_number.id_for_label }}">Batch Monitoring Number <span class="text-danger">*</span></label>
+                                        {{ form.batch_monitoring_number|add_class:"form-control" }}
+                                        {% if form.batch_monitoring_number.errors %}<div class="text-danger small">{{ form.batch_monitoring_number.errors }}</div>{% endif %}
                                     </div>
-                                    <div class="form-row">
-                                        <div class="form-group col-md-6">
-                                            <label for="{{ vehicle_form.color.id_for_label }}">Color</label>
-                                            {{ vehicle_form.color|add_class:"form-control" }}
-                                            {% if vehicle_form.color.errors %}<div class="text-danger small">{{ vehicle_form.color.errors }}</div>{% endif %}
-                                        </div>
-                                    </div>
-                                    {% if vehicle_form.can_delete %}
-                                    <div class="form-check">
-                                        {{ vehicle_form.DELETE }} <label class="form-check-label">Remove</label>
+
+                                    {% if form.user_account %}
+                                    <div class="form-group">
+                                        <label for="userAccountSelect">User Account</label>
+                                        <select id="userAccountSelect" name="user_account" class="form-control" style="width:100%">
+                                            {% if form.instance and form.instance.user_account %}
+                                                <option value="{{ form.instance.user_account.id }}" selected>{{ form.instance.user_account.full_name|default:form.instance.user_account.username }}</option>
+                                            {% endif %}
+                                        </select>
+                                        {% if form.user_account.errors %}<div class="text-danger small">{{ form.user_account.errors }}</div>{% endif %}
                                     </div>
                                     {% endif %}
                                 </div>
-                            {% endfor %}
 
-                            <div class="mt-3">
-                              <button type="submit" class="btn btn-primary">Save</button>
-                              <a href="{% url 'member_list' %}" class="btn btn-secondary">Cancel</a>
-                            </div>
-                        </form>
+                                <!-- Step 2: Vehicle Information (Optional) -->
+                                <div class="form-step" data-step="2">
+                                    <div class="form-step-header">
+                                        <h5 class="form-step-title">Vehicle Information <span class="optional-badge">Optional</span></h5>
+                                        <p class="form-step-desc">Add vehicle details if available</p>
+                                    </div>
+
+                                    {{ formset.management_form }}
+                                    {% for vehicle_form in formset %}
+                                        <div class="vehicle-form-section">
+                                            {% if vehicle_form.non_field_errors %}
+                                              <div class="alert alert-danger">{{ vehicle_form.non_field_errors }}</div>
+                                            {% endif %}
+                                            <div class="form-row">
+                                                <div class="form-group col-md-6">
+                                                    <label for="{{ vehicle_form.plate_number.id_for_label }}">Plate Number</label>
+                                                    {{ vehicle_form.plate_number|add_class:"form-control" }}
+                                                    {% if vehicle_form.plate_number.errors %}<div class="text-danger small">{{ vehicle_form.plate_number.errors }}</div>{% endif %}
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label for="{{ vehicle_form.engine_number.id_for_label }}">Engine Number</label>
+                                                    {% with field=vehicle_form.engine_number %}
+                                                        <input type="text" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control" pattern="[0-9]*" inputmode="numeric" title="Please enter only numbers" {% if field.value %}value="{{ field.value }}"{% endif %}>
+                                                    {% endwith %}
+                                                    {% if vehicle_form.engine_number.errors %}<div class="text-danger small">{{ vehicle_form.engine_number.errors }}</div>{% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-6">
+                                                    <label for="{{ vehicle_form.chassis_number.id_for_label }}">Chassis Number</label>
+                                                    {% with field=vehicle_form.chassis_number %}
+                                                        <input type="text" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control" pattern="[0-9]*" inputmode="numeric" title="Please enter only numbers" {% if field.value %}value="{{ field.value }}"{% endif %}>
+                                                    {% endwith %}
+                                                    {% if vehicle_form.chassis_number.errors %}<div class="text-danger small">{{ vehicle_form.chassis_number.errors }}</div>{% endif %}
+                                                </div>
+                                                <div class="form-group col-md-6">
+                                                    <label for="{{ vehicle_form.make_brand.id_for_label }}">Make/Brand</label>
+                                                    {{ vehicle_form.make_brand|add_class:"form-control" }}
+                                                    {% if vehicle_form.make_brand.errors %}<div class="text-danger small">{{ vehicle_form.make_brand.errors }}</div>{% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-4">
+                                                    <label for="{{ vehicle_form.year_model.id_for_label }}">Year Model</label>
+                                                    {{ vehicle_form.year_model|add_class:"form-control" }}
+                                                    {% if vehicle_form.year_model.errors %}<div class="text-danger small">{{ vehicle_form.year_model.errors }}</div>{% endif %}
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label for="{{ vehicle_form.series.id_for_label }}">Series</label>
+                                                    {{ vehicle_form.series|add_class:"form-control" }}
+                                                    {% if vehicle_form.series.errors %}<div class="text-danger small">{{ vehicle_form.series.errors }}</div>{% endif %}
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label for="{{ vehicle_form.color.id_for_label }}">Color</label>
+                                                    {{ vehicle_form.color|add_class:"form-control" }}
+                                                    {% if vehicle_form.color.errors %}<div class="text-danger small">{{ vehicle_form.color.errors }}</div>{% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- Step 3: Document Information (Optional) -->
+                                <div class="form-step" data-step="3">
+                                    <div class="form-step-header">
+                                        <h5 class="form-step-title">Document Information (TIN) <span class="optional-badge">Optional</span></h5>
+                                        <p class="form-step-desc">Upload document files if available</p>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="id_tin">TIN Number</label>
+                                        <input type="text" name="tin" id="id_tin" class="form-control" placeholder="Enter TIN number">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="id_renewal_date">Renewal Date</label>
+                                        <input type="date" name="renewal_date" id="id_renewal_date" class="form-control">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="id_official_receipt">Official Receipt (PDF/Image)</label>
+                                        <input type="file" name="official_receipt" id="id_official_receipt" class="form-control" accept="image/*,.pdf">
+                                        <small class="form-text text-muted">Upload Official Receipt document</small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="id_certificate_of_registration">Certificate of Registration (PDF/Image)</label>
+                                        <input type="file" name="certificate_of_registration" id="id_certificate_of_registration" class="form-control" accept="image/*,.pdf">
+                                        <small class="form-text text-muted">Upload Certificate of Registration document</small>
+                                    </div>
+                                </div>
+
+                                <!-- Form Actions -->
+                                <div class="form-actions">
+                                    <a href="{% url 'member_list' %}" class="btn btn-secondary">
+                                        <i class="la la-times"></i> Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="la la-save"></i> Save
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Navigation Arrows (Circular - Positioned Outside) -->
+                        <button type="button" class="form-nav-arrow left-arrow" id="prevFormBtn" disabled>
+                            <i class="la la-angle-left"></i>
+                        </button>
+                        <button type="button" class="form-nav-arrow right-arrow" id="nextFormBtn">
+                            <i class="la la-angle-right"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -128,12 +207,12 @@ label[for$="-DELETE"], input[name$="-DELETE"] {
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Select2
     const $select = $('#userAccountSelect');
-    console.log('member_add.js: found select length=', $select.length, 'select2 fn:', typeof $.fn.select2);
     if ($select.length && $.fn && $.fn.select2) {
         $select.select2({
             theme: 'bootstrap-5',
-            placeholder: "-- Unselect User Account --",
+            placeholder: "-- Select User Account (Optional) --",
             allowClear: true,
             ajax: {
                 url: "{% url 'user_search_api' %}",
@@ -145,29 +224,92 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             minimumInputLength: 1,
             width: 'resolve'
-        })
-        .on('select2:open', function() { console.log('member_add: select2 opened'); })
-        .on('select2:select', function(e) { console.log('member_add: selected', e.params && e.params.data); });
-
-        // Log keystrokes in the Select2 search input to ensure typing is captured
-        $(document).on('keyup', '.select2-search__field', function(e) {
-            console.log('member_add: search input value=', $(this).val());
         });
-
-        // Capture AJAX errors for the search URL
-        $(document).ajaxError(function(event, jqxhr, settings, thrownError) {
-            try {
-                var searchUrl = "{% url 'user_search_api' %}";
-                if (settings && settings.url && settings.url.indexOf(searchUrl) !== -1) {
-                    console.error('member_add: AJAX error calling user_search_api', jqxhr.status, thrownError, jqxhr.responseText);
-                }
-            } catch (err) { console.error('member_add: ajaxError handler failed', err); }
-        });
-    } else {
-        console.warn('member_add: Select2 not available; inserting simple fallback input');
-        // lightweight fallback so user can at least type something
-        $('#userAccountSelect').replaceWith('<input type="text" id="userAccountFallback" name="user_account_text" class="form-control" placeholder="Type username or full name">');
     }
+
+    // Multi-Step Form Navigation
+    let currentStep = 1;
+    const totalSteps = 3;
+    const prevBtn = document.getElementById('prevFormBtn');
+    const nextBtn = document.getElementById('nextFormBtn');
+    const formSteps = document.querySelectorAll('.form-step');
+    const progressSteps = document.querySelectorAll('.progress-step');
+
+    function updateFormDisplay() {
+        // Update form steps visibility
+        formSteps.forEach(step => {
+            step.classList.remove('active');
+            if (parseInt(step.dataset.step) === currentStep) {
+                step.classList.add('active');
+            }
+        });
+
+        // Update progress indicators
+        progressSteps.forEach(step => {
+            const stepNum = parseInt(step.dataset.step);
+            step.classList.remove('active', 'completed');
+            if (stepNum === currentStep) {
+                step.classList.add('active');
+            } else if (stepNum < currentStep) {
+                step.classList.add('completed');
+            }
+        });
+
+        // Update button states
+        prevBtn.disabled = currentStep === 1;
+        nextBtn.disabled = currentStep === totalSteps;
+
+        // Update button text for last step
+        if (currentStep === totalSteps) {
+            nextBtn.innerHTML = '<i class="la la-check"></i>';
+        } else {
+            nextBtn.innerHTML = '<i class="la la-angle-right"></i>';
+        }
+    }
+
+    // Previous button click
+    prevBtn.addEventListener('click', function() {
+        if (currentStep > 1) {
+            currentStep--;
+            updateFormDisplay();
+        }
+    });
+
+    // Next button click
+    nextBtn.addEventListener('click', function() {
+        if (currentStep < totalSteps) {
+            currentStep++;
+            updateFormDisplay();
+        }
+    });
+
+    // Click on progress steps to navigate
+    progressSteps.forEach(step => {
+        step.addEventListener('click', function() {
+            const targetStep = parseInt(this.dataset.step);
+            if (targetStep !== currentStep) {
+                currentStep = targetStep;
+                updateFormDisplay();
+            }
+        });
+    });
+
+    // Initialize display
+    updateFormDisplay();
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        // Alt + Right Arrow = Next
+        if (e.altKey && e.key === 'ArrowRight' && currentStep < totalSteps) {
+            currentStep++;
+            updateFormDisplay();
+        }
+        // Alt + Left Arrow = Previous
+        if (e.altKey && e.key === 'ArrowLeft' && currentStep > 1) {
+            currentStep--;
+            updateFormDisplay();
+        }
+    });
 });
 </script>
 {% endblock %}

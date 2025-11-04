@@ -1,39 +1,82 @@
 {% extends 'base.html' %}
 {% load static %}
+<link rel="stylesheet" href="{% static 'css/admin_forms.css' %}">
+{% load widget_tweaks %}
 {% block content %}
-<div class="container mt-4">
-    <h4>Add Document (TIN)</h4>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
-        {{ form.errors }}
-        <div class="mb-3">
-            {{ form.tin.label_tag }}{{ form.tin }}
+<div class="content admin-dashboard">
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div class="admin-form-card">
+                    <div class="form-header-gradient">
+                        <h4 class="form-header-title">
+                            <i class="fas fa-file-alt"></i> Add Document (TIN)
+                        </h4>
+                        <p class="form-header-sub">Register a new TIN document for a vehicle</p>
+                    </div>
+                    <div class="form-content">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                            {% endif %}
+                            
+                            <div class="form-group">
+                                <label for="id_tin">TIN Number</label>
+                                {{ form.tin|add_class:"form-control" }}
+                                {% if form.tin.errors %}<div class="text-danger small">{{ form.tin.errors }}</div>{% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="id_vehicle">Vehicle</label>
+                                <select id="id_vehicle" name="vehicle" class="form-control" style="width:100%">
+                                    {% if selected_vehicle %}
+                                        <option value="{{ selected_vehicle }}" selected="selected">{{ selected_vehicle }}</option>
+                                    {% elif form.vehicle.value %}
+                                        <option value="{{ form.vehicle.value }}" selected="selected">{{ form.vehicle.value }}</option>
+                                    {% endif %}
+                                </select>
+                                {% if form.vehicle.errors %}<div class="text-danger small">{{ form.vehicle.errors }}</div>{% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="id_renewal_date">Renewal Date</label>
+                                {{ entry_form.renewal_date|add_class:"form-control" }}
+                                {% if entry_form.renewal_date.errors %}<div class="text-danger small">{{ entry_form.renewal_date.errors }}</div>{% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="id_official_receipt">Official Receipt (OR)</label>
+                                <div class="custom-file-upload">
+                                    {{ entry_form.official_receipt }}
+                                </div>
+                                {% if entry_form.official_receipt.errors %}<div class="text-danger small">{{ entry_form.official_receipt.errors }}</div>{% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="id_certificate_of_registration">Certificate of Registration (COR)</label>
+                                <div class="custom-file-upload">
+                                    {{ entry_form.certificate_of_registration }}
+                                </div>
+                                {% if entry_form.certificate_of_registration.errors %}<div class="text-danger small">{{ entry_form.certificate_of_registration.errors }}</div>{% endif %}
+                            </div>
+                            
+                            <div class="form-actions">
+                                <a href="{% url 'document_list' %}" class="btn btn-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Create Document
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-            <label for="id_vehicle">Vehicle</label>
-            <select id="id_vehicle" name="vehicle" class="form-control" style="width:100%">
-                {% if selected_vehicle %}
-                    <option value="{{ selected_vehicle }}" selected="selected">{{ selected_vehicle }}</option>
-                {% elif form.vehicle.value %}
-                    <option value="{{ form.vehicle.value }}" selected="selected">{{ form.vehicle.value }}</option>
-                {% endif %}
-            </select>
-        </div>
-        <div class="mb-3">
-            {{ entry_form.renewal_date.label_tag }}{{ entry_form.renewal_date }}
-        </div>
-        <div class="mb-3">
-            {{ entry_form.official_receipt.label_tag }}{{ entry_form.official_receipt }}
-        </div>
-        <div class="mb-3">
-            {{ entry_form.certificate_of_registration.label_tag }}{{ entry_form.certificate_of_registration }}
-        </div>
-        <button type="submit" class="btn btn-primary">Create Document</button>
-        <a href="{% url 'document_list' %}" class="btn btn-secondary">Cancel</a>
-    </form>
+    </div>
 </div>
-<!-- Select2 JS (already loaded in base.html) -->
+{% endblock %}
+
+{% block extra_js %}
 <script>
 $(document).ready(function() {
     $('#id_vehicle').select2({

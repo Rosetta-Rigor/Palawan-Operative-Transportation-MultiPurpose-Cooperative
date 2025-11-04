@@ -120,6 +120,7 @@ def member_add(request):
     - Accepts POST data for MemberForm and VehicleFormSet.
     - Assigns an existing vehicle to the member if selected in the form.
     - Saves any new vehicles entered in the formset.
+    - Optionally creates a Document and DocumentEntry if provided.
     - Redirects to member list on success.
     """
     if request.method == "POST":
@@ -165,7 +166,7 @@ def member_add(request):
                     return render(request, "member_add.html", {"form": member_form, "formset": formset})
 
                 # Save formset and attach selected existing vehicle if provided
-                formset.save()
+                saved_vehicles = formset.save()
                 if selected_vehicle:
                     # Untie from previous member if necessary
                     if selected_vehicle.member and selected_vehicle.member != member:
@@ -174,6 +175,52 @@ def member_add(request):
                     else:
                         selected_vehicle.member = member
                     selected_vehicle.save()
+                
+                # Handle optional document submission (Step 3)
+                tin = request.POST.get('tin', '').strip()
+                renewal_date_str = request.POST.get('renewal_date', '').strip()
+                official_receipt = request.FILES.get('official_receipt')
+                certificate_of_registration = request.FILES.get('certificate_of_registration')
+                
+                # Only create document if TIN is provided
+                if tin:
+                    # Get the first vehicle (either from formset or selected_vehicle)
+                    target_vehicle = None
+                    if saved_vehicles:
+                        target_vehicle = saved_vehicles[0]
+                    elif selected_vehicle:
+                        target_vehicle = selected_vehicle
+                    
+                    if target_vehicle:
+                        # Create Document
+                        document = Document.objects.create(
+                            tin=tin,
+                            vehicle=target_vehicle
+                        )
+                        
+                        # Create DocumentEntry if renewal_date and files are provided
+                        if renewal_date_str:
+                            from datetime import datetime
+                            try:
+                                renewal_date = datetime.strptime(renewal_date_str, '%Y-%m-%d').date()
+                                
+                                DocumentEntry.objects.create(
+                                    document=document,
+                                    renewal_date=renewal_date,
+                                    official_receipt=official_receipt,
+                                    certificate_of_registration=certificate_of_registration,
+                                    status='pending'
+                                )
+                                messages.success(request, 'Member, vehicle, and document created successfully!')
+                            except ValueError:
+                                messages.warning(request, 'Member and vehicle created, but document renewal date was invalid.')
+                        else:
+                            messages.success(request, 'Member and vehicle created successfully!')
+                    else:
+                        messages.warning(request, 'Member created, but no vehicle available to attach document.')
+                else:
+                    messages.success(request, 'Member created successfully!')
+                    
                 return redirect("member_list")
         else:
             formset = VehicleFormSet(request.POST)
@@ -1125,6 +1172,7 @@ def user_search_api(request):
     """
     Search API for User objects used by Select2 AJAX widgets.
     Returns JSON in Select2 { results: [{id, text}, ...] } format.
+    Only returns activated users without existing member profiles (excluding superusers).
     """
     from django.contrib.auth import get_user_model
     UserModel = get_user_model()
@@ -1132,10 +1180,15 @@ def user_search_api(request):
     if not q:
         users = []
     else:
+        # Filter: activated users, not superusers, and without existing member_profile
         users = UserModel.objects.filter(
             Q(username__icontains=q) |
             Q(full_name__icontains=q) |
             Q(email__icontains=q)
+        ).filter(
+            is_active=True,
+            is_superuser=False,
+            member_profile__isnull=True
         )[:10]
     results = []
     for u in users:
@@ -1745,12 +1798,49 @@ def other_payments_view(request, year_id):
 @login_required
 def payment_year_detail(request, year_id):
     year = get_object_or_404(PaymentYear, pk=year_id)
-    payment_types = year.payment_types.all()
+    
+    # Separate payment types by category
+    from_members_types = PaymentType.objects.filter(year=year, payment_type='from_members')
+    other_types = PaymentType.objects.filter(year=year, payment_type='other')
+    
     months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    
+    # Process "From Members" payment types - aggregate all members
+    from_members_data = []
+    for payment_type in from_members_types:
+        monthly_totals = []
+        for month in range(1, 13):  # January to December
+            # Sum all payments for this payment type and month across all members
+            total = PaymentEntry.objects.filter(
+                payment_type=payment_type,
+                month=month
+            ).aggregate(total=Sum('amount_paid'))['total']
+            monthly_totals.append(total if total is not None else None)
+        from_members_data.append({
+            'payment_type': payment_type,
+            'monthly_totals': monthly_totals,
+        })
+    
+    # Process "Other" payment types - aggregate all entries
+    other_data = []
+    for payment_type in other_types:
+        monthly_totals = []
+        for month in range(1, 13):  # January to December
+            # Sum all payments for this payment type and month
+            total = PaymentEntry.objects.filter(
+                payment_type=payment_type,
+                month=month
+            ).aggregate(total=Sum('amount_paid'))['total']
+            monthly_totals.append(total if total is not None else None)
+        other_data.append({
+            'payment_type': payment_type,
+            'monthly_totals': monthly_totals,
+        })
 
     return render(request, 'payments/year_detail.html', {
         'year': year,
-        'payment_types': payment_types,
+        'from_members_data': from_members_data,
+        'other_data': other_data,
         'months': months,
     })
 
@@ -1832,6 +1922,38 @@ def add_payment_entry(request, year_id, member_id=None):
     return render(request, 'payments/add_payment_entry.html', {'form': form, 'year': year, 'member': member})
 
 
+@login_required
+def add_other_payment_entry(request, year_id):
+    """
+    Add payment entry specifically for 'Other' payment types.
+    Only shows payment types with payment_type='other'.
+    """
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    
+    if request.method == 'POST':
+        form = PaymentEntryForm(request.POST)
+        
+        if form.is_valid():
+            payment_entry = form.save(commit=False)
+            payment_entry.recorded_by = request.user
+            payment_entry.save()
+            messages.success(request, "Other payment entry added successfully.")
+            return redirect('other_payments_view', year_id=year.id)
+        else:
+            messages.error(request, "There was an error adding the payment entry.")
+    else:
+        form = PaymentEntryForm()
+    
+    # Filter to only show "Other" payment types for the current year
+    other_payment_types = PaymentType.objects.filter(year=year, payment_type='other')
+    
+    return render(request, 'payments/add_other_payment_entry.html', {
+        'form': form,
+        'year': year,
+        'other_payment_types': other_payment_types
+    })
+
+
 from .forms import PaymentYearForm
 
 @login_required
@@ -1852,34 +1974,42 @@ from .forms import PaymentEntryForm
 def member_payment_list(request, year_id, member_id):
     year = get_object_or_404(PaymentYear, pk=year_id)
     member = get_object_or_404(Member, pk=member_id)
-    payment_types = PaymentType.objects.filter(year=year)
-
-    # Debug: Print all payment entries for this member
-    all_entries = member.payment_entries.all()
-    print(f"DEBUG: Member {member.full_name} has {all_entries.count()} payment entries")
-    for entry in all_entries:
-        print(f"  - Payment Type: {entry.payment_type.name}, Month: {entry.month}, Amount: {entry.amount_paid}")
+    
+    # Separate payment types by category
+    from_members_types = PaymentType.objects.filter(year=year, payment_type='from_members')
+    other_types = PaymentType.objects.filter(year=year, payment_type='other')
 
     # Prepare data for the template
     months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-    payment_data = []
-
-    for payment_type in payment_types:
+    
+    # Process "From Members" payment types
+    from_members_data = []
+    for payment_type in from_members_types:
         monthly_totals = []
         for month in range(1, 13):  # January to December
-            # Fetch the total amount paid for the specific member, payment type, and month
-            # Note: payment_type already filtered by year above, so no need to filter again
             entries = member.payment_entries.filter(
                 payment_type=payment_type,
                 month=month
             )
             total = entries.aggregate(total=Sum('amount_paid'))['total']
-            # Debug: Print what we found
-            if total is not None:
-                print(f"DEBUG: Found payment for {payment_type.name}, month {month}: {total}")
-            # Append None if no payment exists, otherwise append the total
             monthly_totals.append(total if total is not None else None)
-        payment_data.append({
+        from_members_data.append({
+            'payment_type': payment_type,
+            'monthly_totals': monthly_totals,
+        })
+    
+    # Process "Other" payment types
+    other_data = []
+    for payment_type in other_types:
+        monthly_totals = []
+        for month in range(1, 13):  # January to December
+            entries = member.payment_entries.filter(
+                payment_type=payment_type,
+                month=month
+            )
+            total = entries.aggregate(total=Sum('amount_paid'))['total']
+            monthly_totals.append(total if total is not None else None)
+        other_data.append({
             'payment_type': payment_type,
             'monthly_totals': monthly_totals,
         })
@@ -1890,7 +2020,8 @@ def member_payment_list(request, year_id, member_id):
     context = {
         'year': year,
         'member': member,
-        'payment_data': payment_data,
+        'from_members_data': from_members_data,
+        'other_data': other_data,
         'months': months,
         'form': form,
     }

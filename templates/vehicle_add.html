@@ -1,57 +1,76 @@
 {% extends 'base.html' %}
 {% load static %}
+<link rel="stylesheet" href="{% static 'css/admin_forms.css' %}">
+{% load widget_tweaks %}
 {% block content %}
-<div class="content">
+<div class="content admin-dashboard">
     <div class="container-fluid">
-        <h4 class="page-title">Add Vehicle</h4>
-        <div class="row">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Vehicle Information</div>
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div class="admin-form-card">
+                    <div class="form-header-gradient">
+                        <h4 class="form-header-title">
+                            <i class="fas fa-car"></i> Add Vehicle
+                        </h4>
+                        <p class="form-header-sub">Register a new vehicle in the system</p>
                     </div>
-                    <div class="card-body">
+                    <div class="form-content">
                         <form method="POST">
                             {% csrf_token %}
-                            <div class="form-group">
-                                <label for="id_plate_number">Plate Number</label>
-                                {{ form.plate_number }}
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="id_plate_number">Plate Number</label>
+                                    {{ form.plate_number|add_class:"form-control" }}
+                                    {% if form.plate_number.errors %}<div class="text-danger small">{{ form.plate_number.errors }}</div>{% endif %}
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="id_engine_number">Engine Number</label>
+                                    <input type="text" name="engine_number" id="id_engine_number" class="form-control" pattern="[0-9]*" inputmode="numeric" title="Please enter only numbers" value="{{ form.engine_number.value|default:'' }}">
+                                    {% if form.engine_number.errors %}<div class="text-danger small">{{ form.engine_number.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="id_chassis_number">Chassis Number</label>
+                                    <input type="text" name="chassis_number" id="id_chassis_number" class="form-control" pattern="[0-9]*" inputmode="numeric" title="Please enter only numbers" value="{{ form.chassis_number.value|default:'' }}">
+                                    {% if form.chassis_number.errors %}<div class="text-danger small">{{ form.chassis_number.errors }}</div>{% endif %}
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="id_make_brand">Make/Brand</label>
+                                    {{ form.make_brand|add_class:"form-control" }}
+                                    {% if form.make_brand.errors %}<div class="text-danger small">{{ form.make_brand.errors }}</div>{% endif %}
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="id_year_model">Year Model</label>
+                                    {{ form.year_model|add_class:"form-control" }}
+                                    {% if form.year_model.errors %}<div class="text-danger small">{{ form.year_model.errors }}</div>{% endif %}
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="id_series">Series</label>
+                                    {{ form.series|add_class:"form-control" }}
+                                    {% if form.series.errors %}<div class="text-danger small">{{ form.series.errors }}</div>{% endif %}
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="id_color">Color</label>
+                                    {{ form.color|add_class:"form-control" }}
+                                    {% if form.color.errors %}<div class="text-danger small">{{ form.color.errors }}</div>{% endif %}
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label for="id_engine_number">Engine Number</label>
-                                {{ form.engine_number }}
-                            </div>
-                            <div class="form-group">
-                                <label for="id_chassis_number">Chassis Number</label>
-                                {{ form.chassis_number }}
-                            </div>
-                            <div class="form-group">
-                                <label for="id_make_brand">Make/Brand</label>
-                                {{ form.make_brand }}
-                            </div>
-                            <div class="form-group">
-                                <label for="id_year_model">Year Model</label>
-                                {{ form.year_model }}
-                            </div>
-                            <div class="form-group">
-                                <label for="id_series">Series</label>
-                                {{ form.series }}
-                            </div>
-                            <div class="form-group">
-                                <label for="id_color">Color</label>
-                                {{ form.color }}
-                            </div>
-                            <div class="form-group">
-                                <label for="vehicleMemberSelect">Member (optional)</label>
+                                <label for="vehicleMemberSelect">Member <span class="optional-badge">Optional</span></label>
                                 <select id="vehicleMemberSelect" name="member" class="form-control" style="width:100%">
                                     {% if form.instance and form.instance.member %}
                                         <option value="{{ form.instance.member.id }}" selected>{{ form.instance.member.full_name }}</option>
                                     {% endif %}
                                 </select>
                             </div>
-                            <div class="form-group">
-                                <button type="submit" class="btn btn-success btn-rounded">Save</button>
-                                <a href="{% url 'vehicle_list' %}" class="btn btn-secondary btn-rounded">Cancel</a>
+                            <div class="form-actions">
+                                <a href="{% url 'vehicle_list' %}" class="btn btn-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Save Vehicle
+                                </button>
                             </div>
                         </form>
                     </div>
