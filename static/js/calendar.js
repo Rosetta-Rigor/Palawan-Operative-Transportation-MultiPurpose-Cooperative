@@ -141,134 +141,38 @@
       if (renewals) {
         // Determine most urgent status (urgent > upcoming)
         let dayStatus = 'normal';
-        if (renewals.urgent && renewals.urgent.length > 0) {
+        const hasUrgent = renewals.urgent && renewals.urgent.length > 0;
+        const hasUpcoming = renewals.upcoming && renewals.upcoming.length > 0;
+        const hasNormal = renewals.normal && renewals.normal.length > 0;
+        
+        if (hasUrgent) {
           dayStatus = 'urgent';
           cell.classList.add('urgent-renewal');
-        } else if (renewals.upcoming && renewals.upcoming.length > 0) {
+        } else if (hasUpcoming) {
           dayStatus = 'upcoming';
           cell.classList.add('upcoming-renewal');
         }
 
-        // Combine all renewals for tooltip
-        const allRenewals = [
-          ...(renewals.urgent || []),
-          ...(renewals.upcoming || []),
-          ...(renewals.normal || [])
-        ];
-
-        if (allRenewals.length > 0) {
-          cell.dataset.renewals = JSON.stringify(allRenewals);
-          cell.dataset.status = dayStatus;
-          cell.addEventListener('mouseenter', showTooltip);
-          cell.addEventListener('mousemove', moveTooltip);
-          cell.addEventListener('mouseleave', hideTooltip);
+        // If there are any renewals, make the day clickable
+        if (hasUrgent || hasUpcoming || hasNormal) {
+          cell.classList.add('has-renewals');
+          cell.style.cursor = 'pointer';
           cell.addEventListener('click', handleDayClick);
-          cell.addEventListener('touchstart', function (e) {
-            e.preventDefault();
-            showTooltip(e);
-          }, { passive: false });
         }
       }
 
       // Legacy support for old renewalEvents format
       if (renewalEvents && renewalEvents[ymd]) {
         cell.classList.add('has-event');
-        if (!cell.dataset.renewals) {
-          cell.dataset.events = JSON.stringify(renewalEvents[ymd]);
+        cell.style.cursor = 'pointer';
+        // Ensure click handler is attached for legacy events too
+        if (!cell.classList.contains('has-renewals')) {
+          cell.addEventListener('click', handleDayClick);
         }
       }
 
       grid.appendChild(cell);
     }
-  }
-
-  // tooltip
-  const tooltip = document.createElement('div');
-  tooltip.className = 'calendar-tooltip';
-  document.body.appendChild(tooltip);
-
-  function showTooltip(e) {
-    const target = e.currentTarget || e.target;
-    
-    // Try new renewals format first
-    let renewals = null;
-    const renewalsRaw = target.dataset.renewals;
-    if (renewalsRaw) {
-      try { renewals = JSON.parse(renewalsRaw); } catch (err) { }
-    }
-
-    // Fallback to old events format
-    if (!renewals) {
-      const eventsRaw = target.dataset.events;
-      if (eventsRaw) {
-        try { renewals = JSON.parse(eventsRaw); } catch (err) { }
-      }
-    }
-
-    if (!renewals || renewals.length === 0) return;
-
-    tooltip.innerHTML = '';
-
-    // Add header with count
-    const header = document.createElement('div');
-    header.className = 'tooltip-header';
-    header.style.fontWeight = '700';
-    header.style.marginBottom = '8px';
-    header.style.borderBottom = '1px solid rgba(255,255,255,0.2)';
-    header.style.paddingBottom = '6px';
-    
-    const status = target.dataset.status || 'normal';
-    const statusLabel = status === 'urgent' ? '🔴 Urgent Renewals' : 
-                        status === 'upcoming' ? '🟡 Upcoming Renewals' : 'Renewals';
-    header.textContent = `${statusLabel} (${renewals.length})`;
-    tooltip.appendChild(header);
-
-    // Show up to 2 renewals
-    renewals.slice(0, 2).forEach(renewal => {
-      const item = document.createElement('div');
-      item.className = 'tooltip-item';
-      item.style.marginBottom = '4px';
-      item.style.fontSize = '0.85rem';
-      
-      const memberName = renewal.member || renewal.member_name || 'Unknown';
-      const plate = renewal.plate || 'N/A';
-      const daysText = renewal.daysLeft !== undefined ? ` (${renewal.daysLeft}d)` : '';
-      
-      item.textContent = `${memberName} — ${plate}${daysText}`;
-      tooltip.appendChild(item);
-    });
-
-    // Show "more" indicator if needed
-    if (renewals.length > 2) {
-      const more = document.createElement('div');
-      more.className = 'tooltip-more';
-      more.style.marginTop = '6px';
-      more.style.paddingTop = '6px';
-      more.style.borderTop = '1px solid rgba(255,255,255,0.2)';
-      more.style.fontSize = '0.8rem';
-      more.style.opacity = '0.8';
-      more.textContent = `+ ${renewals.length - 2} more (click to view all)`;
-      tooltip.appendChild(more);
-    }
-
-    tooltip.classList.add('visible');
-    positionTooltip(e);
-  }
-
-  function moveTooltip(e) {
-    positionTooltip(e);
-  }
-
-  function positionTooltip(e) {
-    const x = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
-    const y = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
-    tooltip.style.left = x + 'px';
-    tooltip.style.top = (y - 10) + 'px';
-    tooltip.style.transform = 'translate(-50%, -100%)';
-  }
-
-  function hideTooltip() {
-    tooltip.classList.remove('visible');
   }
 
   function handleDayClick(e) {
@@ -319,9 +223,4 @@
   window.refreshCalendar = function() {
     renderCalendar(activeYear, activeMonth);
   };
-
-  // close tooltip when clicking outside calendar
-  document.addEventListener('click', function (e) {
-    if (!e.target.closest('#renewalCalendar')) hideTooltip();
-  });
 })();

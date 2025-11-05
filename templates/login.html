@@ -4,11 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Login - POTMPC</title>
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" />
-    <link rel="stylesheet" href="{% static 'css/ready.css' %}" />
-    <link rel="stylesheet" href="{% static 'css/demo.css' %}" />
     <link rel="stylesheet" href="{% static 'css/login_custom.css' %}" />
 </head>
 <body>
@@ -21,10 +19,14 @@
     </div>
     <div class="overlay"></div>
     
-    <div class="login-card">
-        <div class="login-header-title"></div>
-        <img src="{% static 'img/home.png' %}" onerror="this.style.display='none'">
-        <div class="login-subtitle">Secure Login Portal</div>
+    <!-- Login Card -->
+    <div class="auth-card login-card" id="loginCard">
+        <div class="auth-header">
+            <img src="{% static 'img/home.png' %}" class="auth-logo" onerror="this.style.display='none'">
+            <h1 class="auth-title">Welcome</h1>
+            <p class="auth-subtitle">Sign in to continue</p>
+        </div>
+        
         {% if messages %}
             <div class="mt-2">
                 {% for message in messages %}
@@ -32,29 +34,114 @@
                 {% endfor %}
             </div>
         {% endif %}
-        <form method="post" class="login-form">
+
+        <!-- Login Method Toggle -->
+        <div class="login-method-toggle">
+            <button type="button" class="method-btn active" data-method="credentials">
+                <span class="method-icon">&#128100;</span>
+                User Details
+            </button>
+            <button type="button" class="method-btn" data-method="qr">
+                <span class="method-icon">&#128247;</span>
+                QR Code
+            </button>
+        </div>
+
+        <!-- Credentials Login Form -->
+        <form method="post" class="auth-form" id="credentialsForm">
             {% csrf_token %}
             <div class="input-group">
                 <span class="icon">&#128100;</span>
-                <input type="text" name="username" placeholder="USER" required>
+                <input type="text" name="username" placeholder="Username" required>
             </div>
             <div class="input-group">
                 <span class="icon">&#128274;</span>
-                <input type="password" name="password" placeholder="PASSWORD" id="password" required>
+                <input type="password" name="password" placeholder="Password" id="password" required>
                 <span class="toggle-password" onclick="togglePassword()">&#128065;</span>
             </div>
             <div class="options">
-                <a href="{% url 'password_reset' %}" class="btn btn-link p-0">Forgot Password?</a>
+                <a href="{% url 'password_reset' %}" class="forgot-link">Forgot Password?</a>
             </div>
-            <button type="submit" class="login-btn">Sign In</button>
+            <button type="submit" class="auth-btn">Sign In</button>
         </form>
-        <div class="text-center mt-3">
-            <a href="{% url 'qr_scan' %}" class="login-btn" style="margin-top: 12px; background: var(--potmpc-green);">
-                <i class="fas fa-qrcode"></i> Scan QR Code
+
+        <!-- QR Login Content (Hidden by default) -->
+        <div class="qr-login-content" id="qrLoginContent" style="display: none;">
+            <p class="qr-instruction">Scan your QR code or upload an image</p>
+            <a href="{% url 'qr_scan' %}" class="auth-btn qr-btn">
+                <span class="method-icon">&#128247;</span>
+                Open QR Scanner
             </a>
         </div>
-        <div class="text-center mt-3">
-            <a href="{% url 'register' %}">Don't have an account? Register here</a>
+
+        <!-- Register Link -->
+        <div class="auth-footer">
+            <p>Don't have an account?</p>
+            <button type="button" class="link-btn" id="showRegisterBtn">Create Account</button>
+        </div>
+    </div>
+
+    <!-- Register Card -->
+    <div class="auth-card register-card" id="registerCard">
+        <button type="button" class="back-btn" id="backToLoginBtn">
+            <span>&#8592;</span>
+        </button>
+        
+        <div class="auth-header">
+            <img src="{% static 'img/home.png' %}" class="auth-logo" onerror="this.style.display='none'">
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Register here</p>
+        </div>
+
+        <form method="post" action="{% url 'register' %}" enctype="multipart/form-data" class="auth-form register-form" id="registerForm">
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="id_username">Username</label>
+                    <input type="text" name="username" id="id_username" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="id_full_name">Full Name</label>
+                    <input type="text" name="full_name" id="id_full_name" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="id_email">Email</label>
+                    <input type="email" name="email" id="id_email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="id_phone_number">Phone Number</label>
+                    <input type="text" name="phone_number" id="id_phone_number" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="id_password1">Password</label>
+                    <input type="password" name="password1" id="id_password1" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="id_password2">Confirm Password</label>
+                    <input type="password" name="password2" id="id_password2" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="id_id_image">Valid ID (JPG/PNG)</label>
+                <div class="file-upload-wrapper">
+                    <input type="file" name="id_image" id="id_id_image" accept="image/*" required>
+                    <label for="id_id_image" class="file-upload-label">
+                        <span class="file-icon">&#128193;</span>
+                        <span class="file-text">Choose File</span>
+                    </label>
+                </div>
+                <img id="imgPreview" class="img-preview" alt="ID Preview" style="display: none;"/>
+            </div>
+            <button type="submit" class="auth-btn">Register</button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Already have an account?</p>
+            <button type="button" class="link-btn" id="showLoginBtn">Sign In</button>
         </div>
     </div>
     <script>
@@ -63,15 +150,15 @@
             var toggleIcon = document.querySelector('.toggle-password');
             if (pwd.type === 'password') {
                 pwd.type = 'text';
-                toggleIcon.innerHTML = '&#128064;'; // Open eye
+                toggleIcon.innerHTML = '&#128064;';
             } else {
                 pwd.type = 'password';
-                toggleIcon.innerHTML = '&#128065;'; // Closed eye
+                toggleIcon.innerHTML = '&#128065;';
             }
         }
 
-        // Carousel functionality
         document.addEventListener("DOMContentLoaded", function() {
+            // Carousel functionality
             const carouselImages = document.querySelectorAll('.carousel-img');
             let currentIndex = 0;
 
@@ -80,89 +167,83 @@
                 currentIndex = (currentIndex + 1) % carouselImages.length;
                 carouselImages[currentIndex].classList.add('active');
             }
-
-            // Change image every 7 seconds
             setInterval(showNextImage, 7000);
-        });
 
-        document.addEventListener("DOMContentLoaded", function(){
-            const startBtn = document.getElementById("start-scan-btn");
-            const stopBtn = document.getElementById("stop-scan-btn");
-            const qrReaderDiv = document.getElementById("qr-reader");
-            const qrResult = document.getElementById("qr-result");
-            let html5QrCode = null;
+            // Login/Register card transitions
+            const loginCard = document.getElementById('loginCard');
+            const registerCard = document.getElementById('registerCard');
+            const showRegisterBtn = document.getElementById('showRegisterBtn');
+            const showLoginBtn = document.getElementById('showLoginBtn');
+            const backToLoginBtn = document.getElementById('backToLoginBtn');
 
-            startBtn.addEventListener("click", function(){
-                qrReaderDiv.style.display = "block";
-                startBtn.style.display = "none";
-                stopBtn.style.display = "inline-block";
-                html5QrCode = new Html5Qrcode("qr-reader");
+            showRegisterBtn.addEventListener('click', function() {
+                loginCard.classList.add('slide-out-right');
+                registerCard.classList.add('slide-in-left');
+                setTimeout(() => {
+                    loginCard.style.display = 'none';
+                    registerCard.style.display = 'flex';
+                }, 50);
+            });
 
-                Html5Qrcode.getCameras().then(cameras => {
-                if (cameras && cameras.length) {
-                    const cameraId = cameras[0].id;
-                    html5QrCode.start(
-                    cameraId,
-                    { fps: 10, qrbox: 250 },
-                    (decodedText, decodedResult) => {
-                        // decodedText will be the scanned URL (or token string)
-                        qrResult.innerText = "QR scanned: " + decodedText;
-                        // if the QR encodes the direct login URL (recommended), redirect to it:
-                        if (decodedText.startsWith("http")) {
-                        html5QrCode.stop().then(() => {
-                            window.location.href = decodedText;
-                        }).catch(err => {
-                            // fallback: set location
-                            window.location.href = decodedText;
-                        });
-                        } else {
-                        // if the QR only contains token, build the URL and go
-                        const token = decodedText.trim();
-                        const url = "/qr-login/" + encodeURIComponent(token) + "/";
-                        html5QrCode.stop().then(() => {
-                            window.location.href = url;
-                        }).catch(err => { window.location.href = url; });
-                        }
-                    },
-                    (errorMessage) => {
-                        // decode errors or partial scans can be ignored
-                    })
-                    .catch(err => {
-                    qrResult.innerText = "Unable to start camera: " + err;
-                    });
-                } else {
-                    qrResult.innerText = "No camera found.";
-                }
-                }).catch(err => {
-                qrResult.innerText = "Camera access error: " + err;
+            function showLogin() {
+                registerCard.classList.remove('slide-in-left');
+                registerCard.classList.add('slide-out-left');
+                loginCard.classList.remove('slide-out-right');
+                loginCard.style.display = 'flex';
+                loginCard.classList.add('slide-in-right');
+                setTimeout(() => {
+                    registerCard.style.display = 'none';
+                }, 500);
+            }
+
+            showLoginBtn.addEventListener('click', showLogin);
+            backToLoginBtn.addEventListener('click', showLogin);
+
+            // Login method toggle
+            const methodBtns = document.querySelectorAll('.method-btn');
+            const credentialsForm = document.getElementById('credentialsForm');
+            const qrLoginContent = document.getElementById('qrLoginContent');
+
+            methodBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    methodBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const method = this.getAttribute('data-method');
+                    if (method === 'credentials') {
+                        credentialsForm.style.display = 'block';
+                        qrLoginContent.style.display = 'none';
+                    } else {
+                        credentialsForm.style.display = 'none';
+                        qrLoginContent.style.display = 'block';
+                    }
                 });
             });
 
-            stopBtn.addEventListener("click", function(){
-                if (html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    qrReaderDiv.style.display = "none";
-                    startBtn.style.display = "inline-block";
-                    stopBtn.style.display = "none";
-                }).catch(err => {
-                    console.error(err);
+            // Image preview for registration
+            const fileInput = document.getElementById('id_id_image');
+            const imgPreview = document.getElementById('imgPreview');
+            const fileLabel = document.querySelector('.file-upload-label .file-text');
+
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    if (fileInput.files && fileInput.files[0]) {
+                        const fileName = fileInput.files[0].name;
+                        fileLabel.textContent = fileName;
+                        
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            imgPreview.src = e.target.result;
+                            imgPreview.style.display = 'block';
+                        };
+                        reader.readAsDataURL(fileInput.files[0]);
+                    } else {
+                        imgPreview.style.display = 'none';
+                        fileLabel.textContent = 'Choose File';
+                    }
                 });
-                }
-            });
+            }
         });
     </script>
-    <script src="{% static 'js/core/jquery.3.2.1.min.js' %}"></script>
-    <script src="{% static 'js/plugin/jquery-ui-1.12.1.custom/jquery-ui.min.js' %}"></script>
-    <script src="{% static 'js/core/popper.min.js' %}"></script>
-    <script src="{% static 'js/core/bootstrap.min.js' %}"></script>
-    <script src="{% static 'js/plugin/chartist/chartist.min.js' %}"></script>
-    <script src="{% static 'js/plugin/chartist/plugin/chartist-plugin-tooltip.min.js' %}"></script>
-    <script src="{% static 'js/plugin/bootstrap-notify/bootstrap-notify.min.js' %}"></script>
-    <script src="{% static 'js/plugin/bootstrap-toggle/bootstrap-toggle.min.js' %}"></script>
-    <script src="{% static 'js/plugin/jquery-mapael/jquery.mapael.min.js' %}"></script>
-    <script src="{% static 'js/plugin/jquery-mapael/maps/world_countries.min.js' %}"></script>
-    <script src="{% static 'js/plugin/jquery-circle-progress/circle-progress.min.js' %}"></script>
-    <script src="{% static 'js/plugin/jquery-scrollbar/jquery.scrollbar.min.js' %}"></script>
-    <script src="{% static 'js/ready.min.js' %}"></script>
 </body>
 </html>

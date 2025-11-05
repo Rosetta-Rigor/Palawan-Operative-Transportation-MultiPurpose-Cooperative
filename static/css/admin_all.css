@@ -149,7 +149,7 @@
 .admin-dashboard .calendar-card {
   border:1px solid rgba(31,62,39,0.1); background:var(--card-bg);
   padding:16px; border-radius:12px;
-  height: 480px;
+  height: 500px;
   display: flex;
   flex-direction: column;
 }
@@ -191,32 +191,6 @@
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(251, 173, 76, 0.2) 100%);
   border-color: var(--batch-upcoming);
   box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
-}
-
-/* tooltip */
-.admin-dashboard .calendar-tooltip { 
-  position:fixed; 
-  z-index:12000; 
-  background:var(--brand-600); 
-  color:#fff; 
-  padding:12px 14px; 
-  border-radius:10px; 
-  font-size:0.9rem; 
-  box-shadow:0 10px 30px rgba(11,77,162,0.25); 
-  pointer-events:none; 
-  white-space:normal; 
-  max-width:280px;
-  transform:translate(-50%,-100%); 
-  display:none;
-  animation: tooltipFadeIn 0.2s ease;
-}
-.admin-dashboard .calendar-tooltip.visible { display:block; }
-.admin-dashboard .calendar-tooltip .item { display:block; font-weight:600; margin-bottom:4px; }
-.admin-dashboard .calendar-tooltip .meta { display:block; font-weight:400; opacity:0.95; font-size:0.85rem; }
-
-@keyframes tooltipFadeIn {
-  from { opacity: 0; transform: translate(-50%, -90%); }
-  to { opacity: 1; transform: translate(-50%, -100%); }
 }
 
 /* Quick cards grid */

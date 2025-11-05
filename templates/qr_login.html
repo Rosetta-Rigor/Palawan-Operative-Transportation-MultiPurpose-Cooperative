@@ -3,46 +3,91 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>QR Code Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Login - POTMPC</title>
     <link rel="stylesheet" href="{% static 'css/login_custom.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
 </head>
 <body>
-<div class="bg-road-stripes"></div>
+<div class="carousel-background">
+    <img src="{% static 'img/bg.jpg' %}" class="carousel-img active" alt="Background 1">
+    <img src="{% static 'img/bg2.jpg' %}" class="carousel-img" alt="Background 2">
+    <img src="{% static 'img/bg3.jpg' %}" class="carousel-img" alt="Background 3">
+    <img src="{% static 'img/bg4.jpg' %}" class="carousel-img" alt="Background 4">
+</div>
 <div class="overlay"></div>
 
-<div class="login-card">
-    <a href="{% url 'login' %}" class="register-back-btn" title="Back to Login">
-            &#8592;
-        </a>
-    <h2 class="login-title">Scan Your QR Code</h2>
-    <button id="start-scan-btn" type="button" class="btn btn-primary">OPEN CAMERA</button>
-    <button id="stop-scan-btn" type="button" class="btn btn-secondary" style="display:none;">Stop Scanner</button>
-    <div id="qr-reader" style="margin-top:10px;">
-        <video id="qr-video" width="400" height="300" autoplay playsinline style="border:1px solid #ccc; display:none;"></video>
-        <canvas id="qr-canvas" width="400" height="300" style="display:none;"></canvas>
-        <div id="qr-result" style="margin-top:10px;"></div>
+<div class="auth-card qr-scanner-card">
+    <a href="{% url 'login' %}" class="back-btn" title="Back to Login">
+        <span>&#8592;</span>
+    </a>
+    
+    <div class="auth-header">
+        <img src="{% static 'img/home.png' %}" class="auth-logo" onerror="this.style.display='none'">
+        <h1 class="auth-title">QR Code Login</h1>
+        <p class="auth-subtitle">Scan your QR code to sign in</p>
     </div>
-    <h2 class="login-title">OR</h2>
-    <form method="post" enctype="multipart/form-data" action="{% url 'qr-image-login' %}">
+    <div class="qr-scanner-section">
+        <button id="start-scan-btn" type="button" class="auth-btn qr-btn">
+            <span class="method-icon">&#128247;</span>
+            Open Camera
+        </button>
+        <button id="stop-scan-btn" type="button" class="auth-btn" style="display:none; background: var(--danger);">
+            Stop Scanner
+        </button>
+        
+        <div id="qr-reader" style="margin-top:20px;">
+            <video id="qr-video" width="400" height="300" autoplay playsinline style="border-radius:12px; display:none; max-width:100%;"></video>
+            <canvas id="qr-canvas" width="400" height="300" style="display:none;"></canvas>
+            <div id="qr-result" style="margin-top:12px; color: var(--muted); font-weight:600;"></div>
+        </div>
+    </div>
+
+    <div class="qr-divider">
+        <span>OR</span>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" action="{% url 'qr-image-login' %}" class="qr-upload-form">
         {% csrf_token %}
-        <label for="qr_image" class="upload-label">Upload QR Code Image</label>
-        <input type="file" name="qr_image" id="qr_image" accept="image/*" required>
-        <button type="submit" id="qr-login-btn" class="btn-custom" disabled>Login with QR Image</button>
+        <div class="form-group">
+            <label for="qr_image">Upload QR Code Image</label>
+            <div class="file-upload-wrapper">
+                <input type="file" name="qr_image" id="qr_image" accept="image/*" required>
+                <label for="qr_image" class="file-upload-label">
+                    <span class="file-icon">&#128247;</span>
+                    <span class="file-text">Choose QR Image</span>
+                </label>
+            </div>
+        </div>
+        <button type="submit" id="qr-login-btn" class="auth-btn" disabled>Login with QR Image</button>
     </form>
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        // Carousel functionality
+        const carouselImages = document.querySelectorAll('.carousel-img');
+        let currentIndex = 0;
+
+        function showNextImage() {
+            carouselImages[currentIndex].classList.remove('active');
+            currentIndex = (currentIndex + 1) % carouselImages.length;
+            carouselImages[currentIndex].classList.add('active');
+        }
+        setInterval(showNextImage, 7000);
+
+        // File upload handling
         const fileInput = document.getElementById("qr_image");
         const loginButton = document.getElementById("qr-login-btn");
+        const fileLabel = document.querySelector('.file-upload-label .file-text');
 
-        // Enable the button only when a file is selected
         fileInput.addEventListener("change", function() {
             if (fileInput.files.length > 0) {
                 loginButton.disabled = false;
+                fileLabel.textContent = fileInput.files[0].name;
             } else {
                 loginButton.disabled = true;
+                fileLabel.textContent = 'Choose QR Image';
             }
         });
     });

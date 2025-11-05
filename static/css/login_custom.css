@@ -1,13 +1,33 @@
+/* New Color Scheme from admin_all.css */
+:root {
+    --brand-600: #1F3E27;        /* Deep Forest - Headers */
+    --brand-500: #4C6B4A;        /* Secondary buttons */
+    --accent-500: #C99E35;       /* Muted Gold - Primary buttons */
+    --bg-100: #F6F4ED;           /* Ivory Mist - Backgrounds */
+    --card-bg: #FFFFFF;          /* Card background */
+    --muted: #2F2F2F;            /* Main text */
+    --muted-2: #5C3A21;          /* Secondary text */
+    --success: #2D8A63;          /* Success green */
+    --danger: #D64545;           /* Danger red */
+    
+    /* Legacy support */
+    --potmpc-gold: #C99E35;
+    --potmpc-brown: #5C3A21;
+    --potmpc-green: #1F3E27;
+    --potmpc-dark: #2F2F2F;
+}
+
 body {
     min-height: 100vh;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Nunito', 'Segoe UI', Arial, sans-serif;
     position: relative;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: center;
+    background: var(--bg-100);
 }
 
 /* Carousel Background */
@@ -34,114 +54,215 @@ body {
 }
 
 .carousel-background img.active {
-    opacity: 0.25;
+    opacity: 0.15;
 }
 
-/* Overlay for better readability */
+/* Overlay */
 .overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(58, 122, 58, 0.15) 0%, rgba(107, 47, 19, 0.1) 100%);
+    background: linear-gradient(135deg, rgba(31, 62, 39, 0.08) 0%, rgba(92, 58, 33, 0.05) 100%);
     z-index: 1;
     pointer-events: none;
 }
 
-/* Accent colors from logo */
-:root {
-    --potmpc-gold: #FFD43B;
-    --potmpc-brown: #6B2F13;
-    --potmpc-green: #3A7A3A;
-    --potmpc-dark: #222;
-}
-
-.login-card {
+/* Auth Cards - Shared Styles */
+.auth-card {
     position: fixed;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 45%;
-    min-width: 400px;
-    max-width: 550px;
-    background: linear-gradient(135deg, rgba(255, 212, 59, 0.85) 0%, rgba(255, 224, 102, 0.9) 100%);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 480px;
+    max-width: 90vw;
+    background: var(--card-bg);
     backdrop-filter: blur(10px);
-    box-shadow: -8px 0 32px rgba(107, 47, 19, 0.3);
-    padding: 60px 50px;
+    box-shadow: 0 10px 40px rgba(31, 62, 39, 0.15);
+    border-radius: 16px;
+    padding: 48px 40px;
     text-align: center;
     z-index: 10;
     overflow-y: auto;
+    max-height: 95vh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-}
-.login-header-title {
-    color: var(--potmpc-brown);
-    font-size: 1.4rem;
-    font-weight: 700;
-    margin-bottom: 20px;
-    text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.5);
-    line-height: 1.4;
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-.login-card img {
-    width: 240px;
-    margin: 0 auto 24px;
-    filter: drop-shadow(0 4px 8px rgba(107, 47, 19, 0.2));
+.login-card {
+    right: 10%;
+}
+
+.register-card {
+    left: 10%;
+    display: none;
+}
+
+/* animation dito lods */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%) translateY(-50%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0) translateY(-50%);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0) translateY(-50%);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%) translateY(-50%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        transform: translateX(-100%) translateY(-50%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0) translateY(-50%);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutLeft {
+    from {
+        transform: translateX(0) translateY(-50%);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(-100%) translateY(-50%);
+        opacity: 0;
+    }
+}
+
+.slide-in-right {
+    animation: slideInRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.slide-out-right {
+    animation: slideOutRight 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.slide-in-left {
+    animation: slideInLeft 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.slide-out-left {
+    animation: slideOutLeft 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+
+
+/* Auth Header */
+.auth-header {
+    margin-bottom: 32px;
+}
+
+.auth-logo {
+    width: 180px;
+    margin: 0 auto 20px;
+    filter: drop-shadow(0 4px 8px rgba(31, 62, 39, 0.1));
     display: block;
 }
 
-.login-title {
-    color: var(--potmpc-brown);
-    font-size: 2.5rem;
+.auth-title {
+    color: var(--brand-600);
+    font-size: 2rem;
     font-weight: 800;
-    margin-bottom: 12px;
-    text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.5);
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
 }
 
-.login-subtitle {
-    color: var(--potmpc-dark);
+.auth-subtitle {
+    color: var(--muted-2);
     font-size: 0.95rem;
-    margin-bottom: 40px;
-    line-height: 1.6;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
+    margin-bottom: 0;
+    font-weight: 500;
 }
-.login-form {
+
+.auth-form {
     text-align: left;
     width: 100%;
 }
 
+/* Login Method Toggle */
+.login-method-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    background: var(--bg-100);
+    padding: 6px;
+    border-radius: 12px;
+}
+
+.method-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.method-btn.active {
+    background: var(--card-bg);
+    color: var(--brand-600);
+    box-shadow: 0 2px 8px rgba(31, 62, 39, 0.1);
+}
+
+.method-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.method-icon {
+    font-size: 1.2rem;
+}
+
+/* Input Groups */
 .input-group {
     position: relative;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 }
 
 .input-group input {
     width: 100%;
-    padding: 16px 50px 16px 50px;
-    border: 2px solid var(--potmpc-brown);
+    padding: 14px 50px 14px 50px;
+    border: 2px solid var(--bg-100);
     border-radius: 10px;
-    font-size: 1.05rem;
-    background: #fffbe6;
+    font-size: 1rem;
+    background: var(--bg-100);
     transition: all 0.3s ease;
     font-weight: 500;
+    color: var(--muted);
 }
 
 .input-group input:focus {
     outline: none;
-    border-color: var(--potmpc-green);
-    background: #ffffff;
-    box-shadow: 0 4px 12px rgba(58, 122, 58, 0.2);
-    transform: translateY(-2px);
+    border-color: var(--accent-500);
+    background: var(--card-bg);
+    box-shadow: 0 4px 12px rgba(201, 158, 53, 0.15);
 }
 
 .input-group input::placeholder {
-    color: #a68a5c;
-    font-weight: 600;
-    letter-spacing: 0.5px;
+    color: #999;
+    font-weight: 500;
 }
 
 .input-group .icon {
@@ -149,8 +270,8 @@ body {
     left: 16px;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--potmpc-brown);
-    font-size: 1.4rem;
+    color: var(--muted-2);
+    font-size: 1.3rem;
     pointer-events: none;
     z-index: 10;
 }
@@ -161,276 +282,336 @@ body {
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
-    color: var(--potmpc-brown);
-    font-size: 1.3rem;
+    color: var(--muted-2);
+    font-size: 1.2rem;
     transition: color 0.2s;
     z-index: 10;
 }
 
 .input-group .toggle-password:hover {
-    color: var(--potmpc-green);
+    color: var(--brand-600);
 }
 .options {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    margin-bottom: 24px;
-    font-size: 1rem;
+    margin-bottom: 20px;
 }
 
-.options label {
-    display: flex;
-    align-items: center;
-}
-
-.options a {
-    color: var(--potmpc-green);
+.forgot-link {
+    color: var(--accent-500);
     text-decoration: none;
     font-weight: 600;
+    font-size: 0.9rem;
     transition: color 0.2s;
 }
 
-.options a:hover {
-    color: var(--potmpc-brown);
+.forgot-link:hover {
+    color: var(--brand-600);
     text-decoration: underline;
 }
 
-.login-btn {
+/* Buttons */
+.auth-btn {
     width: 100%;
-    background: var(--potmpc-brown);
+    background: var(--brand-600);
     color: #fff;
     border: none;
     border-radius: 10px;
-    padding: 16px;
-    font-size: 1.2rem;
-    font-weight: 800;
+    padding: 14px;
+    font-size: 1.05rem;
+    font-weight: 700;
     cursor: pointer;
-    margin-top: 12px;
     transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    box-shadow: 0 4px 12px rgba(107, 47, 19, 0.3);
-}
-
-.login-btn:hover {
-    background: var(--potmpc-green);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(58, 122, 58, 0.4);
-}
-
-.login-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(107, 47, 19, 0.3);
-}
-.back-to-login {
-    width: auto;
-    padding: 8px 16px;
-    font-size: 1rem;
-    text-align: center;
-    background: var(--potmpc-green);
-    color: #fff;
-    border-radius: 6px;
-    display: inline-block;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.back-to-login:hover {
-    background: var(--potmpc-brown);
-}
-/* Style for the upload label */
-.upload-label {
-    display: block;
-    margin: 12px auto 8px;
-    font-size: 1rem;
-    color: var(--potmpc-brown);
-    font-weight: bold;
-    text-align: center;
-}
-
-/* Style for the buttons */
-.btn-custom {
-    width: auto;
-    padding: 8px 16px;
-    font-size: 1rem;
-    text-align: center;
-    background: var(--potmpc-green);
-    color: #fff;
-    border-radius: 6px;
-    display: inline-block;
-    cursor: pointer;
-    transition: background 0.2s;
-    margin-top: 12px;
-}
-
-.btn-custom:hover {
-    background: var(--potmpc-brown);
-}
-
-/* Align all buttons to the center */
-form, .back-to-login {
-    text-align: center;
-}
-
-.register-back-btn {
-    position: absolute;
-    top: 18px;
-    left: 18px;
-    background: #fffbe6;
-    border: 1px solid #6B2F13;
-    color: #6B2F13;
-    border-radius: 50%;
-    width: 38px;
-    height: 38px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(31, 62, 39, 0.2);
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.auth-btn:hover {
+    background: var(--brand-500);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(31, 62, 39, 0.3);
+}
+
+.auth-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(31, 62, 39, 0.2);
+}
+
+.qr-btn {
+    background: var(--accent-500);
+    margin-top: 16px;
+}
+
+.qr-btn:hover {
+    background: #b38e2e;
+}
+
+/* QR Login Content */
+.qr-login-content {
+    padding: 20px 0;
+}
+
+.qr-instruction {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+/* Back Button */
+.back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: var(--bg-100);
+    border: 2px solid var(--brand-600);
+    color: var(--brand-600);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 20;
+}
+
+.back-btn:hover {
+    background: var(--brand-600);
+    color: var(--card-bg);
+    transform: scale(1.1);
+}
+
+/* Auth Footer */
+.auth-footer {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--bg-100);
+}
+
+.auth-footer p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.link-btn {
+    background: none;
+    border: none;
+    color: var(--accent-500);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 0;
+}
+
+.link-btn:hover {
+    color: var(--brand-600);
+    text-decoration: underline;
+}
+
+/* Registration Form Specific Styles */
+.register-form .form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.register-form .form-group {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+}
+
+.register-form label {
+    display: block;
+    color: var(--brand-600);
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+}
+
+.register-form .form-control {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--bg-100);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: var(--bg-100);
+    transition: all 0.3s ease;
+    color: var(--muted);
+}
+
+.register-form .form-control:focus {
+    outline: none;
+    border-color: var(--accent-500);
+    background: var(--card-bg);
+    box-shadow: 0 2px 8px rgba(201, 158, 53, 0.15);
+}
+
+.register-form .form-control::placeholder {
+    color: #999;
+}
+
+/* File Upload Styling */
+.file-upload-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    width: 100%;
+}
+
+.file-upload-wrapper input[type="file"] {
+    position: absolute;
+    left: -9999px;
+}
+
+.file-upload-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--bg-100);
+    border: 2px dashed var(--accent-500);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.file-upload-label:hover {
+    background: var(--card-bg);
+    border-color: var(--brand-600);
+}
+
+.file-icon {
     font-size: 1.3rem;
-    cursor: pointer;
-    transition: background 0.15s;
-    z-index: 2;
-}
-.register-back-btn:hover {
-    background: #ffe066;
-    color: #3A7A3A;
 }
 
-/* Style for the "OPEN CAMERA" and "CHOOSE FILE" buttons */
-#start-scan-btn, #qr_image {
-    width: auto;
-    padding: 8px 16px;
-    font-size: 1rem;
-    text-align: center;
-    background: var(--potmpc-green);
-    color: #fff;
-    border-radius: 6px;
-    display: inline-block;
-    cursor: pointer;
-    transition: background 0.2s;
-    margin-top: 12px;
-    border: none; /* Remove default border */
-}
-
-#start-scan-btn:hover, #qr_image:hover {
-    background: var(--potmpc-brown);
-}
-
-/* Ensure the "CHOOSE FILE" input matches the design */
-#qr_image {
-    display: inline-block;
-    text-align: center;
-    cursor: pointer;
-    padding: 8px 16px;
-    font-size: 1rem;
-    background: var(--potmpc-green);
-    color: #fff;
-    border-radius: 6px;
-    border: none;
-    transition: background 0.2s;
-}
-
-#qr_image:hover {
-    background: var(--potmpc-brown);
-}
-
-/* Style for the "OPEN CAMERA", "STOP SCANNER", and "CHOOSE FILE" buttons */
-#start-scan-btn, #stop-scan-btn, #qr_image {
-    width: auto;
-    padding: 8px 16px;
-    font-size: 1rem;
-    text-align: center;
-    background: var(--potmpc-green);
-    color: #fff;
-    border-radius: 6px;
-    display: inline-block;
-    cursor: pointer;
-    transition: background 0.2s;
-    margin-top: 12px;
-    border: none; /* Remove default border */
-}
-
-#start-scan-btn:hover, #stop-scan-btn:hover, #qr_image:hover {
-    background: var(--potmpc-brown);
-}
-
-/* Ensure the "CHOOSE FILE" input matches the design */
-#qr_image {
-    display: inline-block;
-    text-align: center;
-    cursor: pointer;
-    padding: 8px 16px;
-    font-size: 1rem;
-    background: var(--potmpc-green);
-    color: #fff;
-    border-radius: 6px;
-    border: none;
-    transition: background 0.2s;
-}
-
-#qr_image:hover {
-    background: var(--potmpc-brown);
-}
-
-/* Style for the "STOP SCANNER" button */
-#stop-scan-btn {
-    display: none; /* Initially hidden */
-}
-
-/* Style for the "Login with QR Image" button when disabled */
-#qr-login-btn:disabled {
-    background: #ccc;
-    color: #666;
-    cursor: not-allowed;
+.img-preview {
+    display: block;
+    margin: 16px auto;
+    max-width: 100%;
+    max-height: 180px;
+    border-radius: 8px;
+    border: 2px solid var(--bg-100);
+    object-fit: cover;
 }
 
 /* Alert Styles */
 .alert {
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 12px 16px;
     margin-bottom: 20px;
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: #fee;
+    border: 1px solid var(--danger);
+    color: var(--danger);
 }
 
-/* Links styling */
-.text-center a {
-    color: var(--potmpc-brown);
-    text-decoration: none;
+.alert-danger {
+    background: rgba(214, 69, 69, 0.1);
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.alert-success {
+    background: rgba(45, 138, 99, 0.1);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+/* QR Scanner Specific Styles */
+.qr-scanner-card {
+    position: relative;
+    left: auto !important;
+    right: auto !important;
+    margin: 60px auto;
+    transform: none;
+}
+
+.qr-scanner-section {
+    margin: 24px 0;
+}
+
+.qr-divider {
+    position: relative;
+    text-align: center;
+    margin: 32px 0;
+}
+
+.qr-divider::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: var(--bg-100);
+}
+
+.qr-divider span {
+    position: relative;
+    background: var(--card-bg);
+    padding: 0 16px;
+    color: var(--muted-2);
     font-weight: 600;
-    transition: color 0.2s;
+    font-size: 0.9rem;
 }
 
-.text-center a:hover {
-    color: var(--potmpc-green);
-    text-decoration: underline;
+.qr-upload-form {
+    margin-top: 20px;
+}
+
+.qr-upload-form .form-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.qr-upload-form label {
+    display: block;
+    color: var(--brand-600);
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
 }
 
 /* Responsive Design */
-@media (max-width: 1024px) {
-    .login-card {
-        width: 50%;
-        min-width: 380px;
-        padding: 50px 40px;
+@media (max-width: 1200px) {
+    .auth-card {
+        width: 440px;
     }
     
-    .login-title {
-        font-size: 2.2rem;
+    .login-card {
+        right: 5%;
+    }
+    
+    .register-card {
+        left: 5%;
     }
 }
 
 @media (max-width: 768px) {
-    body {
-        justify-content: center;
-    }
-    
-    .login-card {
+    .auth-card {
         position: relative;
+        left: auto !important;
+        right: auto !important;
+        transform: none;
         width: 90%;
-        max-width: 90%;
-        min-width: unset;
-        margin: 20px auto;
-        padding: 40px 30px;
-        border-radius: 16px;
+        max-width: 440px;
+        margin: 40px auto;
+        padding: 36px 28px;
     }
     
     .carousel-background img {
@@ -438,54 +619,67 @@ form, .back-to-login {
     }
     
     .carousel-background img.active {
-        opacity: 0.2;
+        opacity: 0.12;
     }
     
-    .login-title {
-        font-size: 1.8rem;
-    }
-    
-    .login-subtitle {
-        font-size: 0.95rem;
+    .auth-title {
+        font-size: 1.75rem;
     }
     
     .input-group input {
-        padding: 14px 45px;
-        font-size: 1rem;
+        padding: 12px 45px;
+        font-size: 0.95rem;
+    }
+    
+    .register-form .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    /* Disable slide animations on mobile */
+    .slide-in-right,
+    .slide-out-right,
+    .slide-in-left,
+    .slide-out-left {
+        animation: none !important;
     }
 }
 
 @media (max-width: 480px) {
-    .login-card {
+    .auth-card {
         width: 95%;
-        padding: 30px 20px;
+        padding: 28px 20px;
     }
     
-    .login-card img {
-        width: 100px;
+    .auth-logo {
+        width: 140px;
         margin-bottom: 16px;
     }
     
-    .login-title {
+    .auth-title {
         font-size: 1.5rem;
     }
     
-    .login-subtitle {
+    .auth-subtitle {
         font-size: 0.85rem;
-        margin-bottom: 30px;
     }
     
     .input-group {
-        margin-bottom: 20px;
+        margin-bottom: 16px;
     }
     
     .input-group input {
         padding: 12px 40px;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
     }
     
-    .login-btn {
-        padding: 14px;
-        font-size: 1.05rem;
+    .auth-btn {
+        padding: 12px;
+        font-size: 1rem;
+    }
+    
+    .method-btn {
+        font-size: 0.8rem;
+        padding: 10px 8px;
     }
 }
