@@ -79,12 +79,24 @@
   background: var(--bg-100); /* Ivory Mist */
   color: var(--muted); /* Graphite */
   padding-bottom: 36px;
-  padding-top: 5px; /* Reduced top padding for tighter spacing */
+  padding-top: 0 !important;
+  margin-top: 0 !important;
 }
 
 /* Main panel adjustment for fixed header */
 .main-panel {
-  padding-top: 60px; /* Header height (70px) + 20px gap */
+  padding-top: 75px; /* Space for fixed navbar (70px) + breathing room (20px) */
+}
+
+.content {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.admin-dashboard .container,
+.admin-dashboard .container-fluid {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
 }
 
 /* Header / title */
@@ -291,6 +303,7 @@
   border-radius: 12px;
   padding: 18px;
   color: #fff;
+  margin-top: 0 !important;
 }
 
 /* Header gradient - Deep Forest with Gold accent */
@@ -302,6 +315,7 @@
   justify-content:space-between;
   box-shadow: 0 8px 28px rgba(31,62,39,0.2);
   padding: 20px 24px;
+  border-radius: 12px;
 }
 
 /* header text */

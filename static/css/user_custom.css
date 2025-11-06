@@ -309,6 +309,25 @@ body {
     padding-top: 85px; /* 70px header + 15px spacing */
     min-height: 100vh;
     transition: margin-left 0.3s ease;
+    width: calc(100% - 260px);
+}
+
+/* User Profile Content Wrapper (matches admin .content behavior) */
+.user-profile-content {
+    padding: 30px;
+    max-width: 100%;
+    width: 100%;
+}
+
+/* Container fluid - full width override */
+.main-panel .container-fluid,
+.user-profile-content .container-fluid {
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-top: 0;
+    margin: 0;
 }
 
 /* --- Sidebar User Card at Top --- */
@@ -507,4 +526,551 @@ body {
     background: rgba(255, 255, 255, 0.15) !important;
     color: #ffffff !important;
     text-decoration: none !important;
+}
+/* ===== USER PROFILE PAGE STYLES ===== */
+
+/* Page Header */
+.user-page-header-section {
+  margin-top: 0;
+  margin-bottom: 30px;
+  padding-top: 0;
+  padding-bottom: 20px;
+  border-bottom: 2px solid rgba(31,62,39,0.1);
+  width: 100%;
+}
+
+.user-page-title {
+  color: #1F3E27;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-page-title i {
+  font-size: 1.8rem;
+  color: #C99E35;
+}
+
+.user-page-subtitle {
+  color: #5C3A21;
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Form Cards */
+.user-form-card {
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(31,62,39,0.08);
+  overflow: hidden;
+  margin-top: 0;
+  margin-bottom: 24px;
+  border: 1px solid rgba(31,62,39,0.08);
+}
+
+/* Form Header with Gradient */
+.user-form-header-gradient {
+  background: linear-gradient(135deg, #1F3E27 0%, #4C6B4A 100%);
+  padding: 24px 32px;
+  color: #fff;
+  border-bottom: 3px solid #C99E35;
+}
+
+.user-form-header-title {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-form-header-title i {
+  font-size: 1.3rem;
+  opacity: 0.9;
+}
+
+.user-form-header-sub {
+  margin: 0;
+  font-size: 0.95rem;
+  opacity: 0.9;
+  font-weight: 400;
+}
+
+/* Form Content Area */
+.user-form-content {
+  padding: 32px;
+}
+
+/* Profile Image Section */
+.user-profile-image-section {
+  text-align: center;
+}
+
+.user-profile-image-section label {
+  font-weight: 700;
+  color: #1F3E27;
+  font-size: 1rem;
+}
+
+.user-profile-image-wrapper {
+  width: 220px;
+  height: 220px;
+  margin: 0 auto;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 5px solid #F6F4ED;
+  box-shadow: 0 8px 24px rgba(31,62,39,0.15);
+  transition: all 0.3s ease;
+}
+
+.user-profile-image-wrapper:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 32px rgba(31,62,39,0.2);
+}
+
+.user-profile-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* User Info Grid */
+.user-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.user-info-item {
+  background: linear-gradient(180deg, #F6F4ED, #FFFFFF);
+  border: 1px solid rgba(31,62,39,0.08);
+  border-radius: 10px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.user-info-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(31,62,39,0.1);
+}
+
+.user-info-item label {
+  font-weight: 600;
+  color: #1F3E27;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.user-info-item label i {
+  margin-right: 6px;
+  color: #C99E35;
+}
+
+.user-info-value {
+  font-weight: 700;
+  color: #2D8A63;
+  font-size: 1rem;
+}
+
+/* Form Actions */
+.user-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(31,62,39,0.1);
+}
+
+.user-form-actions .btn {
+  padding: 11px 28px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-form-actions .btn i {
+  font-size: 0.9rem;
+}
+
+.user-form-actions .btn-success {
+  background: linear-gradient(135deg, #2D8A63, #247552);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(45,138,99,0.25);
+}
+
+.user-form-actions .btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(45,138,99,0.35);
+}
+
+.user-form-actions .btn-primary {
+  background: linear-gradient(135deg, #1F3E27, #4C6B4A);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(31,62,39,0.25);
+}
+
+.user-form-actions .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(31,62,39,0.35);
+}
+
+/* Settings Section */
+.user-settings-section {
+  padding: 8px 0;
+}
+
+.user-settings-category-title {
+  color: #1F3E27;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-settings-category-title i {
+  color: #C99E35;
+  font-size: 1.3rem;
+}
+
+.user-settings-category-desc {
+  color: #5C3A21;
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+}
+
+/* Settings Grid */
+.user-settings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.user-setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(246,244,237,0.5), rgba(255,255,255,0.8));
+  border: 1px solid rgba(31,62,39,0.08);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.user-setting-item:hover {
+  background: rgba(246,244,237,0.8);
+  border-color: rgba(201,158,53,0.3);
+  box-shadow: 0 4px 12px rgba(31,62,39,0.08);
+  transform: translateX(4px);
+}
+
+.user-setting-info {
+  flex: 1;
+  padding-right: 20px;
+}
+
+.user-setting-label {
+  color: #1F3E27;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.user-setting-description {
+  color: #5C3A21;
+  font-size: 0.875rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.user-setting-control {
+  flex-shrink: 0;
+}
+
+/* Custom Switch Toggle */
+.user-custom-switch {
+  position: relative;
+  display: inline-block;
+  width: 56px;
+  height: 30px;
+  cursor: pointer;
+}
+
+.user-custom-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.user-switch-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #D4D0C7;
+  border-radius: 30px;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.user-switch-slider:before {
+  content: "";
+  position: absolute;
+  height: 22px;
+  width: 22px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.user-custom-switch input:checked + .user-switch-slider {
+  background: linear-gradient(135deg, #2D8A63, #247552);
+}
+
+.user-custom-switch input:checked + .user-switch-slider:before {
+  transform: translateX(26px);
+}
+
+.user-custom-switch:hover .user-switch-slider {
+  box-shadow: 0 0 8px rgba(31,62,39,0.2), inset 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* ===== UNIFIED PROFILE PAGE STYLES ===== */
+
+/* Page Header with Actions */
+.user-page-header-section {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(31, 62, 39, 0.1);
+}
+
+.user-page-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.user-page-actions .btn {
+    padding: 10px 24px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+/* Form Labels */
+.user-form-label {
+    font-weight: 600;
+    color: #1F3E27;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.user-form-label i {
+    color: #C99E35;
+    font-size: 1.1rem;
+}
+
+/* Info Display (View Mode) */
+.user-info-display {
+    padding: 12px 16px;
+    background: rgba(76, 107, 74, 0.05);
+    border-radius: 8px;
+    color: #2F2F2F;
+    font-weight: 500;
+    border: 1px solid rgba(31, 62, 39, 0.1);
+}
+
+/* Form Controls (Edit Mode) */
+.edit-mode-only .form-control {
+    padding: 12px 16px;
+    border: 2px solid rgba(31, 62, 39, 0.15);
+    border-radius: 8px;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.edit-mode-only .form-control:focus {
+    border-color: #4C6B4A;
+    box-shadow: 0 0 0 3px rgba(76, 107, 74, 0.1);
+    outline: none;
+}
+
+/* Quick Stats */
+.user-quick-stats {
+    padding-top: 24px;
+    border-top: 1px solid rgba(31, 62, 39, 0.1);
+}
+
+.user-quick-stats .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.user-quick-stats .stat-item i {
+    font-size: 2rem;
+    color: #C99E35;
+}
+
+.user-quick-stats .stat-item span {
+    font-size: 0.85rem;
+    color: #5C3A21;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.user-quick-stats .stat-item strong {
+    font-size: 1.1rem;
+    color: #1F3E27;
+    font-weight: 700;
+}
+
+/* Full Width Layout */
+.user-profile-full-width {
+    max-width: 100%;
+    padding: 0 20px;
+}
+
+/* Profile Image Upload Button */
+.edit-mode-only label.btn {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.edit-mode-only label.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(31, 62, 39, 0.15);
+}
+
+/* ===== PROFILE PAGE FULL WIDTH FIX ===== */
+
+/* Ensure profile page cards don't get constrained */
+.user-form-card {
+    max-width: 100%;
+    width: 100%;
+}
+
+/* Profile page specific styles already handled above */
+
+/* Profile row should use full width */
+.main-panel .row,
+.user-profile-content .row {
+    margin-left: -15px;
+    margin-right: -15px;
+}
+
+/* Columns should have proper spacing */
+.main-panel .row > [class*='col-'],
+.user-profile-content .row > [class*='col-'] {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Profile header section full width */
+.user-page-header-section {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Form content should be properly padded */
+.user-form-content {
+    padding: 30px;
+}
+
+/* Info grid should be responsive */
+.user-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    width: 100%;
+}
+
+/* Settings grid full width */
+.user-settings-grid {
+    width: 100%;
+}
+
+/* ===== EDIT MODE VISIBILITY FIX ===== */
+
+/* Ensure form controls in edit mode are visible and properly styled */
+.edit-mode-only.form-control {
+    display: none;
+}
+
+.edit-mode-only.form-control[style*='display: block'] {
+    display: block !important;
+}
+
+/* Ensure edit mode elements show as block when toggled */
+.edit-mode-only[style*='display: block'] {
+    display: block !important;
+}
+
+/* Specific fix for form controls inside edit-mode divs */
+.edit-mode-only input.form-control,
+.edit-mode-only select.form-control,
+.edit-mode-only textarea.form-control {
+    width: 100%;
+}
+
+/* ===== PROFILE PAGE EQUAL HEIGHT CARDS ===== */
+
+/* Ensure profile cards row uses flexbox for equal heights */
+.profile-cards-row {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+/* Profile and Personal Details cards have equal heights */
+.profile-info-card.h-100,
+.personal-details-card.h-100 {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.profile-info-card .user-form-content,
+.personal-details-card .user-form-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ensure Settings card spans full width */
+#settingsSection {
+    width: 100%;
+}
+
+/* Mobile: stack cards vertically */
+@media (max-width: 991px) {
+    .profile-cards-row {
+        display: block;
+    }
+    
+    .profile-info-card.h-100,
+    .personal-details-card.h-100 {
+        height: auto !important;
+    }
 }

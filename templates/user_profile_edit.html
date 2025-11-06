@@ -1,77 +1,209 @@
 {% extends 'user_base.html' %}
 {% load static %}
+{% load widget_tweaks %}
 {% block title %}Edit Profile{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+{% endblock %}
+
 {% block content %}
-  <br>
-<div class="user-dashboard-card" style="max-width:900px; margin:24px auto;">
-  <h2>Edit Profile</h2>
+<div class="user-profile-content">
+    <div class="container-fluid">
+        <!-- Page Header -->
+        <div class="user-page-header-section">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h1 class="user-page-title">
+                        <i class="las la-user-edit"></i>
+                        Edit Profile
+                    </h1>
+                    <p class="user-page-subtitle">Update your personal information</p>
+                </div>
+                <div class="user-page-actions">
+                    <a href="{% url 'user_profile' %}" class="btn btn-secondary">
+                        <i class="las la-arrow-left"></i> Back to Profile
+                    </a>
+                </div>
+            </div>
+        </div>
 
-  {% if form.errors %}
-    <div class="alert alert-danger">
-      <strong>Form validation errors:</strong>
-      <pre>{{ form.errors }}</pre>
-    </div>
-  {% endif %}
-
-  {% if messages %}
-    {% for m in messages %}
-      <div class="alert alert-{{ m.tags }}">{{ m }}</div>
-    {% endfor %}
-  {% endif %}
-
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-    <div class="row">
-      <div class="col-md-4 text-center">
-        {% if request.user.profile_image %}
-          <img src="{{ request.user.profile_image.url }}" alt="Profile" class="img-fluid rounded mb-2" style="max-height:200px;">
-        {% else %}
-          <img src="{% static 'img/boss.jpg' %}" alt="Default" class="img-fluid rounded mb-2" style="max-height:200px;">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
         {% endif %}
-        <div class="small text-muted">Current picture</div>
-      </div>
-      <div class="col-md-8">
-        <div class="mb-3">
-          <label class="form-label">Member Name</label>
-          <div class="form-control-plaintext">
-            {% if request.user.member_profile %}
-              {{ request.user.member_profile.full_name }}
-            {% elif request.user.full_name %}
-              {{ request.user.full_name }}
-            {% else %}
-              {{ request.user.username }}
-            {% endif %}
-          </div>
-          <input type="hidden" name="full_name" value="{% if request.user.member_profile %}{{ request.user.member_profile.full_name }}{% elif request.user.full_name %}{{ request.user.full_name }}{% else %}{{ request.user.username }}{% endif %}">
-          {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors }}</div>{% endif %}
-        </div>
 
-        <div class="mb-3">
-          <label class="form-label">Username</label>
-          {{ form.username }}
-          {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors }}</div>{% endif %}
-        </div>
+        {% if form.errors %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Please correct the following errors:</strong>
+                <ul class="mb-0 mt-2">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li>{{ field|title }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        {% endif %}
 
-        <div class="mb-3">
-          <label class="form-label">Email</label>
-          {{ form.email }}
-          {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Phone number</label>
-          {{ form.phone_number }}
-          {% if form.phone_number.errors %}<div class="text-danger small">{{ form.phone_number.errors }}</div>{% endif %}
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Profile picture</label>
-          {{ form.profile_image }}
-          {% if form.profile_image.errors %}<div class="text-danger small">{{ form.profile_image.errors }}</div>{% endif %}
-        </div>
-        <button type="submit" class="btn btn-success">Save changes</button>
-        <a href="{% url 'user_profile' %}" class="btn btn-secondary">Cancel</a>
-      </div>
+        <form method="post" enctype="multipart/form-data" id="profileEditForm">
+            {% csrf_token %}
+            
+            <div class="row">
+                <!-- Profile Image Section -->
+                <div class="col-lg-4 col-md-5 mb-4">
+                    <div class="user-form-card">
+                        <div class="user-form-header-gradient">
+                            <h4 class="user-form-header-title">
+                                <i class="las la-camera"></i>
+                                Profile Picture
+                            </h4>
+                            <p class="user-form-header-sub">Update your photo</p>
+                        </div>
+
+                        <div class="user-form-content text-center">
+                            <div class="user-profile-image-section">
+                                <div class="user-profile-image-wrapper mx-auto">
+                                    <img id="profileImagePreview" 
+                                         src="{% if user.profile_image %}{{ user.profile_image.url }}{% elif user.member_profile and user.member_profile.photo %}{{ user.member_profile.photo.url %}{% else %}{% static 'img/boss.jpg' %}{% endif %}" 
+                                         alt="Profile" 
+                                         class="user-profile-preview-img">
+                                </div>
+                                <div class="mt-3">
+                                    <label class="btn btn-primary">
+                                        <i class="las la-upload"></i> Choose New Photo
+                                        {{ form.profile_image|add_class:"d-none" }}
+                                    </label>
+                                    {% if form.profile_image.errors %}
+                                        <div class="text-danger small mt-2">{{ form.profile_image.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal Details Section -->
+                <div class="col-lg-8 col-md-7 mb-4">
+                    <div class="user-form-card">
+                        <div class="user-form-header-gradient">
+                            <h4 class="user-form-header-title">
+                                <i class="las la-user-edit"></i>
+                                Personal Information
+                            </h4>
+                            <p class="user-form-header-sub">Update your account details</p>
+                        </div>
+
+                        <div class="user-form-content">
+                            <div class="row">
+                                <!-- Member Name (Read-only) -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="user-form-label"><i class="las la-user"></i> Member Name</label>
+                                    <div class="user-info-display">
+                                        {% if user.member_profile %}
+                                            {{ user.member_profile.full_name }}
+                                        {% elif user.full_name %}
+                                            {{ user.full_name }}
+                                        {% else %}
+                                            {{ user.username }}
+                                        {% endif %}
+                                    </div>
+                                    <input type="hidden" name="full_name" value="{% if user.member_profile %}{{ user.member_profile.full_name }}{% elif user.full_name %}{{ user.full_name }}{% else %}{{ user.username }}{% endif %}">
+                                    <small class="text-muted">This field cannot be edited</small>
+                                </div>
+
+                                <!-- Username -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="user-form-label"><i class="las la-user-tag"></i> Username</label>
+                                    {{ form.username|add_class:"form-control"|attr:"placeholder:Enter username" }}
+                                    {% if form.username.errors %}
+                                        <div class="text-danger small mt-1">{{ form.username.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Email -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="user-form-label"><i class="las la-envelope"></i> Email</label>
+                                    {{ form.email|add_class:"form-control"|attr:"placeholder:Enter email address" }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger small mt-1">{{ form.email.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Phone -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="user-form-label"><i class="las la-phone"></i> Phone Number</label>
+                                    {{ form.phone_number|add_class:"form-control"|attr:"placeholder:Enter phone number" }}
+                                    {% if form.phone_number.errors %}
+                                        <div class="text-danger small mt-1">{{ form.phone_number.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                {% if user.member_profile %}
+                                <!-- Age -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="user-form-label"><i class="las la-birthday-cake"></i> Age</label>
+                                    {{ form.age|add_class:"form-control"|attr:"placeholder:Enter age" }}
+                                    {% if form.age.errors %}
+                                        <div class="text-danger small mt-1">{{ form.age.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Sex -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="user-form-label"><i class="las la-venus-mars"></i> Sex</label>
+                                    {{ form.sex|add_class:"form-control" }}
+                                    {% if form.sex.errors %}
+                                        <div class="text-danger small mt-1">{{ form.sex.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="user-form-actions mt-4">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="las la-save"></i> Save Changes
+                                </button>
+                                <a href="{% url 'user_profile' %}" class="btn btn-secondary">
+                                    <i class="las la-times"></i> Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
     </div>
-  </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const profileImageInput = document.querySelector('input[type="file"]');
+    const profileImagePreview = document.getElementById('profileImagePreview');
+
+    // Profile image preview
+    if (profileImageInput) {
+        profileImageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    profileImagePreview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

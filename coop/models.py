@@ -63,10 +63,18 @@ class Batch(models.Model):
         return f"Batch {self.number}"
 
 class Member(models.Model):
+    SEX_CHOICES = [
+        ('M', 'Male'),
+        ('F', 'Female'),
+        ('O', 'Other'),
+    ]
+    
     full_name = models.CharField(max_length=255)
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="members")
     batch_monitoring_number = models.PositiveIntegerField()
     is_dormant = models.BooleanField(default=False)
+    age = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Member's age")
+    sex = models.CharField(max_length=1, choices=SEX_CHOICES, null=True, blank=True, help_text="Member's sex")
     # phone_number and email removed, user_account now on User
     user_account = models.OneToOneField(
         'User',

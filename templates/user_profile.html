@@ -1,75 +1,302 @@
 {% extends 'user_base.html' %}
 {% load static %}
-{% block title %}User Profile - Coop Management{% endblock %}
-{% block content %}
-<br><br>
-<div class="user-dashboard-card">
-    <h2>My Profile</h2>
+{% block title %}My Profile & Settings{% endblock %}
 
-    <div class="row">
-        <div class="col-md-3 text-center">
-            {% if user.profile_image %}
-                <img src="{{ user.profile_image.url }}" alt="Profile Image" class="img-fluid rounded mb-2" style="max-height:160px;">
-            {% elif user.member_profile and user.member_profile.photo %}
-                <img src="{{ user.member_profile.photo.url }}" alt="Profile Image" class="img-fluid rounded mb-2" style="max-height:160px;">
-            {% else %}
-                <img src="{% static 'img/boss.jpg' %}" alt="Default Avatar" class="img-fluid rounded mb-2" style="max-height:160px;">
-            {% endif %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="user-profile-content">
+    <div class="container-fluid">
+        <!-- Page Header -->
+        <div class="user-page-header-section">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h1 class="user-page-title">
+                        <i class="las la-user-circle"></i>
+                        My Profile & Settings
+                    </h1>
+                    <p class="user-page-subtitle">View your information and manage preferences</p>
+                </div>
+                <div class="user-page-actions">
+                    <a href="{% url 'user_profile_edit' %}" class="btn btn-primary">
+                        <i class="las la-edit"></i> Edit Profile
+                    </a>
+                </div>
+            </div>
         </div>
 
-        <div class="col-md-9">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="feature-card">Name:
-                        <span class="placeholder">
-                            {% if user.member_profile %}
-                                {{ user.member_profile.full_name }}
-                            {% elif user.full_name %}
-                                {{ user.full_name }}
-                            {% else %}
-                                {{ user.username }}
-                            {% endif %}
-                        </span>
-                    </div>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
+            {% endfor %}
+        {% endif %}
 
-                <div class="col-md-6">
-                    <div class="feature-card">Username:
-                        <span class="placeholder">{{ user.username }}</span>
-                    </div>
-                </div>
-            </div>
+        <!-- Profile Cards Row -->
+        <div class="row profile-cards-row">
+            <div class="col-lg-4 col-md-5 mb-4">
+                <div class="user-form-card profile-info-card h-100">
+                        <div class="user-form-header-gradient">
+                            <h4 class="user-form-header-title">
+                                <i class="las la-id-card"></i>
+                                Profile Information
+                            </h4>
+                            <p class="user-form-header-sub">Your personal details</p>
+                        </div>
 
-            <div class="feature-card">Email: <span class="placeholder">{{ user.email }}</span></div>
-            <div class="feature-card">Phone: <span class="placeholder">{{ user.phone_number|default:"N/A" }}</span></div>
+                        <div class="user-form-content text-center">
+                            <div class="user-profile-image-section">
+                                <div class="user-profile-image-wrapper mx-auto">
+                                    <img id="profileImagePreview" 
+                                         src="{% if user.profile_image %}{{ user.profile_image.url }}{% elif user.member_profile and user.member_profile.photo %}{{ user.member_profile.photo.url }}{% else %}{% static 'img/boss.jpg' %}{% endif %}" 
+                                         alt="Profile" 
+                                         class="user-profile-preview-img">
+                                </div>
+                            
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-primary btn-block" id="showQrBtn">
+                                        <i class="las la-qrcode"></i> Show My QR Code
+                                    </button>
+                                </div>
+                            </div>
 
-            <div class="mt-3">
-              <a href="{% url 'my_profile' %}" class="btn btn-primary">Edit Profile</a>
-              <button class="btn btn-success" id="showQrBtn">Show My QR</button>
-            </div>
-            <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content text-center p-3">
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title fw-bold w-100 text-center" id="qrModalLabel">My QR Code</h5>
-                    </div>
-                    <div class="modal-body">
-                        <img id="qrImage" src="{% url 'my-qr' %}" alt="My QR Code" class="img-fluid rounded shadow-sm" style="max-width: 250px;">
-                        <p class="mt-3 text-muted">Scan this QR to log in quickly</p>
-
-                        <div class="mt-3 d-flex justify-content-center gap-2">
-                        <a id="downloadQrBtn" href="{% url 'my-qr' %}" download="my_qr_code.png" class="btn btn-outline-success">
-                            Download QR
-                        </a>
+                            <div class="user-quick-stats mt-4">
+                                <div class="stat-item">
+                                    <i class="las la-calendar-check"></i>
+                                    <span>Member Since</span>
+                                    <strong>{{ user.date_joined|date:"M Y" }}</strong>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </div>
+
+            <div class="col-lg-8 col-md-7 mb-4">
+                <div class="user-form-card personal-details-card h-100">
+                        <div class="user-form-header-gradient">
+                            <h4 class="user-form-header-title">
+                                <i class="las la-user-edit"></i>
+                                Personal Details
+                            </h4>
+                            <p class="user-form-header-sub">Your account information</p>
+                        </div>
+
+                        <div class="user-form-content">
+                            <div class="row">
+                                <!-- Member Name -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="user-form-label"><i class="las la-user"></i> Member Name</label>
+                                    <div class="user-info-display">
+                                        {% if user.member_profile %}
+                                            {{ user.member_profile.full_name }}
+                                        {% elif user.full_name %}
+                                            {{ user.full_name }}
+                                        {% else %}
+                                            {{ user.username }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Username -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="user-form-label"><i class="las la-user-tag"></i> Username</label>
+                                    <div class="user-info-display">{{ user.username }}</div>
+                                </div>
+
+                                <!-- Email -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="user-form-label"><i class="las la-envelope"></i> Email</label>
+                                    <div class="user-info-display">{{ user.email }}</div>
+                                </div>
+
+                                <!-- Phone -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="user-form-label"><i class="las la-phone"></i> Phone Number</label>
+                                    <div class="user-info-display">{{ user.phone_number|default:"Not set" }}</div>
+                                </div>
+
+                                {% if user.member_profile %}
+                                <!-- Age -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="user-form-label"><i class="las la-birthday-cake"></i> Age</label>
+                                    <div class="user-info-display">{{ user.member_profile.age|default:"Not set" }}</div>
+                                </div>
+
+                                <!-- Sex -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="user-form-label"><i class="las la-venus-mars"></i> Sex</label>
+                                    <div class="user-info-display">
+                                        {% if user.member_profile.sex %}
+                                            {% if user.member_profile.sex == 'M' %}Male
+                                            {% elif user.member_profile.sex == 'F' %}Female
+                                            {% else %}{{ user.member_profile.sex }}{% endif %}
+                                        {% else %}Not set{% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Settings Card -->
+        <div class="row">
+            <div class="col-12">
+                <div class="user-form-card" id="settingsSection">
+                        <div class="user-form-header-gradient">
+                            <h4 class="user-form-header-title">
+                                <i class="las la-cog"></i>
+                                Settings
+                            </h4>
+                            <p class="user-form-header-sub">Configure your notification preferences</p>
+                        </div>
+
+                        <div class="user-form-content">
+                            <div class="user-settings-section">
+                                <h5 class="user-settings-category-title">
+                                    <i class="las la-bell"></i>
+                                    Notifications
+                                </h5>
+                                <p class="user-settings-category-desc">Choose which notifications you want to receive</p>
+
+                                <div class="user-settings-grid">
+                                    <div class="user-setting-item">
+                                        <div class="user-setting-info">
+                                            <h6 class="user-setting-label">Document Status Updates</h6>
+                                            <p class="user-setting-description">Get notified when your document status changes</p>
+                                        </div>
+                                        <div class="user-setting-control">
+                                            <label class="user-custom-switch">
+                                                <input type="checkbox" name="notify_document_status" checked>
+                                                <span class="user-switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="user-setting-item">
+                                        <div class="user-setting-info">
+                                            <h6 class="user-setting-label">Renewal Reminders</h6>
+                                            <p class="user-setting-description">Get notified about upcoming document renewals</p>
+                                        </div>
+                                        <div class="user-setting-control">
+                                            <label class="user-custom-switch">
+                                                <input type="checkbox" name="notify_renewals" checked>
+                                                <span class="user-switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+
+                                    <div class="user-setting-item">
+                                        <div class="user-setting-info">
+                                            <h6 class="user-setting-label">Announcements</h6>
+                                            <p class="user-setting-description">Receive announcements from management</p>
+                                        </div>
+                                        <div class="user-setting-control">
+                                            <label class="user-custom-switch">
+                                                <input type="checkbox" name="notify_announcements" checked>
+                                                <span class="user-switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="user-setting-item">
+                                        <div class="user-setting-info">
+                                            <h6 class="user-setting-label">Email Notifications</h6>
+                                            <p class="user-setting-description">Receive notifications via email</p>
+                                        </div>
+                                        <div class="user-setting-control">
+                                            <label class="user-custom-switch">
+                                                <input type="checkbox" name="notify_email" checked>
+                                                <span class="user-switch-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="user-form-actions mt-4">
+                                    <button type="button" class="btn btn-success" onclick="saveUserSettings()">
+                                        <i class="las la-save"></i> Save Settings
+                                    </button>
+                                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QR Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-3">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold w-100 text-center" id="qrModalLabel">My QR Code</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <img id="qrImage" src="{% url 'my-qr' %}" alt="My QR Code" class="img-fluid rounded shadow-sm" style="max-width: 250px;">
+                <p class="mt-3 text-muted">Scan this QR to log in quickly</p>
+                <div class="mt-3 d-flex justify-content-center gap-2">
+                    <a id="downloadQrBtn" href="{% url 'my-qr' %}" download="my_qr_code.png" class="btn btn-success">
+                        <i class="las la-download"></i> Download QR
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    document.getElementById("showQrBtn").addEventListener("click", function() {
-    const qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
-    qrModal.show();
+document.addEventListener('DOMContentLoaded', function() {
+    // Show QR Modal
+    document.getElementById("showQrBtn").addEventListener("click", function(e) {
+        e.preventDefault();
+        const qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
+        qrModal.show();
+    });
+
+    // Save user settings function (placeholder for future implementation)
+    window.saveUserSettings = function() {
+        const settings = {
+            notify_document_status: document.querySelector('input[name="notify_document_status"]').checked,
+            notify_renewals: document.querySelector('input[name="notify_renewals"]').checked,
+            notify_announcements: document.querySelector('input[name="notify_announcements"]').checked,
+            notify_email: document.querySelector('input[name="notify_email"]').checked
+        };
+        
+        // TODO: Send to backend via AJAX
+        console.log('User settings to save:', settings);
+        
+        // Show success message
+        alert('Settings saved successfully! (Backend integration pending)');
+    };
+
+    // Smooth scroll to sections
+    function scrollToSection(sectionId) {
+        const element = document.getElementById(sectionId);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    // Handle hash navigation on page load (for Settings link from navbar)
+    if (window.location.hash) {
+        const targetId = window.location.hash.substring(1);
+        setTimeout(() => {
+            scrollToSection(targetId);
+        }, 300);
+    }
 });
 </script>
 {% endblock %}

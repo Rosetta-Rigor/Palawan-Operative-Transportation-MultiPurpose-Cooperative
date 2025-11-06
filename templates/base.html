@@ -9,6 +9,7 @@
     <!-- Bootstrap + Fonts -->
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900">
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
     <link rel="stylesheet" href="{% static 'css/ready.css' %}">
     <link rel="stylesheet" href="{% static 'css/user_custom.css' %}">
     <link rel="stylesheet" href="{% static 'css/admin_all.css' %}">
@@ -18,7 +19,6 @@
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-
     {% block extra_css %}{% endblock %}
 
     <!-- ✅ jQuery must come BEFORE Select2 JS -->
@@ -101,6 +101,11 @@
                                         <i class="la la-user" style="margin-right: 8px;"></i> Edit Admin Profile
                                     </a>
                                 </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'admin_profile_edit' %}#settings-section">
+                                        <i class="la la-cog" style="margin-right: 8px;"></i> Settings
+                                    </a>
+                                </li>
                                 <li class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
@@ -123,7 +128,7 @@
             <nav class="sidebar-nav">
                 <div class="nav-item {% if current == 'home' %}active{% endif %}">
                     <a class="nav-link" href="{% url 'home' %}">
-                        <i class="la la-dashboard"></i>
+                        <i class="las la-dashboard"></i>
                         <p>Dashboard</p>
                     </a>
                 </div>

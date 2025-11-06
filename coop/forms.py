@@ -6,6 +6,19 @@ from .models import User, Member, Vehicle, Batch, Document, DocumentEntry, Annou
 User = get_user_model()
 
 class UserProfileForm(forms.ModelForm):
+    # Add age and sex fields that will be saved to the linked Member profile
+    age = forms.IntegerField(
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '150'}),
+        help_text="Your age"
+    )
+    sex = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Select...')] + [('M', 'Male'), ('F', 'Female'), ('O', 'Other')],
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        help_text="Your sex"
+    )
+    
     class Meta:
         model = User
         # allow editing username, email, phone number and profile picture
@@ -17,6 +30,23 @@ class UserProfileForm(forms.ModelForm):
             'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
             'profile_image': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Pre-populate age and sex from member_profile if it exists
+        if self.instance and hasattr(self.instance, 'member_profile') and self.instance.member_profile:
+            self.fields['age'].initial = self.instance.member_profile.age
+            self.fields['sex'].initial = self.instance.member_profile.sex
+    
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        # Save age and sex to linked member_profile if it exists
+        if hasattr(user, 'member_profile') and user.member_profile:
+            user.member_profile.age = self.cleaned_data.get('age')
+            user.member_profile.sex = self.cleaned_data.get('sex')
+            if commit:
+                user.member_profile.save()
+        return user
 
 class AdminProfileForm(forms.ModelForm):
     class Meta:
@@ -46,12 +76,14 @@ class CustomUserRegistrationForm(UserCreationForm):
 class MemberForm(forms.ModelForm):
     class Meta:
         model = Member
-        fields = ['full_name', 'batch', 'batch_monitoring_number', 'is_dormant', 'user_account']
+        fields = ['full_name', 'batch', 'batch_monitoring_number', 'is_dormant', 'age', 'sex', 'user_account']
         widgets = {
             'full_name': forms.TextInput(attrs={'class': 'form-control'}),
             'batch': forms.Select(attrs={'class': 'form-control'}),
             'batch_monitoring_number': forms.NumberInput(attrs={'class': 'form-control'}),
             'is_dormant': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'age': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '150'}),
+            'sex': forms.Select(attrs={'class': 'form-control'}),
             'user_account': forms.Select(attrs={'class': 'form-control'}),
         }
 
