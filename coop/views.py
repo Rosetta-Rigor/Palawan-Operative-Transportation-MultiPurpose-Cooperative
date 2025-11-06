@@ -14,6 +14,10 @@ from .models import Announcement
 from .forms import AnnouncementForm
 from django.db.models import Q
 
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.conf import settings
+
 from django.contrib.auth import get_user_model, login as auth_login
 from django.shortcuts import HttpResponse
 from django.contrib.auth.decorators import login_required
@@ -2129,22 +2133,108 @@ def renewal_details(request, date):
     return render(request, 'renewal_details.html', context)
 
 
+def send_renewal_reminder_email(member, vehicle, document_entry, request):
+    """
+    Send renewal reminder email to member with vehicle details.
+    Returns (success: bool, message: str) tuple.
+    """
+    # Check if member has email
+    if not member.user_account or not member.user_account.email:
+        return False, "No email address found for member"
+    
+    email = member.user_account.email
+    
+    # Calculate days left
+    today = timezone.localtime(timezone.now()).date()
+    expiry_date = document_entry.renewal_date
+    days_left = (expiry_date - today).days
+    
+    # Determine urgency
+    is_urgent = days_left <= 29
+    
+    # Build portal URL
+    portal_url = request.build_absolute_uri('/user-documents/')
+    
+    # Email context
+    context = {
+        'member_name': member.full_name,
+        'plate_number': vehicle.plate_number,
+        'document_type': 'Vehicle Registration',  # Default document type
+        'expiry_date': expiry_date.strftime('%B %d, %Y'),
+        'days_left': days_left,
+        'is_urgent': is_urgent,
+        'batch_number': member.batch.number if member.batch else 'N/A',
+        'portal_url': portal_url,
+    }
+    
+    # Render email templates
+    try:
+        html_content = render_to_string('emails/renewal_reminder.html', context)
+        text_content = render_to_string('emails/renewal_reminder.txt', context)
+    except Exception as e:
+        return False, f"Failed to render email template: {str(e)}"
+    
+    # Email subject
+    if days_left <= 0:
+        subject = f'⚠️ URGENT: Vehicle {vehicle.plate_number} Registration EXPIRED'
+    elif days_left <= 7:
+        subject = f'⚠️ URGENT: Vehicle {vehicle.plate_number} Expires in {days_left} Days'
+    elif days_left <= 29:
+        subject = f'⚠️ Reminder: Vehicle {vehicle.plate_number} Registration Expires Soon'
+    else:
+        subject = f'Reminder: Vehicle {vehicle.plate_number} Registration Due for Renewal'
+    
+    try:
+        # Create email with both HTML and plain text
+        email_message = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[email],
+        )
+        email_message.attach_alternative(html_content, "text/html")
+        email_message.send(fail_silently=False)
+        
+        return True, f"Email sent successfully to {email}"
+    except Exception as e:
+        return False, f"Failed to send email: {str(e)}"
+
+
 @staff_member_required
 @require_POST
 def send_renewal_reminder(request, member_id, vehicle_id):
     """
-    Send a renewal reminder to a member for a specific vehicle.
+    Send a renewal reminder to a member for a specific vehicle via email.
     """
     member = get_object_or_404(Member, pk=member_id)
     vehicle = get_object_or_404(Vehicle, pk=vehicle_id)
     
-    # TODO: Implement actual reminder sending (email/SMS/notification)
-    # For now, just show a success message
-    
-    messages.success(
-        request, 
-        f"Reminder sent to {member.full_name} for vehicle {vehicle.plate_number}"
-    )
+    # Get the vehicle's document and latest entry
+    try:
+        document = vehicle.document
+        latest_entry = document.entries.filter(
+            models.Q(uploaded_by__isnull=True) | models.Q(status="approved")
+        ).order_by('-renewal_date').first()
+        
+        if not latest_entry:
+            messages.error(request, f"No approved document entry found for vehicle {vehicle.plate_number}")
+            date = request.POST.get('date')
+            if date:
+                return redirect('renewal_details', date=date)
+            return redirect('home')
+        
+        # Send email
+        success, message = send_renewal_reminder_email(member, vehicle, latest_entry, request)
+        
+        if success:
+            messages.success(request, f"✅ {message}")
+        else:
+            messages.error(request, f"❌ {message}")
+            
+    except Document.DoesNotExist:
+        messages.error(request, f"No document found for vehicle {vehicle.plate_number}")
+    except Exception as e:
+        messages.error(request, f"Error sending reminder: {str(e)}")
     
     # Redirect back to the renewal details page
     date = request.POST.get('date')
@@ -2192,3 +2282,158 @@ def mark_as_renewed(request, member_id, vehicle_id):
     if date:
         return redirect('renewal_details', date=date)
     return redirect('home')
+
+
+# ==== Password Reset ====
+from .models import PasswordResetToken
+from .forms import PasswordResetRequestForm, PasswordResetVerifyForm, PasswordResetConfirmForm
+from django.contrib.auth.hashers import make_password
+
+def password_reset_request(request):
+    """
+    Step 1: User enters email to request password reset.
+    Sends 6-digit verification code to email.
+    """
+    if request.method == 'POST':
+        form = PasswordResetRequestForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            User = get_user_model()
+            user = User.objects.get(email=email)
+            
+            # Generate verification code
+            reset_token = PasswordResetToken.create_code_for_user(user)
+            
+            # Send verification code via email
+            try:
+                from django.core.mail import send_mail
+                subject = 'POTMPC - Password Reset Verification Code'
+                message = f"""
+                Hello {user.full_name},
+
+                You have requested to reset your password for your POTMPC account.
+
+                Your verification code is: {reset_token.code}
+
+                This code will expire in 15 minutes.
+
+                If you did not request this password reset, please ignore this email.
+
+                ---
+                Palawan Operative Transportation Multi-Purpose Cooperative
+                """
+                
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+                
+                # Store email in session for next step
+                request.session['reset_email'] = email
+                messages.success(request, f'✅ Verification code sent to {email}. Please check your inbox.')
+                return redirect('password_reset_verify')
+                
+            except Exception as e:
+                messages.error(request, f'❌ Failed to send verification email: {str(e)}')
+    else:
+        form = PasswordResetRequestForm()
+    
+    return render(request, 'registration/password_reset_request.html', {'form': form})
+
+
+def password_reset_verify(request):
+    """
+    Step 2: User enters 6-digit verification code.
+    Validates code and proceeds to password change.
+    """
+    email = request.session.get('reset_email')
+    if not email:
+        messages.error(request, 'Session expired. Please start again.')
+        return redirect('password_reset_request')
+    
+    if request.method == 'POST':
+        form = PasswordResetVerifyForm(request.POST)
+        if form.is_valid():
+            code = form.cleaned_data['code']
+            User = get_user_model()
+            
+            try:
+                user = User.objects.get(email=email)
+                # Find valid token with this code
+                reset_token = PasswordResetToken.objects.filter(
+                    user=user,
+                    code=code,
+                    is_used=False
+                ).first()
+                
+                if reset_token and reset_token.is_valid():
+                    # Store token ID in session for final step
+                    request.session['reset_token_id'] = reset_token.id
+                    messages.success(request, '✅ Code verified! Now set your new password.')
+                    return redirect('password_reset_confirm')
+                else:
+                    messages.error(request, '❌ Invalid or expired verification code.')
+            except User.DoesNotExist:
+                messages.error(request, 'User not found.')
+    else:
+        form = PasswordResetVerifyForm()
+
+    return render(request, 'registration/password_reset_verify.html', {
+        'form': form,
+        'email': email
+    })
+
+
+def password_reset_confirm(request):
+    """
+    Step 3: User sets new password.
+    Updates password in database and marks token as used.
+    """
+    token_id = request.session.get('reset_token_id')
+    email = request.session.get('reset_email')
+    
+    if not token_id or not email:
+        messages.error(request, 'Session expired. Please start again.')
+        return redirect('password_reset_request')
+    
+    try:
+        reset_token = PasswordResetToken.objects.get(id=token_id, is_used=False)
+        if not reset_token.is_valid():
+            messages.error(request, 'Verification code expired. Please start again.')
+            return redirect('password_reset_request')
+    except PasswordResetToken.DoesNotExist:
+        messages.error(request, 'Invalid token. Please start again.')
+        return redirect('password_reset_request')
+    
+    if request.method == 'POST':
+        form = PasswordResetConfirmForm(request.POST)
+        if form.is_valid():
+            new_password = form.cleaned_data['new_password']
+            
+            # Update user password
+            user = reset_token.user
+            user.password = make_password(new_password)
+            user.save()
+            
+            # Mark token as used
+            reset_token.is_used = True
+            reset_token.save()
+            
+            # Clear session data
+            if 'reset_email' in request.session:
+                del request.session['reset_email']
+            if 'reset_token_id' in request.session:
+                del request.session['reset_token_id']
+            
+            messages.success(request, '✅ Password successfully reset! You can now login with your new password.')
+            return redirect('login')
+    else:
+        form = PasswordResetConfirmForm()
+    
+    return render(request, 'registration/password_reset_confirm.html', {
+        'form': form,
+        'email': email
+    })

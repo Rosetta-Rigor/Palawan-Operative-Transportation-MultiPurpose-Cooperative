@@ -1,152 +1,422 @@
 {% extends 'base.html' %}
 {% load static %}
- 
+{% block title %}Member Details — {{ member.full_name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_forms.css' %}">
+{% endblock %}
+
 {% block content %}
-{% block title %}Member — {{ member.full_name }}{% endblock %}
-<div class="container mt-4">
-  <div class="row">
-    <div class="col-md-8">
-      <div class="card mb-3">
-        <div class="card-header">
-          <h4 class="card-title">Profile</h4>
-        </div>
-        <div class="card-body">
-          <p><strong>Name:</strong> {{ member.full_name }}</p>
-          <p><strong>Email:</strong> {{ member.user_account.email|default:"Not provided" }}</p>
-          <p><strong>Phone:</strong> {{ member.user_account.phone_number|default:"Not provided" }}</p>
-          <p><strong>Batch:</strong>
-            {% if member.batch %}
-              {{ member.batch.number }}
-            {% else %}
-              Not connected
-            {% endif %}
-          </p>
-          <p><strong>Batch Monitoring #:</strong> {{ member.batch_monitoring_number|default:"N/A" }}</p>
-          <p><strong>Status:</strong> {% if member.is_dormant %}Dormant{% else %}Active{% endif %}</p>
-          <hr/>
-          <h5>Account</h5>
-          {% if member.user_account %}
-            <div class="mb-3">
-              <p><strong>Username:</strong> {{ member.user_account.username }}</p>
-              <p><strong>Account Email:</strong> {{ member.user_account.email }}</p>
-              <p><strong>Account Active:</strong> {{ member.user_account.is_active }}</p>
-
-              <!-- show profile image if available -->
-              <div class="mb-2">
-                <strong>Profile Image:</strong><br/>
-                {% if member.user_account.profile_image %}
-                  <a href="{{ member.user_account.profile_image.url }}" target="_blank">
-                    <img src="{{ member.user_account.profile_image.url }}" alt="Profile" style="max-width:120px;max-height:120px;object-fit:cover;border:1px solid #ddd;padding:4px;">
-                  </a>
-                {% else %}
-                  <img src="{% static 'img/boss.jpg' %}" alt="Default Profile" style="max-width:120px;max-height:120px;object-fit:cover;border:1px solid #ddd;padding:4px;">
-                {% endif %}
-              </div>
-
-              <!-- show ID image (id_image) if available -->
-              <div class="mb-2">
-                <strong>ID Image:</strong><br/>
-                {% if member.user_account.id_image %}
-                  <a href="{{ member.user_account.id_image.url }}" target="_blank">
-                    <img src="{{ member.user_account.id_image.url }}" alt="ID Image" style="max-width:200px;max-height:120px;object-fit:cover;border:1px solid #ddd;padding:4px;">
-                  </a>
-                {% else %}
-                  <div class="text-muted small">ID image not uploaded</div>
-                {% endif %}
-              </div>
-
-              <a class="btn btn-sm btn-secondary" href="{% url 'accounts_list' %}">Open Accounts List</a>
-            </div>
-          {% else %}
-            <p class="text-muted">Not connected to an account</p>
-          {% endif %}
-        </div>
-      </div>
-
-      <div class="card mb-3">
-        <div class="card-header"><h4 class="card-title">Vehicles</h4></div>
-        <div class="card-body">
-          {% if vehicles %}
-            <ul class="list-unstyled">
-              {% for v in vehicles %}
-                <li class="mb-2">
-                  <strong>{{ v.plate_number }}</strong> — {{ v.make_brand }} {{ v.year_model }} ({{ v.color }})<br/>
-                  Engine: {{ v.engine_number|default:"N/A" }}, Chassis: {{ v.chassis_number|default:"N/A" }}
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="text-muted">Not connected to any vehicle</p>
-          {% endif %}
-        </div>
-      </div>
-
-      <div class="card mb-3">
-        <div class="card-header"><h4 class="card-title">Documents</h4></div>
-        <div class="card-body">
-          {% if documents %}
-            {% for doc in documents %}
-              <div class="mb-3">
-                <strong>Document TIN:</strong> {{ doc.tin }}<br/>
-                <strong>Vehicle:</strong> {% if doc.vehicle %}{{ doc.vehicle.plate_number }}{% else %}N/A{% endif %}<br/>
-                <strong>Entries:</strong>
-                {% if doc.entries_list %}
-                  <ul class="list-unstyled">
-                    {% for e in doc.entries_list %}
-                      <li class="mb-2">
-                        <div><strong>{{ e.renewal_date|date:"Y-m-d" }}</strong></div>
-
-                        <div class="d-flex align-items-center" style="gap:10px;">
-                          <!-- Official Receipt (OR) -->
-                          {% if e.official_receipt %}
-                            <a href="{{ e.official_receipt.url }}" target="_blank" title="Open Official Receipt (new tab)">
-                              <img src="{{ e.official_receipt.url }}" alt="OR" style="max-width:120px;max-height:90px;object-fit:cover;border:1px solid #ddd;padding:2px;">
-                            </a>
-                          {% else %}
-                            <div class="text-muted small">OR: Not uploaded</div>
-                          {% endif %}
-
-                          <!-- Certificate of Registration (CR) -->
-                          {% if e.certificate_of_registration %}
-                            <a href="{{ e.certificate_of_registration.url }}" target="_blank" title="Open Certificate of Registration (new tab)">
-                              <img src="{{ e.certificate_of_registration.url }}" alt="CR" style="max-width:120px;max-height:90px;object-fit:cover;border:1px solid #ddd;padding:2px;">
-                            </a>
-                          {% else %}
-                            <div class="text-muted small">CR: Not uploaded</div>
-                          {% endif %}
+<div class="content admin-dashboard">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Left Column: Profile & Account -->
+            <div class="col-lg-4 col-md-5">
+                <!-- Profile Information Card -->
+                <div class="admin-form-card mb-4">
+                    <div class="form-header-gradient" style="position: relative;">
+                        <a href="{% url 'member_list' %}" class="member-back-btn" title="Back to Members List">
+                            <i class="las la-arrow-left"></i>
+                        </a>
+                        <h4 class="form-header-title">
+                            <i class="las la-id-card"></i>
+                            Member Profile
+                        </h4>
+                        <p class="form-header-sub">Personal information and status</p>
+                    </div>
+                    
+                    <div class="form-content">
+                        <!-- Profile Image -->
+                        <div class="text-center mb-4">
+                            <div class="profile-image-wrapper">
+                                {% if member.user_account and member.user_account.profile_image %}
+                                    <img src="{{ member.user_account.profile_image.url }}" alt="Profile" class="profile-preview-img">
+                                {% else %}
+                                    <img src="{% static 'img/boss.jpg' %}" alt="Default Profile" class="profile-preview-img">
+                                {% endif %}
+                            </div>
                         </div>
-                      </li>
-                    {% endfor %}
-                  </ul>
+
+                        <!-- Member Info Grid -->
+                        <div class="info-row">
+                            <span class="info-label">
+                                <i class="las la-user"></i> Full Name
+                            </span>
+                            <span class="info-value">{{ member.full_name }}</span>
+                        </div>
+
+                        <div class="info-row">
+                            <span class="info-label">
+                                <i class="las la-layer-group"></i> Batch
+                            </span>
+                            <span class="info-value">
+                                {% if member.batch %}
+                                    <a href="{% url 'batch_detail' member.batch.id %}" class="text-primary">
+                                        {{ member.batch.number }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Not assigned</span>
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="info-row">
+                            <span class="info-label">
+                                <i class="las la-hashtag"></i> Monitoring #
+                            </span>
+                            <span class="info-value">{{ member.batch_monitoring_number|default:"N/A" }}</span>
+                        </div>
+
+                        {% if member.user_account %}
+                        <div class="info-row">
+                            <span class="info-label">
+                                <i class="las la-envelope"></i> Email
+                            </span>
+                            <span class="info-value">{{ member.user_account.email|default:"Not provided" }}</span>
+                        </div>
+
+                        <div class="info-row">
+                            <span class="info-label">
+                                <i class="las la-phone"></i> Phone
+                            </span>
+                            <span class="info-value">{{ member.user_account.phone_number|default:"Not provided" }}</span>
+                        </div>
+
+                        <div class="info-row">
+                            <span class="info-label">
+                                <i class="las la-birthday-cake"></i> Age
+                            </span>
+                            <span class="info-value">{{ member.age|default:"Not set" }}</span>
+                        </div>
+
+                        <div class="info-row">
+                            <span class="info-label">
+                                <i class="las la-venus-mars"></i> Sex
+                            </span>
+                            <span class="info-value">
+                                {% if member.sex == 'M' %}Male
+                                {% elif member.sex == 'F' %}Female
+                                {% elif member.sex == 'O' %}Other
+                                {% else %}Not set{% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+
+                        <div class="info-row">
+                            <span class="info-label">
+                                <i class="las la-toggle-on"></i> Status
+                            </span>
+                            <span class="info-value">
+                                {% if member.is_dormant %}
+                                    <span class="badge badge-warning">Dormant</span>
+                                {% else %}
+                                    <span class="badge badge-success">Active</span>
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <!-- Edit Member Button -->
+                        <div class="mt-4">
+                            <a href="{% url 'member_edit' member.id %}" class="btn btn-primary btn-block" style="background: linear-gradient(135deg, var(--accent-500), #B88D2F); border: none; padding: 12px 20px; border-radius: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 20px rgba(201,158,53,0.25); transition: all 0.3s ease; text-decoration: none; color: #fff;">
+                                <i class="las la-edit"></i> Edit Member
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Details Card -->
+                {% if member.user_account %}
+                <div class="admin-form-card mb-4">
+                    <div class="form-header-gradient">
+                        <h4 class="form-header-title">
+                            <i class="las la-user-lock"></i>
+                            System Account
+                        </h4>
+                        <p class="form-header-sub">Login credentials and access</p>
+                    </div>
+                    
+                    <div class="form-content">
+                        <div class="info-row">
+                            <span class="info-label">
+                                <i class="las la-user-tag"></i> Username
+                            </span>
+                            <span class="info-value">{{ member.user_account.username }}</span>
+                        </div>
+
+                        <div class="info-row">
+                            <span class="info-label">
+                                <i class="las la-shield-alt"></i> Role
+                            </span>
+                            <span class="info-value">
+                                <span class="badge badge-info">{{ member.user_account.get_role_display }}</span>
+                            </span>
+                        </div>
+
+                        <div class="info-row">
+                            <span class="info-label">
+                                <i class="las la-check-circle"></i> Account Status
+                            </span>
+                            <span class="info-value">
+                                {% if member.user_account.is_active %}
+                                    <span class="badge badge-success">Active</span>
+                                {% else %}
+                                    <span class="badge badge-danger">Inactive</span>
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <!-- ID Image -->
+                        {% if member.user_account.id_image %}
+                        <div class="mt-3">
+                            <label class="info-label d-block mb-2">
+                                <i class="las la-id-card"></i> ID Image
+                            </label>
+                            <a href="{{ member.user_account.id_image.url }}" target="_blank" class="d-inline-block">
+                                <img src="{{ member.user_account.id_image.url }}" 
+                                     alt="ID" 
+                                     style="max-width:100%; height:auto; border-radius:8px; border:1px solid rgba(31,62,39,0.1); padding:4px; transition: transform 0.2s;"
+                                     onmouseover="this.style.transform='scale(1.02)'"
+                                     onmouseout="this.style.transform='scale(1)'">
+                            </a>
+                        </div>
+                        {% else %}
+                        <div class="mt-3 text-center text-muted">
+                            <i class="las la-id-card" style="font-size: 2rem; opacity: 0.3;"></i>
+                            <p class="small mb-0">No ID image uploaded</p>
+                        </div>
+                        {% endif %}
+
+                        <div class="mt-3">
+                            <a href="{% url 'accounts_list' %}" class="btn btn-sm btn-outline-primary btn-block">
+                                <i class="las la-list"></i> View All Accounts
+                            </a>
+                        </div>
+                    </div>
+                </div>
                 {% else %}
-                  <p class="text-muted">No document entries</p>
+                <div class="admin-form-card mb-4">
+                    <div class="form-header-gradient">
+                        <h4 class="form-header-title">
+                            <i class="las la-user-lock"></i>
+                            System Account
+                        </h4>
+                        <p class="form-header-sub">Login credentials and access</p>
+                    </div>
+                    
+                    <div class="form-content text-center">
+                        <i class="las la-user-slash" style="font-size: 3rem; color: var(--muted-2); opacity: 0.3;"></i>
+                        <p class="text-muted mt-2 mb-0">Not connected to a system account</p>
+                    </div>
+                </div>
                 {% endif %}
-              </div>
-            {% endfor %}
-          {% else %}
-            <p class="text-muted">Not connected to any documents</p>
-          {% endif %}
-        </div>
-      </div>
+            </div>
 
-    </div>
+            <!-- Right Column: Vehicles & Documents -->
+            <div class="col-lg-8 col-md-7">
 
-    <div class="col-md-4">
-      <div class="card">
-        <div class="card-header"><h5>Quick Info</h5></div>
-        <div class="card-body">
-          <p><strong>Joined:</strong>
-            {% if member.created_at %}
-              {{ member.created_at|date:"Y-m-d" }}
-            {% else %}
-              N/A
-            {% endif %}
-          </p>
-          <p><strong>Address:</strong> {{ member.address|default:"N/A" }}</p>
-          <p><strong>Notes:</strong> {{ member.notes|default:"-" }}</p>
+                <!-- Vehicles Card -->
+                <div class="admin-form-card mb-4">
+                    <div class="form-header-gradient">
+                        <h4 class="form-header-title">
+                            <i class="las la-car"></i>
+                            Registered Vehicles
+                        </h4>
+                        <p class="form-header-sub">Vehicles associated with this member</p>
+                    </div>
+                    
+                    <div class="form-content">
+                        {% if vehicles %}
+                            {% for v in vehicles %}
+                                <div class="vehicle-item" style="background: linear-gradient(135deg, #FFFFFF 0%, #F6F4ED 100%); border: 1px solid rgba(31,62,39,0.08); border-radius: 12px; padding: 20px; margin-bottom: 16px; transition: transform 0.2s, box-shadow 0.2s;">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h5 class="mb-0" style="color: var(--brand-600); font-weight: 700; font-size: 1.1rem;">
+                                            <i class="las la-car-side"></i> {{ v.plate_number }}
+                                        </h5>
+                                        <span class="badge badge-primary">{{ v.body_type|default:"Van" }}</span>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="info-row-compact" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                                <span style="font-weight: 700; color: var(--brand-600); font-size: 0.95rem;">
+                                                    <i class="las la-industry"></i> Make/Brand
+                                                </span>
+                                                <span style="font-weight: 600; font-size: 0.95rem;">{{ v.make_brand|default:"N/A" }}</span>
+                                            </div>
+                                            <div class="info-row-compact" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                                <span style="font-weight: 700; color: var(--brand-600); font-size: 0.95rem;">
+                                                    <i class="las la-calendar"></i> Year Model
+                                                </span>
+                                                <span style="font-weight: 600; font-size: 0.95rem;">{{ v.year_model|default:"N/A" }}</span>
+                                            </div>
+                                            <div class="info-row-compact" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                                <span style="font-weight: 700; color: var(--brand-600); font-size: 0.95rem;">
+                                                    <i class="las la-palette"></i> Color
+                                                </span>
+                                                <span style="font-weight: 600; font-size: 0.95rem;">{{ v.color|default:"N/A" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="info-row-compact" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                                <span style="font-weight: 700; color: var(--brand-600); font-size: 0.95rem;">
+                                                    <i class="las la-cog"></i> Engine #
+                                                </span>
+                                                <span style="font-weight: 600; font-size: 0.9rem;">{{ v.engine_number|default:"N/A" }}</span>
+                                            </div>
+                                            <div class="info-row-compact" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                                <span style="font-weight: 700; color: var(--brand-600); font-size: 0.95rem;">
+                                                    <i class="las la-car"></i> Chassis #
+                                                </span>
+                                                <span style="font-weight: 600; font-size: 0.9rem;">{{ v.chassis_number|default:"N/A" }}</span>
+                                            </div>
+                                            <div class="info-row-compact" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                                <span style="font-weight: 700; color: var(--brand-600); font-size: 0.95rem;">
+                                                    <i class="las la-tag"></i> Series
+                                                </span>
+                                                <span style="font-weight: 600; font-size: 0.95rem;">{{ v.series|default:"N/A" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="las la-car-crash" style="font-size: 3rem; color: var(--muted-2); opacity: 0.3;"></i>
+                                <p class="text-muted mt-2 mb-0">No vehicles registered</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Documents Card -->
+                <div class="admin-form-card mb-4">
+                    <div class="form-header-gradient">
+                        <h4 class="form-header-title">
+                            <i class="las la-file-alt"></i>
+                            Documents & Renewals
+                        </h4>
+                        <p class="form-header-sub">Registration and renewal records</p>
+                    </div>
+                    
+                    <div class="form-content">
+                        {% if documents %}
+                            {% for doc in documents %}
+                                <div class="document-section mb-4 p-3" style="background: #F6F4ED; border-radius: 10px; border-left: 4px solid var(--accent-500);">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <h5 class="mb-1" style="color: var(--brand-600); font-weight: 700; font-size: 1.1rem;">
+                                                <i class="las la-file-invoice"></i> TIN: {{ doc.tin }}
+                                            </h5>
+                                            <small style="font-size: 0.95rem; color: var(--muted-2); font-weight: 600;">
+                                                <i class="las la-car"></i> 
+                                                Vehicle: 
+                                                {% if doc.vehicle %}
+                                                    <strong style="color: var(--brand-600);">{{ doc.vehicle.plate_number }}</strong>
+                                                {% else %}
+                                                    <span class="text-muted">Not linked</span>
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    {% if doc.entries_list %}
+                                        <div class="renewal-entries">
+                                            <h6 class="mb-3" style="color: var(--brand-600); font-weight: 700; font-size: 1rem;">
+                                                <i class="las la-history"></i> Renewal History
+                                            </h6>
+                                            {% for e in doc.entries_list %}
+                                                <div class="renewal-entry mb-3 p-3" style="background: white; border-radius: 8px; border: 1px solid rgba(31,62,39,0.08);">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <div>
+                                                            <strong style="color: var(--brand-600); font-size: 1rem;">
+                                                                <i class="las la-calendar-check"></i> 
+                                                                {{ e.renewal_date|date:"F d, Y" }}
+                                                            </strong>
+                                                            <span class="badge badge-{{ e.status|lower }} ml-2">
+                                                                {{ e.get_status_display }}
+                                                            </span>
+                                                        </div>
+                                                        <small style="font-size: 0.9rem; font-weight: 600;">
+                                                            <i class="las la-clock"></i> 
+                                                            {{ e.created_at|date:"M d, Y" }}
+                                                        </small>
+                                                    </div>
+
+                                                    <div class="row mt-3">
+                                                        <!-- Official Receipt (OR) -->
+                                                        <div class="col-md-6 mb-3">
+                                                            <label style="font-weight: 700; color: var(--brand-600); font-size: 0.95rem; display: block; margin-bottom: 8px;">
+                                                                <i class="las la-receipt"></i> Official Receipt (OR)
+                                                            </label>
+                                                            {% if e.official_receipt %}
+                                                                <a href="{{ e.official_receipt.url }}" target="_blank" class="d-block">
+                                                                    <img src="{{ e.official_receipt.url }}" 
+                                                                         alt="OR" 
+                                                                         class="img-fluid rounded"
+                                                                         style="max-height: 200px; width: 100%; object-fit: cover; border: 2px solid rgba(31,62,39,0.1); transition: transform 0.2s;"
+                                                                         onmouseover="this.style.transform='scale(1.02)'"
+                                                                         onmouseout="this.style.transform='scale(1)'">
+                                                                </a>
+                                                            {% else %}
+                                                                <div class="text-center p-3" style="background: #F6F4ED; border-radius: 8px;">
+                                                                    <i class="las la-file-upload" style="font-size: 2rem; color: var(--muted-2); opacity: 0.3;"></i>
+                                                                    <p class="small text-muted mb-0">Not uploaded</p>
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+
+                                                        <!-- Certificate of Registration (CR) -->
+                                                        <div class="col-md-6 mb-3">
+                                                            <label style="font-weight: 700; color: var(--brand-600); font-size: 0.95rem; display: block; margin-bottom: 8px;">
+                                                                <i class="las la-certificate"></i> Certificate of Registration (CR)
+                                                            </label>
+                                                            {% if e.certificate_of_registration %}
+                                                                <a href="{{ e.certificate_of_registration.url }}" target="_blank" class="d-block">
+                                                                    <img src="{{ e.certificate_of_registration.url }}" 
+                                                                         alt="CR" 
+                                                                         class="img-fluid rounded"
+                                                                         style="max-height: 200px; width: 100%; object-fit: cover; border: 2px solid rgba(31,62,39,0.1); transition: transform 0.2s;"
+                                                                         onmouseover="this.style.transform='scale(1.02)'"
+                                                                         onmouseout="this.style.transform='scale(1)'">
+                                                                </a>
+                                                            {% else %}
+                                                                <div class="text-center p-3" style="background: #F6F4ED; border-radius: 8px;">
+                                                                    <i class="las la-file-upload" style="font-size: 2rem; color: var(--muted-2); opacity: 0.3;"></i>
+                                                                    <p class="small text-muted mb-0">Not uploaded</p>
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+
+                                                    {% if e.manager_notes %}
+                                                        <div class="mt-2 p-2" style="background: #FFF9E6; border-left: 3px solid #C99E35; border-radius: 4px;">
+                                                            <small style="font-weight: 700; color: var(--brand-600); display: block; margin-bottom: 4px; font-size: 0.9rem;">
+                                                                <i class="las la-comment"></i> Manager Notes:
+                                                            </small>
+                                                            <small style="font-size: 0.9rem;">{{ e.manager_notes }}</small>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="text-center py-3">
+                                            <i class="las la-folder-open" style="font-size: 2rem; color: var(--muted-2); opacity: 0.3;"></i>
+                                            <p class="text-muted mb-0 small">No renewal entries</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="las la-file-alt" style="font-size: 3rem; color: var(--muted-2); opacity: 0.3;"></i>
+                                <p class="text-muted mt-2 mb-0">No documents associated</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </div>
 {% endblock %}

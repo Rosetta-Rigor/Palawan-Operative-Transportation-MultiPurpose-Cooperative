@@ -185,6 +185,45 @@ class QRLoginToken(models.Model):
         if self.expires_at and timezone.now() > self.expires_at:
             return False
         return True
+
+
+class PasswordResetToken(models.Model):
+    """
+    Stores password reset verification codes sent via email.
+    Used for 2FA during password reset process.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="password_reset_tokens")
+    code = models.CharField(max_length=6, db_index=True)  # 6-digit code
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"PasswordReset({self.user.email}, code={self.code}, used={self.is_used})"
+    
+    @classmethod
+    def create_code_for_user(cls, user, ttl_minutes=15):
+        """Generate a 6-digit verification code that expires in 15 minutes"""
+        import random
+        code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+        expires = timezone.now() + timedelta(minutes=ttl_minutes)
+        
+        # Deactivate any previous unused codes
+        cls.objects.filter(user=user, is_used=False).update(is_used=True)
+        
+        obj = cls.objects.create(user=user, code=code, expires_at=expires)
+        return obj
+    
+    def is_valid(self):
+        """Check if code is still valid"""
+        if self.is_used:
+            return False
+        if timezone.now() > self.expires_at:
+            return False
+        return True
+    
+    class Meta:
+        ordering = ['-created_at']
     
 class PaymentYear(models.Model):
     year = models.PositiveIntegerField(unique=True)

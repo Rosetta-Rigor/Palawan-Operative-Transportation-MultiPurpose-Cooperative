@@ -11,29 +11,35 @@
 {% block content %}
 <br><br>
 <div class="renewal-details-container">
-  <div class="page-header">
-    <h1>DOCUMENT RENEWALS</h1>
-    <div class="subtitle">{{ target_date|date:"l, F d, Y" }}</div>
+  <!-- Page Header Card -->
+  <div class="page-header-card">
+    <a href="{% url 'home' %}" class="member-back-btn" title="Back to Dashboard">
+      <i class="la la-arrow-left"></i>
+    </a>
     
-    <div class="stats-bar">
-      <div class="stat-box">
-        <div class="label">TOTAL RENEWALS</div>
-        <div class="value">{{ total_renewals }}</div>
-      </div>
-      <div class="stat-box">
-        <div class="label">🔴 URGENT</div>
-        <div class="value">{{ urgent_renewals|length }}</div>
-      </div>
-      <div class="stat-box">
-        <div class="label">🟡 UPCOMING</div>
-        <div class="value">{{ upcoming_renewals|length }}</div>
+    <div class="form-header-gradient">
+      <h1 class="form-header-title">
+        <i class="la la-calendar-check"></i>
+        Document Renewals
+      </h1>
+      <p class="form-header-sub">{{ target_date|date:"l, F d, Y" }}</p>
+      
+      <div class="stats-bar">
+        <div class="stat-box">
+          <div class="label">TOTAL RENEWALS</div>
+          <div class="value">{{ total_renewals }}</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">🔴 URGENT</div>
+          <div class="value">{{ urgent_renewals|length }}</div>
+        </div>
+        <div class="stat-box">
+          <div class="label">🟡 UPCOMING</div>
+          <div class="value">{{ upcoming_renewals|length }}</div>
+        </div>
       </div>
     </div>
   </div>
-  <a href="{% url 'home' %}" class="back-button">
-    <i class="la la-arrow-left"></i>
-    Back to Dashboard
-  </a>
 
   {% if messages %}
     <div class="messages mb-4">
@@ -51,7 +57,10 @@
   <!-- Urgent Renewals Section -->
   {% if urgent_renewals %}
     <div class="section-header">
-      <h2>🔴 Urgent Renewals</h2>
+      <h2>
+        <i class="la la-exclamation-circle"></i>
+        Urgent Renewals (0-29 days)
+      </h2>
       <span class="badge badge-danger">{{ urgent_renewals|length }}</span>
     </div>
 
@@ -74,48 +83,52 @@
         </div>
 
         <div class="vehicle-info">
-          <div class="info-item">
-            <span class="label">Vehicle Plate</span>
-            <span class="value">{{ renewal.plate }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Expiry Date</span>
-            <span class="value">{{ renewal.expiry_date|date:"M d, Y" }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Status</span>
-            <span class="value text-{{ renewal.status_class }}">
-              {{ renewal.status|upper }}
-            </span>
-          </div>
-          <div class="info-item">
-            <span class="label">Document Type</span>
-            <span class="value">
-              {% if renewal.document_entry.document %}
-                {{ renewal.document_entry.document.document_type }}
-              {% else %}
-                Registration
-              {% endif %}
-            </span>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="info-item">
+                <span class="label">Plate Number</span>
+                <span class="value">{{ renewal.plate }}</span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="info-item">
+                <span class="label">TIN</span>
+                <span class="value">
+                  {% if renewal.document_entry.document.tin %}
+                    {{ renewal.document_entry.document.tin }}
+                  {% else %}
+                    <span class="text-muted">N/A</span>
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="info-item">
+                <span class="label">Expiry Date</span>
+                <span class="value">{{ renewal.expiry_date|date:"M d, Y" }}</span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="info-item">
+                <span class="label">Days Left</span>
+                <span class="value">
+                  <span class="badge badge-{{ renewal.status_class }}">
+                    {{ renewal.days_left }} day{% if renewal.days_left != 1 %}s{% endif %}
+                  </span>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="action-buttons">
-          <form method="post" action="{% url 'send_renewal_reminder' renewal.member.id renewal.vehicle.id %}" style="display: inline;">
+          <form method="post" action="{% url 'send_renewal_reminder' renewal.member.id renewal.vehicle.id %}">
             {% csrf_token %}
             <input type="hidden" name="date" value="{{ target_date|date:'Y-m-d' }}">
             <button type="submit" class="btn-action btn-send-reminder">
               <i class="la la-bell"></i> Send Reminder
             </button>
           </form>
-
-        <!--<form method="post" action="{% url 'mark_as_renewed' renewal.member.id renewal.vehicle.id %}" style="display: inline;">
-            {% csrf_token %}
-            <input type="hidden" name="date" value="{{ target_date|date:'Y-m-d' }}">
-            <button type="submit" class="btn-action btn-mark-renewed" onclick="return confirm('Mark this vehicle as renewed?');">
-              <i class="la la-check-circle"></i> Mark as Renewed
-            </button>
-          </form>-->
 
           <a href="{% url 'member_view' renewal.member.id %}" class="btn-action btn-view-member">
             <i class="la la-user"></i> View Member
@@ -127,8 +140,11 @@
 
   <!-- Upcoming Renewals Section -->
   {% if upcoming_renewals %}
-    <div class="section-header mt-5">
-      <h2>🟡 Upcoming Renewals</h2>
+    <div class="section-header">
+      <h2>
+        <i class="la la-clock"></i>
+        Upcoming Renewals (30-60 days)
+      </h2>
       <span class="badge badge-warning">{{ upcoming_renewals|length }}</span>
     </div>
 
@@ -151,34 +167,46 @@
         </div>
 
         <div class="vehicle-info">
-          <div class="info-item">
-            <span class="label">Vehicle Plate</span>
-            <span class="value">{{ renewal.plate }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Expiry Date</span>
-            <span class="value">{{ renewal.expiry_date|date:"M d, Y" }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Status</span>
-            <span class="value text-{{ renewal.status_class }}">
-              {{ renewal.status|upper }}
-            </span>
-          </div>
-          <div class="info-item">
-            <span class="label">Document Type</span>
-            <span class="value">
-              {% if renewal.document_entry.document %}
-                {{ renewal.document_entry.document.document_type }}
-              {% else %}
-                Registration
-              {% endif %}
-            </span>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="info-item">
+                <span class="label">Plate Number</span>
+                <span class="value">{{ renewal.plate }}</span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="info-item">
+                <span class="label">TIN</span>
+                <span class="value">
+                  {% if renewal.document_entry.document.tin %}
+                    {{ renewal.document_entry.document.tin }}
+                  {% else %}
+                    <span class="text-muted">N/A</span>
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="info-item">
+                <span class="label">Expiry Date</span>
+                <span class="value">{{ renewal.expiry_date|date:"M d, Y" }}</span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="info-item">
+                <span class="label">Days Left</span>
+                <span class="value">
+                  <span class="badge badge-{{ renewal.status_class }}">
+                    {{ renewal.days_left }} day{% if renewal.days_left != 1 %}s{% endif %}
+                  </span>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="action-buttons">
-          <form method="post" action="{% url 'send_renewal_reminder' renewal.member.id renewal.vehicle.id %}" style="display: inline;">
+          <form method="post" action="{% url 'send_renewal_reminder' renewal.member.id renewal.vehicle.id %}">
             {% csrf_token %}
             <input type="hidden" name="date" value="{{ target_date|date:'Y-m-d' }}">
             <button type="submit" class="btn-action btn-send-reminder">
@@ -186,7 +214,7 @@
             </button>
           </form>
 
-          <form method="post" action="{% url 'mark_as_renewed' renewal.member.id renewal.vehicle.id %}" style="display: inline;">
+          <form method="post" action="{% url 'mark_as_renewed' renewal.member.id renewal.vehicle.id %}">
             {% csrf_token %}
             <input type="hidden" name="date" value="{{ target_date|date:'Y-m-d' }}">
             <button type="submit" class="btn-action btn-mark-renewed" onclick="return confirm('Mark this vehicle as renewed?');">
@@ -204,8 +232,11 @@
 
   <!-- Normal Renewals Section -->
   {% if normal_renewals %}
-    <div class="section-header mt-5">
-      <h2>✅ Other Renewals</h2>
+    <div class="section-header">
+      <h2>
+        <i class="la la-check-circle"></i>
+        Other Renewals (60+ days)
+      </h2>
       <span class="badge badge-secondary">{{ normal_renewals|length }}</span>
     </div>
 
@@ -228,34 +259,46 @@
         </div>
 
         <div class="vehicle-info">
-          <div class="info-item">
-            <span class="label">Vehicle Plate</span>
-            <span class="value">{{ renewal.plate }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Expiry Date</span>
-            <span class="value">{{ renewal.expiry_date|date:"M d, Y" }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">Status</span>
-            <span class="value text-{{ renewal.status_class }}">
-              {{ renewal.status|upper }}
-            </span>
-          </div>
-          <div class="info-item">
-            <span class="label">Document Type</span>
-            <span class="value">
-              {% if renewal.document_entry.document %}
-                {{ renewal.document_entry.document.document_type }}
-              {% else %}
-                Registration
-              {% endif %}
-            </span>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="info-item">
+                <span class="label">Plate Number</span>
+                <span class="value">{{ renewal.plate }}</span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="info-item">
+                <span class="label">TIN</span>
+                <span class="value">
+                  {% if renewal.document_entry.document.tin %}
+                    {{ renewal.document_entry.document.tin }}
+                  {% else %}
+                    <span class="text-muted">N/A</span>
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="info-item">
+                <span class="label">Expiry Date</span>
+                <span class="value">{{ renewal.expiry_date|date:"M d, Y" }}</span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="info-item">
+                <span class="label">Days Left</span>
+                <span class="value">
+                  <span class="badge badge-{{ renewal.status_class }}">
+                    {{ renewal.days_left }} day{% if renewal.days_left != 1 %}s{% endif %}
+                  </span>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="action-buttons">
-          <form method="post" action="{% url 'send_renewal_reminder' renewal.member.id renewal.vehicle.id %}" style="display: inline;">
+          <form method="post" action="{% url 'send_renewal_reminder' renewal.member.id renewal.vehicle.id %}">
             {% csrf_token %}
             <input type="hidden" name="date" value="{{ target_date|date:'Y-m-d' }}">
             <button type="submit" class="btn-action btn-send-reminder">
@@ -263,7 +306,7 @@
             </button>
           </form>
 
-          <form method="post" action="{% url 'mark_as_renewed' renewal.member.id renewal.vehicle.id %}" style="display: inline;">
+          <form method="post" action="{% url 'mark_as_renewed' renewal.member.id renewal.vehicle.id %}">
             {% csrf_token %}
             <input type="hidden" name="date" value="{{ target_date|date:'Y-m-d' }}">
             <button type="submit" class="btn-action btn-mark-renewed" onclick="return confirm('Mark this vehicle as renewed?');">
@@ -282,10 +325,10 @@
   <!-- Empty State -->
   {% if not urgent_renewals and not upcoming_renewals and not normal_renewals %}
     <div class="empty-state">
-      <i class="la la-calendar-check"></i>
+      <i class="la la-calendar-times"></i>
       <h3>No Renewals on This Date</h3>
-      <p>There are no document renewals scheduled for {{ target_date|date:"F d, Y" }}.</p>
-      <a href="{% url 'home' %}" class="btn btn-primary mt-3">
+      <p class="text-muted">There are no document renewals scheduled for {{ target_date|date:"F d, Y" }}.</p>
+      <a href="{% url 'home' %}" class="btn btn-primary mt-3" style="display: inline-flex; align-items: center; gap: 8px;">
         <i class="la la-arrow-left"></i> Back to Dashboard
       </a>
     </div>

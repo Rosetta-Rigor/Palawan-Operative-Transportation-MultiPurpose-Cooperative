@@ -1,231 +1,370 @@
+/* ===== RENEWAL DETAILS PAGE ===== */
+/* References admin_forms.css for consistent styling */
+
 .renewal-details-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
 }
 
-.renewal-details-container .page-header {
-  background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-500) 50%, var(--accent-500) 100%); /* Deep Forest to Gold */
-  color: white;
-  padding: 30px;
-  border-radius: 12px;
-  margin-bottom: 30px;
-  box-shadow: 0 4px 16px rgba(31, 62, 39, 0.3);
+/* Header using admin_forms.css gradient pattern */
+.renewal-details-container .page-header-card {
+  position: relative;
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  margin-bottom: 24px;
+  border: 1px solid rgba(31,62,39,0.08);
 }
 
-.renewal-details-container .page-header h1 {
-  margin: 0 0 10px 0;
-  font-size: 2rem;
+.renewal-details-container .form-header-gradient {
+  background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-500) 100%);
+  padding: 24px 32px 24px 80px;
+  color: #fff;
+  border-bottom: 3px solid var(--accent-500);
+}
+
+.renewal-details-container .form-header-title {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
   font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.renewal-details-container .page-header .subtitle {
+.renewal-details-container .form-header-title i {
+  font-size: 1.3rem;
   opacity: 0.9;
-  font-size: 1.1rem;
 }
 
+.renewal-details-container .form-header-sub {
+  margin: 0;
+  font-size: 0.95rem;
+  opacity: 0.9;
+  font-weight: 400;
+}
+
+/* Stats Bar in Header */
 .renewal-details-container .stats-bar {
   display: flex;
-  gap: 20px;
+  gap: 15px;
   margin-top: 20px;
   flex-wrap: wrap;
 }
 
 .renewal-details-container .stat-box {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(10px);
-  padding: 15px 25px;
+  padding: 12px 20px;
   border-radius: 8px;
   flex: 1;
-  min-width: 150px;
+  min-width: 140px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease;
+}
+
+.renewal-details-container .stat-box:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
 }
 
 .renewal-details-container .stat-box .label {
-  font-size: 0.85rem;
-  opacity: 0.9;
-  margin-bottom: 5px;
+  font-size: 0.8rem;
+  opacity: 0.85;
+  margin-bottom: 6px;
+  font-weight: 500;
 }
 
 .renewal-details-container .stat-box .value {
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   font-weight: 700;
+  line-height: 1;
 }
 
+/* Section Headers - Cleaner Style */
 .renewal-details-container .section-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid var(--muted);
+  margin-top: 32px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(246,244,237,0.5), rgba(255,255,255,0.8));
+  border-left: 4px solid var(--brand-600);
+  border-radius: 8px;
 }
 
 .renewal-details-container .section-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 700;
+  color: var(--brand-600);
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .renewal-details-container .section-header .badge {
-  font-size: 1.1rem;
-  padding: 6px 14px;
+  font-size: 0.9rem;
+  padding: 6px 12px;
+  font-weight: 600;
 }
 
+/* Renewal Cards - Match admin_forms.css card styling */
 .renewal-details-container .renewal-card {
   background: var(--card-bg);
-  border: 1px solid rgba(31, 62, 39, 0.12);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  border: 1px solid rgba(31, 62, 39, 0.08);
+  padding: 24px;
   margin-bottom: 16px;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .renewal-details-container .renewal-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(31, 62, 39, 0.12);
+  box-shadow: 0 8px 24px rgba(31, 62, 39, 0.12);
 }
 
 .renewal-details-container .renewal-card.urgent {
-  border-left: 4px solid var(--batch-urgent);
+  border-left: 4px solid var(--danger);
 }
 
 .renewal-details-container .renewal-card.upcoming {
-  border-left: 4px solid var(--batch-upcoming);
+  border-left: 4px solid #F59E0B;
 }
 
+/* Card Header */
 .renewal-details-container .renewal-card-header {
   display: flex;
   justify-content: space-between;
   align-items: start;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(31,62,39,0.08);
 }
 
 .renewal-details-container .member-info h3 {
-  margin: 0 0 5px 0;
-  font-size: 1.3rem;
-  color: var(--brand-600); /* Deep Forest */
+  margin: 0 0 6px 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--brand-600);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .renewal-details-container .member-info .batch-label {
   font-size: 0.85rem;
-  color: var(--muted-2); /* Earth Brown */
+  color: var(--muted-2);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
+/* Vehicle Info Grid - Match info-row pattern from admin_forms.css */
 .renewal-details-container .vehicle-info {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-  margin-bottom: 15px;
-  padding: 15px;
-  background: rgba(246, 244, 237, 0.5); /* Ivory Mist */
-  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.renewal-details-container .vehicle-info .row {
+  margin-left: -8px;
+  margin-right: -8px;
+}
+
+.renewal-details-container .vehicle-info .col-md-6 {
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .renewal-details-container .info-item {
   display: flex;
   flex-direction: column;
+  padding: 16px;
+  background: rgba(246, 244, 237, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(31,62,39,0.08);
+  height: 100%;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.renewal-details-container .info-item:hover {
+  background: rgba(246, 244, 237, 0.5);
+  border-color: var(--brand-600);
+  transform: translateY(-2px);
 }
 
 .renewal-details-container .info-item .label {
-  font-size: 0.8rem;
-  color: var(--muted-2); /* Earth Brown */
-  margin-bottom: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-2);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin-bottom: 8px;
 }
 
 .renewal-details-container .info-item .value {
   font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--brand-600); /* Deep Forest */
+  font-weight: 700;
+  color: var(--brand-600);
+  word-break: break-word;
 }
 
+/* Action Buttons - Match admin_forms.css button styling */
 .renewal-details-container .action-buttons {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid rgba(31,62,39,0.08);
 }
 
 .renewal-details-container .btn-action {
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
-  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
   border: none;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+}
+
+.renewal-details-container .btn-action i {
+  font-size: 1rem;
 }
 
 .renewal-details-container .btn-send-reminder {
-  background: linear-gradient(135deg, #C99E35 0%, #B88D2F 100%); /* Primary - Muted Gold */
+  background: linear-gradient(135deg, var(--accent-500), #B88D2F);
   color: white;
+  box-shadow: 0 4px 12px rgba(201, 158, 53, 0.25);
 }
 
 .renewal-details-container .btn-send-reminder:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(201, 158, 53, 0.4);
+  box-shadow: 0 6px 16px rgba(201, 158, 53, 0.4);
   color: white;
   text-decoration: none;
 }
 
 .renewal-details-container .btn-mark-renewed {
-  background: linear-gradient(135deg, #2D8A63 0%, #247552 100%); /* Success green */
+  background: linear-gradient(135deg, var(--success), #247552);
   color: white;
+  box-shadow: 0 4px 12px rgba(45, 138, 99, 0.25);
 }
 
 .renewal-details-container .btn-mark-renewed:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(45, 138, 99, 0.3);
+  box-shadow: 0 6px 16px rgba(45, 138, 99, 0.35);
   color: white;
   text-decoration: none;
 }
 
 .renewal-details-container .btn-view-member {
   background: white;
-  color: var(--brand-600); /* Deep Forest */
+  color: var(--brand-600);
   border: 2px solid var(--brand-600);
 }
 
 .renewal-details-container .btn-view-member:hover {
-  background: var(--brand-600); /* Deep Forest */
+  background: var(--brand-600);
   color: white;
   text-decoration: none;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(31,62,39,0.2);
 }
 
+/* Empty State */
 .renewal-details-container .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: var(--muted-2); /* Earth Brown */
+  color: var(--muted-2);
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  border: 1px solid rgba(31,62,39,0.08);
 }
 
 .renewal-details-container .empty-state i {
   font-size: 4rem;
   margin-bottom: 20px;
-  opacity: 0.5;
+  opacity: 0.4;
+  color: var(--brand-600);
 }
 
-.renewal-details-container .back-button {
+.renewal-details-container .empty-state h3 {
+  color: var(--brand-600);
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+/* Back Button - Match admin_forms.css circular style */
+.renewal-details-container .member-back-btn {
+  position: absolute;
+  left: 24px;
+  top: 24px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: white;
-  color: var(--brand-600); /* Deep Forest */
-  border: 2px solid var(--brand-600);
-  border-radius: 8px;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.4rem;
   text-decoration: none;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  z-index: 10;
 }
 
-.renewal-details-container .back-button:hover {
-  background: var(--brand-600); /* Deep Forest */
-  color: white;
-  transform: translateX(-4px);
+.renewal-details-container .member-back-btn:hover {
+  background: rgba(201, 158, 53, 0.9);
+  color: #fff;
+  transform: scale(1.1);
+  border-color: var(--accent-500);
+  box-shadow: 0 4px 16px rgba(201, 158, 53, 0.4);
   text-decoration: none;
+}
+
+.renewal-details-container .member-back-btn:active {
+  transform: scale(0.95);
+}
+
+/* Action Form Styling - Remove Inline Styles */
+.renewal-details-container .action-buttons form {
+  display: inline-block;
+  margin: 0;
+}
+
+/* Badge Sizing */
+.renewal-details-container .badge-lg {
+  font-size: 0.95rem;
+  padding: 8px 16px;
+}
+
+/* Messages Section */
+.renewal-details-container .messages {
+  margin-bottom: 1.5rem;
+}
+
+.renewal-details-container .alert {
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Section Spacing */
+.renewal-details-container .mt-5 {
+  margin-top: 3rem !important;
 }
 
 /* Renewal Details Responsive */
@@ -234,8 +373,9 @@
     flex-direction: column;
   }
 
-  .renewal-details-container .vehicle-info {
-    grid-template-columns: 1fr;
+  .renewal-details-container .vehicle-info .col-md-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
   }
 
   .renewal-details-container .action-buttons {
@@ -247,11 +387,23 @@
     justify-content: center;
   }
 
-  .renewal-details-container .page-header h1 {
-    font-size: 1.5rem;
+  .renewal-details-container .form-header-title {
+    font-size: 1.3rem;
   }
 
   .renewal-details-container .stat-box .value {
     font-size: 1.5rem;
+  }
+  
+  .renewal-details-container .form-header-gradient {
+    padding: 24px 20px 24px 70px;
+  }
+  
+  .renewal-details-container .member-back-btn {
+    left: 16px;
+    top: 20px;
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
   }
 }

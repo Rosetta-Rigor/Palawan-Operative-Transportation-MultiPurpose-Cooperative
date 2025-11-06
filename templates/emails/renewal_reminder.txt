@@ -1,0 +1,36 @@
+POTMPC - Document Renewal Reminder
+====================================
+
+Dear {{ member_name }},
+
+This is a friendly reminder that your vehicle registration is {% if is_urgent %}expiring soon{% else %}due for renewal{% endif %}.
+
+{% if days_left == 0 %}
+⚠️ URGENT: Your document expires TODAY!
+{% elif days_left == 1 %}
+⚠️ URGENT: Your document expires TOMORROW!
+{% elif days_left < 0 %}
+⚠️ URGENT: Your document has EXPIRED!
+{% else %}
+Your document expires in {{ days_left }} day{{ days_left|pluralize }}
+{% endif %}
+
+VEHICLE DETAILS
+---------------
+Plate Number: {{ plate_number }}
+Document Type: {{ document_type }}
+Expiry Date: {{ expiry_date }}
+Batch: {{ batch_number }}
+
+WHAT TO DO NEXT
+---------------
+1. Prepare your renewal documents (OR, CR, etc.)
+2. Visit the cooperative office or upload documents through the portal
+3. Contact us if you need assistance or have questions
+
+View your documents online: {{ portal_url }}
+
+---
+Palawan Operative Transportation Multi-Purpose Cooperative
+This is an automated reminder from POTMPC
+If you have already renewed, please disregard this message.

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Renewal Reminder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #1F3E27 0%, #2A5235 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .header p {
+            margin: 5px 0 0;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 4px solid;
+        }
+        .alert-urgent {
+            background: #FEE;
+            border-left-color: #D64545;
+            color: #721c24;
+        }
+        .alert-upcoming {
+            background: #FFF8E1;
+            border-left-color: #F59E0B;
+            color: #856404;
+        }
+        .alert strong {
+            display: block;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .details {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .details h3 {
+            margin-top: 0;
+            color: #1F3E27;
+        }
+        .details p {
+            margin: 8px 0;
+        }
+        .details strong {
+            color: #555;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #1F3E27, #2A5235);
+            color: white !important;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background: linear-gradient(135deg, #2A5235, #1F3E27);
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background: #f4f4f4;
+            color: #666;
+            font-size: 12px;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        ol {
+            padding-left: 20px;
+        }
+        ol li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔔 Document Renewal Reminder</h1>
+            <p>Palawan Operative Transportation Multi-Purpose Cooperative</p>
+        </div>
+        
+        <div class="content">
+            <p>Dear <strong>{{ member_name }}</strong>,</p>
+            
+            <p>This is a friendly reminder that your vehicle registration is {% if is_urgent %}expiring soon{% else %}due for renewal{% endif %}.</p>
+            
+            <div class="alert {% if is_urgent %}alert-urgent{% else %}alert-upcoming{% endif %}">
+                <strong>{% if is_urgent %}⚠️ URGENT REMINDER{% else %}🕒 UPCOMING RENEWAL{% endif %}</strong>
+                {% if days_left == 0 %}
+                    Your document expires <strong>TODAY</strong>!
+                {% elif days_left == 1 %}
+                    Your document expires <strong>TOMORROW</strong>!
+                {% elif days_left < 0 %}
+                    Your document has <strong>EXPIRED</strong>!
+                {% else %}
+                    Your document expires in <strong>{{ days_left }} day{{ days_left|pluralize }}</strong>
+                {% endif %}
+            </div>
+            
+            <div class="details">
+                <h3>📋 Vehicle Details</h3>
+                <p><strong>Plate Number:</strong> {{ plate_number }}</p>
+                <p><strong>Document Type:</strong> {{ document_type }}</p>
+                <p><strong>Expiry Date:</strong> {{ expiry_date }}</p>
+                <p><strong>Batch:</strong> {{ batch_number }}</p>
+            </div>
+            
+            <p><strong>What to do next:</strong></p>
+            <ol>
+                <li>Prepare your renewal documents (OR, CR, etc.)</li>
+                <li>Visit the cooperative office or upload documents through the portal</li>
+                <li>Contact us if you need assistance or have questions</li>
+            </ol>
+            
+            <center>
+                <a href="{{ portal_url }}" class="btn">View My Documents</a>
+            </center>
+            
+            <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                If you have already renewed your documents, please disregard this message.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Palawan Operative Transportation Multi-Purpose Cooperative</strong></p>
+            <p>This is an automated reminder from POTMPC</p>
+            <p>For assistance, please contact our office</p>
+        </div>
+    </div>
+</body>
+</html>

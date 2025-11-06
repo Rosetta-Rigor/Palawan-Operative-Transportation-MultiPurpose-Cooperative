@@ -63,9 +63,6 @@ urlpatterns = [
     path('accounts/<int:user_id>/deactivate/', views.deactivate_account, name='deactivate_account'),
     path('accounts/<int:user_id>/activate/', views.activate_account, name='activate_account'),
     path('accounts/<int:user_id>/edit/', views.edit_account, name='edit_account'),
-    path('password_reset/', auth_views.PasswordResetView.as_view(template_name='registration/password_reset_form.html'), name='password_reset'),
-    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='registration/password_reset_done.html'), name='password_reset_done'),
-    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='registration/password_reset_confirm.html'), name='password_reset_confirm'),
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete'),
     path('members/<int:pk>/view/', views.member_view, name='member_view'),
     path('api/members/search/', views.member_search_api, name='member_search_api'),
@@ -96,6 +93,11 @@ urlpatterns = [
     path('renewals/<str:date>/', views.renewal_details, name='renewal_details'),
     path('renewals/<int:member_id>/<int:vehicle_id>/send-reminder/', views.send_renewal_reminder, name='send_renewal_reminder'),
     path('renewals/<int:member_id>/<int:vehicle_id>/mark-renewed/', views.mark_as_renewed, name='mark_as_renewed'),
+    
+    # PASSWORD RESET with 2FA
+    path('password-reset/', views.password_reset_request, name='registration/password_reset_request'),
+    path('password-reset/verify/', views.password_reset_verify, name='registration/password_reset_verify'),
+    path('password-reset/confirm/', views.password_reset_confirm, name='registration/password_reset_confirm'),
 ]
 
 
