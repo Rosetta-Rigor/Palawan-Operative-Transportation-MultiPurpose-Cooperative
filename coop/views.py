@@ -6,7 +6,7 @@ from matplotlib.style import context
 from .models import Batch, User, Member
 import json
 from django.utils import timezone
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 
 from django.db import models
 from django.contrib import messages
@@ -305,6 +305,148 @@ def user_documents(request):
     Display documents for the user side (placeholder content).
     """
     return render(request, "user_documents.html")
+
+@login_required
+def user_payments(request):
+    """
+    Display list of payment years as cards for the logged-in user.
+    Users can click on a year card to view detailed payments for that year.
+    """
+    user = request.user
+    member = getattr(user, 'member_profile', None)
+    
+    if not member:
+        messages.warning(request, "Your account is not linked to a member profile. Please contact the administrator to link your account.")
+        return render(request, "user_payments.html", {'member': None, 'payment_years': []})
+    
+    # Get all payment years
+    payment_years = PaymentYear.objects.all().order_by('-year')
+    
+    # Build year summary data
+    years_data = []
+    for year in payment_years:
+        # Count total payment types for this year (from_members + other)
+        from_members_count = PaymentType.objects.filter(
+            year=year, 
+            payment_type='from_members'
+        ).count()
+        
+        other_count = PaymentType.objects.filter(
+            year=year, 
+            payment_type='other'
+        ).count()
+        
+        # Count member's payments for this year
+        member_payments = PaymentEntry.objects.filter(
+            payment_type__year=year,
+            member=member
+        ).exclude(amount_paid=0).count()
+        
+        # Calculate total amount paid by member for this year
+        from django.db.models import Sum
+        total_paid = PaymentEntry.objects.filter(
+            payment_type__year=year,
+            member=member
+        ).aggregate(total=Sum('amount_paid'))['total'] or 0
+        
+        years_data.append({
+            'year': year,
+            'from_members_count': from_members_count,
+            'other_count': other_count,
+            'member_payments_count': member_payments,
+            'total_paid': total_paid,
+        })
+    
+    context = {
+        'member': member,
+        'payment_years': years_data,
+    }
+    return render(request, "user_payments.html", context)
+
+
+@login_required
+def user_payment_year_detail(request, year_id):
+    """
+    Display detailed payment records for a specific year.
+    Shows both "From Members" and "Other" payment types with monthly breakdown.
+    """
+    user = request.user
+    member = getattr(user, 'member_profile', None)
+    
+    if not member:
+        messages.warning(request, "Your account is not linked to a member profile. Please contact the administrator.")
+        return redirect('user_payments')
+    
+    # Get the specific payment year
+    year = get_object_or_404(PaymentYear, id=year_id)
+    
+    # Get "From Members" payment types
+    from_members_types = PaymentType.objects.filter(
+        year=year, 
+        payment_type='from_members'
+    ).order_by('name')
+    
+    # Get "Other" payment types
+    other_types = PaymentType.objects.filter(
+        year=year, 
+        payment_type='other'
+    ).order_by('name')
+    
+    # Build payment data for "From Members"
+    from_members_data = []
+    for payment_type in from_members_types:
+        monthly_totals = []
+        for month_num in range(1, 13):
+            # Aggregate all payment entries for this payment type, member, and month
+            total = PaymentEntry.objects.filter(
+                payment_type=payment_type,
+                member=member,
+                month=month_num
+            ).aggregate(total=Sum('amount_paid'))['total']
+            
+            # total will be None if no payments exist, or the sum if they do
+            monthly_totals.append(total)
+        
+        from_members_data.append({
+            'payment_type': payment_type,
+            'monthly_totals': monthly_totals,
+        })
+    
+    # Build payment data for "Other"
+    other_data = []
+    for payment_type in other_types:
+        monthly_totals = []
+        for month_num in range(1, 13):
+            # Aggregate all payment entries for this payment type, member, and month
+            total = PaymentEntry.objects.filter(
+                payment_type=payment_type,
+                member=member,
+                month=month_num
+            ).aggregate(total=Sum('amount_paid'))['total']
+            
+            # total will be None if no payments exist, or the sum if they do
+            monthly_totals.append(total)
+        
+        other_data.append({
+            'payment_type': payment_type,
+            'monthly_totals': monthly_totals,
+        })
+    
+    # Calculate totals (Sum is already imported at module level)
+    total_paid = PaymentEntry.objects.filter(
+        payment_type__year=year,
+        member=member
+    ).aggregate(total=Sum('amount_paid'))['total'] or 0
+    
+    context = {
+        'member': member,
+        'year': year,
+        'from_members_data': from_members_data,
+        'other_data': other_data,
+        'total_paid': total_paid,
+        'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    }
+    return render(request, "user_payment_year_detail.html", context)
 
 
 @login_required
@@ -794,11 +936,21 @@ class DocumentUpdateView(UpdateView):
 
 # ==== Custom Login View ====
 def custom_login(request):
-    # Always clear session and logout on GET
+
+    if request.user.is_authenticated:
+        if request.user.is_staff or (hasattr(request.user, 'role') and request.user.role == 'manager'):
+            return redirect("home")
+        elif hasattr(request.user, 'role') and request.user.role == 'client':
+            return redirect("user_home")
+        else:
+            # User doesn't have proper role, log them out
+            logout(request)
+            request.session.flush()
+    
+    # Clear session and logout on GET for unauthenticated users
     if request.method == "GET":
-        logout(request)
-        request.session.flush()
         return render(request, "login.html")
+    
     if request.method == "POST":
         username_input = (request.POST.get("username") or "").strip()
         password = request.POST.get("password")
@@ -1753,13 +1905,17 @@ from django.db.models import Q
 def from_members_payment_view(request, year_id):
     year = get_object_or_404(PaymentYear, pk=year_id)
     q = (request.GET.get('q') or '').strip()
+    member_id = request.GET.get('member_id', '').strip()
     page_number = request.GET.get('page', 1)
 
     # Fetch members with related data
     members = Member.objects.select_related('user_account', 'batch').prefetch_related('payment_entries').order_by('full_name')
 
-    # Filter members based on search query
-    if q:
+    # Filter by specific member if selected from search
+    if member_id:
+        members = members.filter(id=member_id)
+    # Otherwise filter members based on text search query
+    elif q:
         members = members.filter(Q(full_name__icontains=q) | Q(batch__number__icontains=q)).distinct()
 
     # Annotate members with monthly totals for the selected year
@@ -1770,7 +1926,7 @@ def from_members_payment_view(request, year_id):
             for month in range(1, 13)
         ]
 
-    paginator = Paginator(members, 10)  # Paginate 10 members per page
+    paginator = Paginator(members, 7)  # Paginate 7 members per page
     page_obj = paginator.get_page(page_number)
 
     context = {
@@ -1779,6 +1935,8 @@ def from_members_payment_view(request, year_id):
         'months': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
         'paginator': paginator,
         'page_obj': page_obj,
+        'q': q,
+        'member_id': member_id,
     }
     return render(request, 'payments/from_members_payment.html', context)
 
@@ -2033,7 +2191,7 @@ def member_payment_list(request, year_id, member_id):
 
 
 # ==== Renewal Details View ====
-from datetime import datetime
+from datetime import datetime as dt
 
 @staff_member_required
 def renewal_details(request, date):
@@ -2044,7 +2202,7 @@ def renewal_details(request, date):
     """
     try:
         # Parse the date from URL (format: YYYY-MM-DD)
-        target_date = datetime.strptime(date, '%Y-%m-%d').date()
+        target_date = dt.strptime(date, '%Y-%m-%d').date()
     except ValueError:
         messages.error(request, "Invalid date format.")
         return redirect('home')
@@ -2437,3 +2595,390 @@ def password_reset_confirm(request):
         'form': form,
         'email': email
     })
+
+
+# ==== PDF Export Views ====
+from django.http import HttpResponse
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from io import BytesIO
+import datetime
+
+@login_required
+def export_year_pdf(request, year_id, report_type):
+    """
+    Export payment report for a year.
+    report_type: 'all', 'from_members', or 'others'
+    """
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    
+    # Create the HttpResponse object with PDF headers
+    response = HttpResponse(content_type='application/pdf')
+    filename = f'Payment_Report_{year.year}_{report_type}.pdf'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Create the PDF object
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    elements = []
+    
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#1F3E27'),
+        spaceAfter=12,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Normal'],
+        fontSize=12,
+        textColor=colors.HexColor('#5C3A21'),
+        spaceAfter=20,
+        alignment=TA_CENTER
+    )
+    
+    # Title
+    title_text = f"POTMPC Payment Report - {year.year}"
+    if report_type == 'from_members':
+        title_text += " (From Members)"
+    elif report_type == 'others':
+        title_text += " (Other Payments)"
+    else:
+        title_text += " (All Payments)"
+    
+    elements.append(Paragraph(title_text, title_style))
+    elements.append(Paragraph(f"Generated on: {datetime.datetime.now().strftime('%B %d, %Y at %I:%M %p')}", subtitle_style))
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Get payment data
+    payment_types = PaymentType.objects.filter(year=year).order_by('payment_type', 'name')
+    
+    # Filter by report type
+    if report_type == 'from_members':
+        payment_types = payment_types.filter(payment_type='from_members')
+    elif report_type == 'others':
+        payment_types = payment_types.filter(payment_type='other')
+    
+    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    
+    if report_type == 'all':
+        # Separate sections for From Members and Others
+        from_members_types = payment_types.filter(payment_type='from_members')
+        other_types = payment_types.filter(payment_type='other')
+        
+        if from_members_types.exists():
+            elements.append(Paragraph("<b>FROM MEMBERS</b>", ParagraphStyle('SectionHeader', parent=styles['Heading2'], textColor=colors.HexColor('#1F3E27'))))
+            elements.append(Spacer(1, 0.1*inch))
+            table_data = _build_payment_table_data(from_members_types, months)
+            elements.append(_create_payment_table(table_data))
+            elements.append(Spacer(1, 0.3*inch))
+        
+        if other_types.exists():
+            elements.append(Paragraph("<b>OTHER PAYMENTS</b>", ParagraphStyle('SectionHeader', parent=styles['Heading2'], textColor=colors.HexColor('#C99E35'))))
+            elements.append(Spacer(1, 0.1*inch))
+            table_data = _build_payment_table_data(other_types, months)
+            elements.append(_create_payment_table(table_data))
+    else:
+        table_data = _build_payment_table_data(payment_types, months)
+        elements.append(_create_payment_table(table_data))
+    
+    # Build PDF
+    doc.build(elements)
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+    
+    return response
+
+
+def _build_payment_table_data(payment_types, months):
+    """Helper function to build table data for payment report"""
+    # Header row
+    data = [['Payment Type'] + months]
+    
+    for payment_type in payment_types:
+        row = [payment_type.name]
+        for month_num in range(1, 13):
+            total = payment_type.entries.filter(month=month_num).aggregate(total=Sum('amount_paid'))['total']
+            row.append(f"₱{total:,.2f}" if total else "-")
+        data.append(row)
+    
+    return data
+
+
+def _create_payment_table(data):
+    """Helper function to create styled payment table"""
+    table = Table(data, repeatRows=1)
+    table.setStyle(TableStyle([
+        # Header row styling
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F3E27')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('TOPPADDING', (0, 0), (-1, 0), 8),
+        
+        # Data rows styling
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#2F2F2F')),
+        ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
+        ('ALIGN', (0, 1), (0, -1), 'LEFT'),
+        ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 1), (-1, -1), 'Courier'),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F6F4ED')]),
+        
+        # Grid styling
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#D4D0C7')),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 6),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 1), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+    ]))
+    
+    return table
+
+
+@login_required
+def export_member_pdf(request, year_id, member_id):
+    """
+    Export individual member payment report for a year.
+    """
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    member = get_object_or_404(Member, pk=member_id)
+    
+    # Create the HttpResponse object with PDF headers
+    response = HttpResponse(content_type='application/pdf')
+    filename = f'Payment_Report_{year.year}_{member.full_name.replace(" ", "_")}.pdf'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Create the PDF object
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
+    elements = []
+    
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#1F3E27'),
+        spaceAfter=12,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    
+    # Title
+    elements.append(Paragraph(f"POTMPC Payment Report - {year.year}", title_style))
+    elements.append(Paragraph(f"<b>Member:</b> {member.full_name}", ParagraphStyle('MemberName', parent=styles['Normal'], fontSize=14, spaceAfter=6, alignment=TA_CENTER)))
+    if member.batch:
+        elements.append(Paragraph(f"<b>Batch:</b> {member.batch.number}", ParagraphStyle('Batch', parent=styles['Normal'], fontSize=12, spaceAfter=20, alignment=TA_CENTER)))
+    elements.append(Paragraph(f"Generated on: {datetime.datetime.now().strftime('%B %d, %Y at %I:%M %p')}", ParagraphStyle('Date', parent=styles['Normal'], fontSize=10, spaceAfter=20, alignment=TA_CENTER, textColor=colors.HexColor('#5C3A21'))))
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # Get payment data
+    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    
+    # From Members payments
+    from_members_types = PaymentType.objects.filter(year=year, payment_type='from_members').order_by('name')
+    if from_members_types.exists():
+        elements.append(Paragraph("<b>FROM MEMBERS</b>", ParagraphStyle('SectionHeader', parent=styles['Heading3'], textColor=colors.HexColor('#1F3E27'), spaceAfter=10)))
+        
+        fm_data = [['Payment Type'] + months]
+        for payment_type in from_members_types:
+            row = [payment_type.name]
+            for month_num in range(1, 13):
+                total = payment_type.entries.filter(month=month_num, member=member).aggregate(total=Sum('amount_paid'))['total']
+                row.append(f"₱{total:,.2f}" if total else "-")
+            fm_data.append(row)
+        
+        elements.append(_create_payment_table(fm_data))
+        elements.append(Spacer(1, 0.3*inch))
+    
+    # Other payments
+    other_types = PaymentType.objects.filter(year=year, payment_type='other').order_by('name')
+    if other_types.exists():
+        elements.append(Paragraph("<b>OTHER PAYMENTS</b>", ParagraphStyle('SectionHeader', parent=styles['Heading3'], textColor=colors.HexColor('#C99E35'), spaceAfter=10)))
+        
+        other_data = [['Payment Type'] + months]
+        for payment_type in other_types:
+            row = [payment_type.name]
+            has_payments = False
+            for month_num in range(1, 13):
+                total = payment_type.entries.filter(month=month_num, member=member).aggregate(total=Sum('amount_paid'))['total']
+                row.append(f"₱{total:,.2f}" if total else "-")
+                if total:
+                    has_payments = True
+            if has_payments:  # Only show payment types with logged amounts
+                other_data.append(row)
+        
+        if len(other_data) > 1:  # Has data beyond header
+            elements.append(_create_payment_table(other_data))
+    
+    # Build PDF
+    doc.build(elements)
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+    
+    return response
+
+
+@login_required
+@require_POST
+def email_member_report(request, year_id, member_id):
+    """
+    Email payment report PDF to member with validations.
+    """
+    try:
+        year = get_object_or_404(PaymentYear, pk=year_id)
+        member = get_object_or_404(Member, pk=member_id)
+        
+        # Validation 1: Check if member has linked user account
+        if not member.user_account:
+            return JsonResponse({
+                'success': False,
+                'error': 'Member does not have a linked user account.'
+            }, status=400)
+        
+        # Validation 2: Check if user account has email
+        if not member.user_account.email:
+            return JsonResponse({
+                'success': False,
+                'error': 'Member account does not have an email address.'
+            }, status=400)
+        
+        email = member.user_account.email
+        
+        # Validation 3: Check if member has any payment records
+        has_payments = PaymentEntry.objects.filter(
+            payment_type__year=year,
+            member=member
+        ).exists()
+        
+        if not has_payments:
+            return JsonResponse({
+                'success': False,
+                'error': 'No payment records found for this member.'
+            }, status=400)
+        
+        # Generate PDF in memory
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
+        elements = []
+        
+        # Styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            textColor=colors.HexColor('#1F3E27'),
+            spaceAfter=12,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+        
+        # Build PDF content
+        elements.append(Paragraph(f"POTMPC Payment Report - {year.year}", title_style))
+        elements.append(Paragraph(f"<b>Member:</b> {member.full_name}", ParagraphStyle('MemberName', parent=styles['Normal'], fontSize=14, spaceAfter=6, alignment=TA_CENTER)))
+        if member.batch:
+            elements.append(Paragraph(f"<b>Batch:</b> {member.batch.number}", ParagraphStyle('Batch', parent=styles['Normal'], fontSize=12, spaceAfter=20, alignment=TA_CENTER)))
+        elements.append(Paragraph(f"Generated on: {datetime.datetime.now().strftime('%B %d, %Y at %I:%M %p')}", ParagraphStyle('Date', parent=styles['Normal'], fontSize=10, spaceAfter=20, alignment=TA_CENTER, textColor=colors.HexColor('#5C3A21'))))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Get payment data
+        months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        
+        # From Members payments
+        from_members_types = PaymentType.objects.filter(year=year, payment_type='from_members').order_by('name')
+        if from_members_types.exists():
+            elements.append(Paragraph("<b>FROM MEMBERS</b>", ParagraphStyle('SectionHeader', parent=styles['Heading3'], textColor=colors.HexColor('#1F3E27'), spaceAfter=10)))
+            
+            fm_data = [['Payment Type'] + months]
+            for payment_type in from_members_types:
+                row = [payment_type.name]
+                for month_num in range(1, 13):
+                    total = payment_type.entries.filter(month=month_num, member=member).aggregate(total=Sum('amount_paid'))['total']
+                    row.append(f"₱{total:,.2f}" if total else "-")
+                fm_data.append(row)
+            
+            elements.append(_create_payment_table(fm_data))
+            elements.append(Spacer(1, 0.3*inch))
+        
+        # Other payments
+        other_types = PaymentType.objects.filter(year=year, payment_type='other').order_by('name')
+        if other_types.exists():
+            elements.append(Paragraph("<b>OTHER PAYMENTS</b>", ParagraphStyle('SectionHeader', parent=styles['Heading3'], textColor=colors.HexColor('#C99E35'), spaceAfter=10)))
+            
+            other_data = [['Payment Type'] + months]
+            for payment_type in other_types:
+                row = [payment_type.name]
+                has_payments = False
+                for month_num in range(1, 13):
+                    total = payment_type.entries.filter(month=month_num, member=member).aggregate(total=Sum('amount_paid'))['total']
+                    row.append(f"₱{total:,.2f}" if total else "-")
+                    if total:
+                        has_payments = True
+                if has_payments:
+                    other_data.append(row)
+            
+            if len(other_data) > 1:
+                elements.append(_create_payment_table(other_data))
+        
+        # Build PDF
+        doc.build(elements)
+        pdf_data = buffer.getvalue()
+        buffer.close()
+        
+        # Send email with PDF attachment
+        subject = f'POTMPC Payment Report - {year.year}'
+        message = f"""
+Dear {member.full_name},
+
+Please find attached your payment report for {year.year}.
+
+This report contains all payment records logged in the POTMPC system for the specified year.
+
+If you have any questions or concerns about your payment records, please contact the cooperative office.
+
+Best regards,
+POTMPC Management
+"""
+        
+        email_message = EmailMultiAlternatives(
+            subject=subject,
+            body=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[email]
+        )
+        
+        # Attach PDF
+        filename = f'Payment_Report_{year.year}_{member.full_name.replace(" ", "_")}.pdf'
+        email_message.attach(filename, pdf_data, 'application/pdf')
+        
+        # Send email
+        email_message.send(fail_silently=False)
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Payment report sent successfully to {email}'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

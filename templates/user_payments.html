@@ -1,0 +1,359 @@
+{% extends 'user_base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/user_custom.css' %}">
+<style>
+/* User Payments Year List Page Styles */
+.user-payments-container {
+    padding: 30px;
+    max-width: 100%;
+}
+
+.user-page-header-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(31,62,39,0.1);
+}
+
+.user-page-title {
+    color: #1F3E27;
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-page-title i {
+    font-size: 1.8rem;
+    color: #C99E35;
+}
+
+.user-page-subtitle {
+    color: #5C3A21;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.user-member-info-banner {
+    background: linear-gradient(180deg, #F6F4ED, #FFFFFF);
+    border: 1px solid rgba(31,62,39,0.1);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.user-member-info-banner i {
+    font-size: 2.5rem;
+    color: #C99E35;
+}
+
+.user-member-info-content h2 {
+    margin: 0 0 8px 0;
+    color: #1F3E27;
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.user-member-info-content p {
+    margin: 0;
+    color: #5C3A21;
+    font-size: 0.95rem;
+}
+
+.user-member-info-content .batch-badge {
+    display: inline-block;
+    background: #C99E35;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-top: 8px;
+}
+
+/* Year Cards Grid */
+.payment-years-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.year-card {
+    background: #FFFFFF;
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(31,62,39,0.08);
+    overflow: hidden;
+    border: 1px solid rgba(31,62,39,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+}
+
+.year-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 35px rgba(31,62,39,0.15);
+    text-decoration: none;
+}
+
+.year-card-header {
+    background: linear-gradient(135deg, #1F3E27 0%, #4C6B4A 100%);
+    padding: 24px 28px;
+    color: #fff;
+    border-bottom: 3px solid #C99E35;
+}
+
+.year-card-title {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.year-card-title i {
+    font-size: 1.8rem;
+    opacity: 0.9;
+}
+
+.year-card-body {
+    padding: 24px 28px;
+}
+
+.year-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(31,62,39,0.08);
+}
+
+.year-stat-row:last-child {
+    border-bottom: none;
+}
+
+.year-stat-label {
+    font-size: 0.9rem;
+    color: #5C3A21;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.year-stat-label i {
+    font-size: 1.1rem;
+    color: #C99E35;
+}
+
+.year-stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1F3E27;
+}
+
+.year-total-paid {
+    background: linear-gradient(135deg, rgba(45,138,99,0.1), rgba(45,138,99,0.05));
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+    text-align: center;
+    border: 1px solid rgba(45,138,99,0.2);
+}
+
+.year-total-paid-label {
+    font-size: 0.85rem;
+    color: #5C3A21;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.year-total-paid-amount {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #2D8A63;
+    font-family: 'Courier New', monospace;
+}
+
+.year-card-footer {
+    padding: 16px 28px;
+    background: rgba(31,62,39,0.02);
+    text-align: center;
+    border-top: 1px solid rgba(31,62,39,0.08);
+}
+
+.year-card-footer span {
+    font-size: 0.9rem;
+    color: #C99E35;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.year-card:hover .year-card-footer span {
+    color: #1F3E27;
+}
+
+.year-card-footer i {
+    transition: transform 0.2s;
+}
+
+.year-card:hover .year-card-footer i {
+    transform: translateX(4px);
+}
+
+/* Empty State */
+.user-no-payments {
+    text-align: center;
+    padding: 80px 20px;
+    background: linear-gradient(180deg, #F6F4ED, #FFFFFF);
+    border-radius: 12px;
+    border: 1px solid rgba(31,62,39,0.08);
+}
+
+.user-no-payments i {
+    font-size: 4rem;
+    color: #C99E35;
+    margin-bottom: 16px;
+}
+
+.user-no-payments h3 {
+    color: #1F3E27;
+    font-weight: 700;
+    margin-bottom: 12px;
+    font-size: 1.5rem;
+}
+
+.user-no-payments p {
+    color: #5C3A21;
+    font-size: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .user-payments-container {
+        padding: 15px;
+    }
+    
+    .payment-years-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .year-card-header,
+    .year-card-body,
+    .year-card-footer {
+        padding: 16px 20px;
+    }
+    
+    .year-card-title {
+        font-size: 1.5rem;
+    }
+    
+    .year-total-paid-amount {
+        font-size: 1.5rem;
+    }
+    
+    .user-member-info-banner {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block title %}My Payments - POTMPC Portal{% endblock %}
+
+{% block content %}
+<div class="user-payments-container">
+    <!-- Page Header -->
+    <div class="user-page-header-section">
+        <h1 class="user-page-title">
+            <i class="la la-wallet"></i>
+            My Payment History
+        </h1>
+        <p class="user-page-subtitle">Select a year to view your payment records</p>
+    </div>
+
+    {% if not member %}
+        <!-- No Member Profile -->
+        <div class="user-no-payments">
+            <i class="la la-exclamation-triangle"></i>
+            <h3>No Member Profile Linked</h3>
+            <p>Your account is not linked to a member profile. Please contact the administrator to link your account.</p>
+        </div>
+    {% else %}
+        {% if not payment_years %}
+            <!-- No Years Configured -->
+            <div class="user-no-payments">
+                <i class="la la-receipt"></i>
+                <h3>No Payment Years Available</h3>
+                <p>No payment years have been configured yet. Payment records will appear here once the administrator sets up payment years.</p>
+            </div>
+        {% else %}
+            <!-- Payment Year Cards Grid -->
+            <div class="payment-years-grid">
+                {% for year_data in payment_years %}
+                    <a href="{% url 'user_payment_year_detail' year_data.year.id %}" class="year-card">
+                        <div class="year-card-header">
+                            <h2 class="year-card-title">
+                                <i class="la la-calendar"></i>
+                                {{ year_data.year.year }}
+                            </h2>
+                        </div>
+                        
+                        <div class="year-card-body">
+                            <div class="year-stat-row">
+                                <span class="year-stat-label">
+                                    <i class="la la-users"></i>
+                                    From Members
+                                </span>
+                                <span class="year-stat-value">{{ year_data.from_members_count }} type{{ year_data.from_members_count|pluralize }}</span>
+                            </div>
+                            
+                            <div class="year-stat-row">
+                                <span class="year-stat-label">
+                                    <i class="la la-file-invoice-dollar"></i>
+                                    Other Payments
+                                </span>
+                                <span class="year-stat-value">{{ year_data.other_count }} type{{ year_data.other_count|pluralize }}</span>
+                            </div>
+                            
+                            <div class="year-stat-row">
+                                <span class="year-stat-label">
+                                    <i class="la la-check-circle"></i>
+                                    Your Payments
+                                </span>
+                                <span class="year-stat-value">{{ year_data.member_payments_count }} payment{{ year_data.member_payments_count|pluralize }}</span>
+                            </div>
+                            
+                            <div class="year-total-paid">
+                                <div class="year-total-paid-label">Total Paid</div>
+                                <div class="year-total-paid-amount">₱{{ year_data.total_paid|floatformat:2 }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="year-card-footer">
+                            <span>
+                                View Details
+                                <i class="la la-arrow-right"></i>
+                            </span>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

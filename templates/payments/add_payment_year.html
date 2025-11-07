@@ -1,15 +1,59 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_payments.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_forms.css' %}">
+{% endblock %}
 
 {% block title %}Add Payment Year{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <h2>Add Payment Year</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-success">Add Year</button>
-    <a href="{% url 'payment_year_list' %}" class="btn btn-secondary">Cancel</a>
-  </form>
+<div class="content admin-dashboard">
+  <div class="payments-container">
+    <div class="row justify-content-center">
+      <div class="col-lg-6 col-md-8">
+        <div class="payment-form-card">
+          <div class="payment-form-header" style="position: relative;">
+            <a href="{% url 'payment_year_list' %}" class="member-back-btn" title="Back to Years">
+              <i class="las la-arrow-left"></i>
+            </a>
+            <h4 class="payment-form-title">
+              <i class="las la-calendar-plus"></i> Add Payment Year
+            </h4>
+            <p class="payment-form-subtitle">Create a new year for payment tracking</p>
+          </div>
+          
+          <div class="payment-form-content">
+            <form method="post">
+              {% csrf_token %}
+              
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+              {% endif %}
+              
+              <div class="form-group">
+                <label for="{{ form.year.id_for_label }}">Year <span class="text-danger">*</span></label>
+                {{ form.year }}
+                {% if form.year.errors %}
+                  <div class="text-danger small mt-2">{{ form.year.errors }}</div>
+                {% endif %}
+                <small class="form-text text-muted">Enter the year (e.g., 2025)</small>
+              </div>
+              
+              <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(31,62,39,0.1);">
+                <a href="{% url 'payment_year_list' %}" class="btn btn-secondary">
+                  <i class="las la-times"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-success">
+                  <i class="las la-check"></i> Add Year
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

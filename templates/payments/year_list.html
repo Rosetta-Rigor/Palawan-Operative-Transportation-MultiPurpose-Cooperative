@@ -1,28 +1,61 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_payments.css' %}">
+{% endblock %}
 
 {% block title %}Payments{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Payment Years</h2>
-    <a href="{% url 'add_payment_year' %}" class="btn btn-primary">Add Year</a>
-  </div>
-
-  {% if years %}
-    <div class="row">
-      {% for year in years %}
-        <div class="col-md-3 mb-3">
-          <a href="{% url 'payment_year_detail' year.id %}" class="card text-center shadow-sm">
-            <div class="card-body">
-              <h4 class="card-title">{{ year.year }}</h4>
-            </div>
-          </a>
-        </div>
-      {% endfor %}
+<div class="content admin-dashboard">
+  <div class="payments-container">
+    <div class="payment-actions-bar">
+      <div class="payment-actions-left">
+        <h2 style="color: var(--brand-600); font-weight: 800; margin: 0; display: flex; align-items: center; gap: 12px;">
+          <i class="las la-calendar-alt"></i> Payment Years
+        </h2>
+      </div>
+      <div class="payment-actions-right">
+        <a href="{% url 'add_payment_year' %}" class="payment-action-btn btn-add">
+          <i class="las la-plus"></i> Add Year
+        </a>
+        <a href="{% url 'home' %}" class="payment-action-btn btn-filter">
+          <i class="las la-arrow-left"></i> Back to Dashboard
+        </a>
+      </div>
     </div>
-  {% else %}
-    <div class="alert alert-info">No payment years created yet.</div>
-  {% endif %}
+
+    {% if years %}
+      <div class="row">
+        {% for year in years %}
+          <div class="col-md-4 col-lg-3 mb-4">
+            <a href="{% url 'payment_year_detail' year.id %}" style="text-decoration: none;">
+              <div class="payment-year-card">
+                <div class="payment-year-header" style="padding: 40px 32px; text-align: center;">
+                  <div style="font-size: 3rem; margin-bottom: 12px; opacity: 0.9;">
+                    <i class="las la-calendar-check"></i>
+                  </div>
+                  <h3 class="payment-year-title" style="font-size: 2.5rem; justify-content: center; margin: 0;">
+                    {{ year.year }}
+                  </h3>
+                  <p class="payment-year-subtitle" style="margin-top: 8px;">View payment records</p>
+                </div>
+              </div>
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="payment-empty-state">
+        <i class="las la-calendar-times"></i>
+        <h3>No Payment Years Yet</h3>
+        <p>Create your first payment year to start tracking financial records.</p>
+        <a href="{% url 'add_payment_year' %}" class="payment-action-btn btn-add" style="display: inline-flex;">
+          <i class="las la-plus"></i> Add First Year
+        </a>
+      </div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

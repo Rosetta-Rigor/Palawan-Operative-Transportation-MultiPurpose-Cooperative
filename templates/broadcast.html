@@ -5,31 +5,14 @@
 {% block content %}
 <div class="content admin-dashboard">
     <div class="container-fluid">
-        <!-- Page Header -->
-        <div class="page-header-section">
-            <div class="d-flex align-items-center justify-content-between flex-wrap mb-3">
-                <div class="d-flex align-items-center gap-3">
-                    <a href="{% url 'home' %}" class="back-btn" title="Back to Dashboard">
-                        <i class="las la-arrow-left"></i>
-                    </a>
-                    <div>
-                        <h1 class="page-title mb-1">
-                            <i class="las la-bullhorn"></i>
-                            Broadcast Announcements
-                        </h1>
-                        <p class="page-subtitle mb-0">
-                            Send notifications and announcements to members
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="row">
             <!-- Left Column: Broadcast Form -->
             <div class="col-lg-5 col-md-6">
                 <div class="admin-form-card broadcast-form-card">
-                    <div class="form-header-gradient">
+                    <div class="form-header-gradient" style="position: relative;">
+                        <a href="{% url 'home' %}" class="member-back-btn" title="Back to Dashboard">
+                            <i class="las la-arrow-left"></i>
+                        </a>
                         <h4 class="form-header-title">
                             <i class="las la-paper-plane"></i>
                             New Broadcast

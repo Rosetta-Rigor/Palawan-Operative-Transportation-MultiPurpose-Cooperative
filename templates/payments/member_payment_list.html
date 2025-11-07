@@ -1,76 +1,164 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Payments for {{ member.full_name }}{% endblock %}
 
-{% block content %}
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Payments for {{ member.full_name }} ({{ year.year }})</h2>
-    <div>
-      <a href="{% url 'from_members_payment_view' year.id %}" class="btn btn-secondary">Back to Members List</a>
-      <a href="{% url 'add_payment_entry_member' year.id member.id %}" class="btn btn-primary">Add Payment Entry</a>
-    </div>
-  </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_payments.css' %}">
+{% endblock %}
 
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>Payment Type</th>
-        {% for month in months %}
-          <th>{{ month }}</th>
-        {% endfor %}
-      </tr>
-    </thead>
-    <tbody>
-      {% if from_members_data %}
-        <!-- From Members Section -->
-        <tr class="table-secondary">
-          <td colspan="13" class="font-weight-bold">FROM MEMBERS</td>
-        </tr>
-        {% for data in from_members_data %}
+{% block content %}
+<div class="content admin-dashboard">
+  <div class="payments-container">
+    <div class="member-payment-summary">
+      <div class="member-payment-header">
+        <div class="member-info">
+          <h3 class="member-name">{{ member.full_name }}</h3>
+          <p class="member-year">Payment Year: {{ year.year }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="payment-actions-bar">
+      <div class="payment-actions-left">
+        <a href="{% url 'from_members_payment_view' year.id %}" class="payment-action-btn secondary">
+          <i class="las la-arrow-left"></i> Back to Members List
+        </a>
+      </div>
+      <div class="payment-actions-right">
+        <a href="{% url 'export_member_pdf' year.id member.id %}" class="payment-action-btn btn-export">
+          <i class="las la-file-pdf"></i> Export PDF
+        </a>
+        {% if member.user_account and member.user_account.email %}
+        <button type="button" class="payment-action-btn btn-export" id="emailReportBtn" data-year-id="{{ year.id }}" data-member-id="{{ member.id }}">
+          <i class="las la-envelope"></i> Email Report
+        </button>
+        {% endif %}
+        <a href="{% url 'add_payment_entry_member' year.id member.id %}" class="payment-action-btn primary">
+          <i class="las la-plus"></i> Add Payment Entry
+        </a>
+      </div>
+    </div>
+
+    <div class="payment-table-container">
+      <div class="payment-table-header">
+        <h4><i class="las la-file-invoice-dollar"></i> Payment History</h4>
+      </div>
+      <div class="table-responsive">
+        <table class="payment-table">
+        <thead>
           <tr>
-            <td>{{ data.payment_type.name }}</td>
-            {% for total in data.monthly_totals %}
-              <td>{{ total|default:"-" }}</td>
+            <th>Payment Type</th>
+            {% for month in months %}
+              <th class="text-right">{{ month }}</th>
             {% endfor %}
           </tr>
-        {% endfor %}
-      {% endif %}
+        </thead>
+        <tbody>
+          {% if from_members_data %}
+            <!-- From Members Section -->
+            <tr class="payment-section-header from-members">
+              <td colspan="13">
+                <i class="las la-users"></i> FROM MEMBERS
+              </td>
+            </tr>
+            {% for data in from_members_data %}
+              <tr>
+                <td><strong>{{ data.payment_type.name }}</strong></td>
+                {% for total in data.monthly_totals %}
+                  <td class="amount-cell">{{ total|default:"-" }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          {% endif %}
 
-      {% if other_data %}
-        <!-- Check if any other payment has been logged -->
-        {% for data in other_data %}
-          {% for total in data.monthly_totals %}
-            {% if total %}
-              <!-- Other Payments Section Header (shown only once) -->
-              {% if forloop.parentloop.first and forloop.first %}
-                <tr class="table-secondary">
-                  <td colspan="13" class="font-weight-bold">OTHER PAYMENTS</td>
+          {% if other_data %}
+            <!-- Check if any other payment has been logged -->
+            {% for data in other_data %}
+              {% for total in data.monthly_totals %}
+                {% if total %}
+                  <!-- Other Payments Section Header (shown only once) -->
+                  {% if forloop.parentloop.first and forloop.first %}
+                    <tr class="payment-section-header other-payments">
+                      <td colspan="13">
+                        <i class="las la-file-alt"></i> OTHER PAYMENTS
+                      </td>
+                    </tr>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+            
+            <!-- Display other payment types that have logged amounts -->
+            {% for data in other_data %}
+              {% if data.monthly_totals|join:"" %}
+                <tr>
+                  <td><strong>{{ data.payment_type.name }}</strong></td>
+                  {% for total in data.monthly_totals %}
+                    <td class="amount-cell">{{ total|default:"-" }}</td>
+                  {% endfor %}
                 </tr>
               {% endif %}
-            {% endif %}
-          {% endfor %}
-        {% endfor %}
-        
-        <!-- Display other payment types that have logged amounts -->
-        {% for data in other_data %}
-          {% if data.monthly_totals|join:"" %}
+            {% endfor %}
+          {% endif %}
+
+          {% if not from_members_data and not other_data %}
             <tr>
-              <td>{{ data.payment_type.name }}</td>
-              {% for total in data.monthly_totals %}
-                <td>{{ total|default:"-" }}</td>
-              {% endfor %}
+              <td colspan="13" class="text-center">
+                <div class="payment-empty-state">
+                  <i class="las la-inbox"></i>
+                  <p>No payment records found</p>
+                </div>
+              </td>
             </tr>
           {% endif %}
-        {% endfor %}
-      {% endif %}
-
-      {% if not from_members_data and not other_data %}
-        <tr>
-          <td colspan="13" class="text-center">No payment types found.</td>
-        </tr>
-      {% endif %}
-    </tbody>
-  </table>
+        </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+  $('#emailReportBtn').on('click', function() {
+    const btn = $(this);
+    const yearId = btn.data('year-id');
+    const memberId = btn.data('member-id');
+    const originalHtml = btn.html();
+    
+    if (confirm('Send payment report to {{ member.user_account.email }}?')) {
+      // Disable button and show loading state
+      btn.prop('disabled', true);
+      btn.html('<i class="las la-spinner la-spin"></i> Sending...');
+      
+      $.ajax({
+        url: '{% url "email_member_report" year.id member.id %}',
+        type: 'POST',
+        data: {
+          csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function(response) {
+          if (response.success) {
+            alert('✓ Payment report sent successfully to {{ member.user_account.email }}');
+          } else {
+            alert('✗ Error: ' + (response.error || 'Failed to send email'));
+          }
+        },
+        error: function(xhr, status, error) {
+          alert('✗ Failed to send email. Please try again.');
+          console.error('Email error:', error);
+        },
+        complete: function() {
+          // Re-enable button and restore text
+          btn.prop('disabled', false);
+          btn.html(originalHtml);
+        }
+      });
+    }
+  });
+});
+</script>
 {% endblock %}

@@ -1,46 +1,75 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Other Payments{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_payments.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Other Payments for {{ year.year }}</h2>
-    <div>
-      <a href="{% url 'payment_year_detail' year.id %}" class="btn btn-secondary">Back to Year Detail</a>
-      <a href="{% url 'add_other_payment_entry' year.id %}" class="btn btn-primary">Add Payment Entry</a>
+<div class="content admin-dashboard">
+  <div class="payments-container">
+    <div class="payment-year-card" style="margin-bottom: 2rem;">
+      <div class="payment-year-header">
+        <h3 class="payment-year-title">Other Payments - {{ year.year }}</h3>
+        <p class="payment-year-subtitle">All other payment entries for the year</p>
+      </div>
     </div>
+
+    <div class="payment-actions-bar">
+      <div class="payment-actions-left">
+        <a href="{% url 'payment_year_detail' year.id %}" class="payment-action-btn secondary">
+          <i class="las la-arrow-left"></i> Back to Year Detail
+        </a>
+      </div>
+      <div class="payment-actions-right">
+        <a href="{% url 'add_other_payment_entry' year.id %}" class="payment-action-btn primary">
+          <i class="las la-plus"></i> Add Payment Entry
+        </a>
+      </div>
+    </div>
+
+    <div class="payment-table-container">
+      <div class="payment-table-header">
+        <h4><i class="las la-file-alt"></i> Payment Entries</h4>
+      </div>
+      <table class="payment-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Payment Type</th>
+            <th>Month</th>
+            <th class="text-right">Amount Paid</th>
+            <th>Recorded By</th>
+            <th>Recorded At</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payment in payments %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td><strong>{{ payment.payment_type.name }}</strong></td>
+              <td>{{ payment.get_month_display }}</td>
+              <td class="amount-cell">₱{{ payment.amount_paid }}</td>
+              <td>{{ payment.recorded_by.username }}</td>
+              <td>{{ payment.recorded_at|date:"M d, Y h:i A" }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="text-center">
+                <div class="payment-empty-state">
+                  <i class="las la-inbox"></i>
+                  <p>No payment records found</p>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include 'includes/pagination.html' %}
   </div>
-
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Payment Type</th>
-        <th>Month</th>
-        <th>Amount Paid</th>
-        <th>Recorded By</th>
-        <th>Recorded At</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for payment in payments %}
-        <tr>
-          <td>{{ forloop.counter }}</td>
-          <td>{{ payment.payment_type.name }}</td>
-          <td>{{ payment.get_month_display }}</td>
-          <td>₱{{ payment.amount_paid }}</td>
-          <td>{{ payment.recorded_by.username }}</td>
-          <td>{{ payment.recorded_at|date:"M d, Y h:i A" }}</td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="6" class="text-center">No payment records found.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  {% include 'includes/pagination.html' %}
 </div>
 {% endblock %}

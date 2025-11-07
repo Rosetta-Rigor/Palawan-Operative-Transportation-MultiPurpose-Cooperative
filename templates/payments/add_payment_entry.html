@@ -2,19 +2,33 @@
 {% load static %}
 {% load widget_tweaks %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_payments.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_forms.css' %}">
+{% endblock %}
+
 {% block content %}
 <div class="content admin-dashboard">
-    <div class="container-fluid">
+    <div class="payments-container">
         <div class="row justify-content-center">
             <div class="col-12 col-lg-8">
-                <div class="admin-form-card">
-                    <div class="form-header-gradient">
-                        <h4 class="form-header-title">
-                            <i class="fas fa-money-bill-wave"></i> Add Payment Entry
+                <div class="payment-form-card">
+                    <div class="payment-form-header">
+                        {% if member %}
+                            <a href="{% url 'member_payment_list' year.id member.id %}" class="member-back-btn">
+                                <i class="las la-arrow-left"></i>
+                            </a>
+                        {% else %}
+                            <a href="{% url 'from_members_payment_view' year.id %}" class="member-back-btn">
+                                <i class="las la-arrow-left"></i>
+                            </a>
+                        {% endif %}
+                        <h4 class="payment-form-title" style="padding-left: 50px;">
+                            <i class="las la-money-bill-wave"></i> Add Payment Entry
                         </h4>
-                        <p class="form-header-sub">Record a payment entry for {{ year.year }}{% if member %} - {{ member.full_name }}{% endif %}</p>
+                        <p class="payment-form-subtitle" style="padding-left: 50px;">Record a payment entry for {{ year.year }}{% if member %} - {{ member.full_name }}{% endif %}</p>
                     </div>
-                    <div class="form-content">
+                    <div class="payment-form-content">
                         <form method="POST">
                             {% csrf_token %}
                             
@@ -62,10 +76,8 @@
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="{{ form.amount_paid.id_for_label }}">Amount Paid <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">₱</span>
-                                        </div>
+                                    <div class="amount-input-wrapper">
+                                        <span class="currency-prefix">₱</span>
                                         {{ form.amount_paid|add_class:"form-control" }}
                                     </div>
                                     {% if form.amount_paid.errors %}
@@ -77,15 +89,15 @@
                             <div class="form-actions">
                                 {% if member %}
                                     <a href="{% url 'member_payment_list' year.id member.id %}" class="btn btn-secondary">
-                                        <i class="fas fa-times"></i> Cancel
+                                        <i class="las la-times"></i> Cancel
                                     </a>
                                 {% else %}
                                     <a href="{% url 'from_members_payment_view' year.id %}" class="btn btn-secondary">
-                                        <i class="fas fa-times"></i> Cancel
+                                        <i class="las la-times"></i> Cancel
                                     </a>
                                 {% endif %}
                                 <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-save"></i> Record Payment
+                                    <i class="las la-save"></i> Record Payment
                                 </button>
                             </div>
                         </form>
@@ -95,36 +107,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_css %}
-<style>
-    .input-group-text {
-        background: linear-gradient(135deg, var(--brand-600), var(--brand-500));
-        color: #fff;
-        border: 1px solid rgba(31,62,39,0.15);
-        font-weight: 600;
-        border-radius: 8px 0 0 8px;
-    }
-    
-    .input-group .form-control {
-        border-left: none;
-        border-radius: 0 8px 8px 0;
-    }
-    
-    .input-group .form-control:focus {
-        border-left: 1px solid var(--accent-500);
-    }
-    
-    .form-text.text-muted {
-        font-size: 0.85rem;
-        color: var(--muted-2);
-        margin-top: 4px;
-    }
-    
-    .text-danger {
-        color: var(--danger);
-        font-weight: 600;
-    }
-</style>
 {% endblock %}

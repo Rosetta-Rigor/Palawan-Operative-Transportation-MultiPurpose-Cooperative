@@ -1,45 +1,166 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}From Members Payments{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_payments.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>From Members Payments for {{ year.year }}</h2>
-    <a href="{% url 'payment_year_detail' year.id %}" class="btn btn-secondary">Back to Year Detail</a>
-  </div>
+<div class="content admin-dashboard">
+  <div class="payments-container">
+    <div class="payment-year-card" style="margin-bottom: 2rem;">
+      <div class="payment-year-header">
+        <h3 class="payment-year-title">From Members Payments - {{ year.year }}</h3>
+        <p class="payment-year-subtitle">Member payment records for all months</p>
+      </div>
+    </div>
 
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Member Name</th>
-        {% for month in months %}
-          <th>{{ month }}</th>
-        {% endfor %}
-        <th class="text-right">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for member in members %}
-        <tr>
-          <td>{{ forloop.counter }}</td>
-          <td>{{ member.full_name }}</td>
-          {% for total in member.monthly_totals %}
-            <td>{{ total|default:"-" }}</td>
+    <div class="payment-actions-bar">
+      <div class="payment-actions-left">
+        <a href="{% url 'payment_year_detail' year.id %}" class="payment-action-btn secondary">
+          <i class="las la-arrow-left"></i> Back to Year Detail
+        </a>
+      </div>
+      <div class="payment-actions-right">
+        <a href="{% url 'add_payment_entry' year.id %}" class="payment-action-btn primary">
+          <i class="las la-plus"></i> Add Payment
+        </a>
+      </div>
+    </div>
+
+    <!-- Member Search Filter -->
+    <div class="payment-member-search">
+      <label for="member-search">
+        <i class="las la-search"></i>
+        Search Member
+      </label>
+      <select id="member-search" name="member_id" class="form-control">
+        <option value="">All Members</option>
+      </select>
+    </div>
+
+    <div class="payment-table-container">
+      <div class="payment-table-header">
+        <h4><i class="las la-users"></i> Member Payments</h4>
+      </div>
+      <div class="table-responsive">
+        <table class="payment-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Member Name</th>
+            {% for month in months %}
+              <th class="text-right">{{ month }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for member in members %}
+            <tr class="clickable-row" data-url="{% url 'member_payment_list' year.id member.id %}">
+              <td>{{ forloop.counter }}</td>
+              <td><strong>{{ member.full_name }}</strong></td>
+              {% for total in member.monthly_totals %}
+                <td class="amount-cell">{{ total|default:"-" }}</td>
+              {% endfor %}
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="14" class="text-center">
+                <div class="payment-empty-state">
+                  <i class="las la-inbox"></i>
+                  <p>No member payment records yet</p>
+                </div>
+              </td>
+            </tr>
           {% endfor %}
-          <td class="text-right">
-            <a href="{% url 'member_payment_list' year.id member.id %}" class="btn btn-primary">View Payments</a>
-          </td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="14" class="text-center">No records have been logged yet.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        </tbody>
+        </table>
+      </div>
+    </div>
 
-  {% include 'includes/pagination.html' %}
+    {% include 'includes/pagination.html' %}
+  </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+  // Initialize Select2 for member search with AJAX
+  $('#member-search').select2({
+    placeholder: 'Search for a member...',
+    allowClear: true,
+    minimumInputLength: 0,
+    ajax: {
+      url: '{% url "member_search_api" %}',
+      dataType: 'json',
+      delay: 250,
+      data: function(params) {
+        return {
+          q: params.term || '',
+          page: params.page || 1
+        };
+      },
+      processResults: function(data, params) {
+        params.page = params.page || 1;
+        return {
+          results: data.results,
+          pagination: {
+            more: data.pagination.more
+          }
+        };
+      },
+      cache: true
+    }
+  });
+
+  // Handle member selection change
+  $('#member-search').on('change', function() {
+    const memberId = $(this).val();
+    const currentUrl = new URL(window.location.href);
+    
+    if (memberId) {
+      currentUrl.searchParams.set('member_id', memberId);
+    } else {
+      currentUrl.searchParams.delete('member_id');
+    }
+    
+    // Reset to page 1 when filtering
+    currentUrl.searchParams.delete('page');
+    
+    window.location.href = currentUrl.toString();
+  });
+
+  // Set selected member if in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const selectedMemberId = urlParams.get('member_id');
+  if (selectedMemberId) {
+    // Fetch member data and set it as selected
+    $.ajax({
+      url: '{% url "member_search_api" %}',
+      data: { q: '', page: 1 },
+      dataType: 'json'
+    }).done(function(data) {
+      const member = data.results.find(m => m.id == selectedMemberId);
+      if (member) {
+        const option = new Option(member.text, member.id, true, true);
+        $('#member-search').append(option).trigger('change');
+      }
+    });
+  }
+
+  // Make table rows clickable
+  $('.clickable-row').on('click', function(e) {
+    // Prevent navigation if clicking on a link or button
+    if ($(e.target).closest('a, button').length === 0) {
+      window.location.href = $(this).data('url');
+    }
+  });
+
+  // Add hover effect hint
+  $('.clickable-row').attr('title', 'Click to view member payments');
+});
+</script>
 {% endblock %}

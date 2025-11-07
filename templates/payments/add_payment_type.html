@@ -1,15 +1,85 @@
 {% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_payments.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_forms.css' %}">
+{% endblock %}
 
 {% block title %}Add Payment Type{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <h2>Add Payment Type for {{ year.year }}</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-success">Add Payment Type</button>
-    <a href="{% url 'payment_year_detail' year.id %}" class="btn btn-secondary">Cancel</a>
-  </form>
+<div class="content admin-dashboard">
+  <div class="payments-container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-md-10">
+        <div class="payment-form-card">
+          <div class="payment-form-header" style="position: relative;">
+            <a href="{% url 'payment_year_detail' year.id %}" class="member-back-btn" title="Back to Year Detail">
+              <i class="las la-arrow-left"></i>
+            </a>
+            <h4 class="payment-form-title">
+              <i class="las la-tags"></i> Add Payment Type
+            </h4>
+            <p class="payment-form-subtitle">Create a new payment type for {{ year.year }}</p>
+          </div>
+          
+          <div class="payment-form-content">
+            <form method="post">
+              {% csrf_token %}
+              
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+              {% endif %}
+              
+              <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">Payment Name <span class="text-danger">*</span></label>
+                {{ form.name|add_class:"form-control" }}
+                {% if form.name.errors %}
+                  <div class="text-danger small mt-2">{{ form.name.errors }}</div>
+                {% endif %}
+                <small class="form-text text-muted">Enter a descriptive name (e.g., "Monthly Dues", "Membership Fee")</small>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.amount.id_for_label }}">Amount <span class="text-danger">*</span></label>
+                    <div class="amount-input-wrapper">
+                      <span class="currency-prefix">₱</span>
+                      {{ form.amount|add_class:"form-control" }}
+                    </div>
+                    {% if form.amount.errors %}
+                      <div class="text-danger small mt-2">{{ form.amount.errors }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label for="{{ form.payment_type.id_for_label }}">Payment Category <span class="text-danger">*</span></label>
+                    {{ form.payment_type|add_class:"form-control" }}
+                    {% if form.payment_type.errors %}
+                      <div class="text-danger small mt-2">{{ form.payment_type.errors }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              
+              <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(31,62,39,0.1);">
+                <a href="{% url 'payment_year_detail' year.id %}" class="btn btn-secondary">
+                  <i class="las la-times"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-success">
+                  <i class="las la-check"></i> Add Payment Type
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

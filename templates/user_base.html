@@ -142,6 +142,12 @@
                         <p>Documents</p>
                     </a>
                 </div>
+                <div class="nav-item {% if current == 'user_payments' %}active{% endif %}">
+                    <a class="nav-link" href="{% url 'user_payments' %}">
+                        <i class="la la-wallet"></i>
+                        <p>My Payments</p>
+                    </a>
+                </div>
                 <div class="nav-item {% if current == 'user_announcements' %}active{% endif %}">
                     <a class="nav-link" href="{% url 'user_announcements' %}">
                         <i class="la la-bell"></i>

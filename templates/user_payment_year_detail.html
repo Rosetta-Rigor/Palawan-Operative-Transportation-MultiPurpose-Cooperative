@@ -1,0 +1,453 @@
+{% extends 'user_base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/user_custom.css' %}">
+<style>
+/* User Payment Year Detail Page Styles */
+.user-payments-container {
+    padding: 30px;
+    max-width: 100%;
+}
+
+.user-page-header-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(31,62,39,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.user-page-header-left {
+    flex: 1;
+}
+
+.user-page-header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 16px;
+}
+
+.user-page-title {
+    color: #1F3E27;
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-page-title i {
+    font-size: 1.8rem;
+    color: #C99E35;
+}
+
+.user-page-subtitle {
+    color: #5C3A21;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.back-button {
+    background: #4C6B4A;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.back-button:hover {
+    background: #1F3E27;
+    transform: translateX(-3px);
+    text-decoration: none;
+    color: #fff;
+}
+
+.back-button i {
+    font-size: 1.1rem;
+}
+
+.user-member-info-banner {
+    background: linear-gradient(180deg, #F6F4ED, #FFFFFF);
+    border: 1px solid rgba(31,62,39,0.1);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.user-member-info-banner i {
+    font-size: 2.5rem;
+    color: #C99E35;
+}
+
+.user-member-info-content h2 {
+    margin: 0 0 8px 0;
+    color: #1F3E27;
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.user-member-info-content p {
+    margin: 0;
+    color: #5C3A21;
+    font-size: 0.95rem;
+}
+
+.user-member-info-content .batch-badge {
+    display: inline-block;
+    background: #C99E35;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-top: 8px;
+}
+
+/* Total Summary Card - Compact version */
+.year-total-summary {
+    background: linear-gradient(135deg, #2D8A63, #1F6847);
+    border-radius: 12px;
+    padding: 20px 28px;
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(45,138,99,0.2);
+    min-width: 280px;
+    max-width: 350px;
+}
+
+.year-total-summary h3 {
+    margin: 0 0 6px 0;
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.9);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.year-total-summary .total-amount {
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: 'Courier New', monospace;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.year-total-summary .total-amount i {
+    font-size: 1.5rem;
+    opacity: 0.9;
+}
+
+/* Payment Section Card */
+.user-payment-section-card {
+    background: #FFFFFF;
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(31,62,39,0.08);
+    overflow: hidden;
+    margin-bottom: 32px;
+    border: 1px solid rgba(31,62,39,0.08);
+}
+
+.user-payment-section-header {
+    background: linear-gradient(135deg, #1F3E27 0%, #4C6B4A 100%);
+    padding: 20px 32px;
+    color: #fff;
+    border-bottom: 3px solid #C99E35;
+}
+
+.user-payment-section-title {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-payment-section-title i {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.user-payment-table-wrapper {
+    padding: 24px;
+    overflow-x: auto;
+}
+
+.user-payment-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.user-payment-table thead {
+    background: #1F3E27;
+    color: #fff;
+}
+
+.user-payment-table thead th {
+    padding: 14px 12px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-right: 1px solid rgba(255,255,255,0.1);
+    white-space: nowrap;
+}
+
+.user-payment-table thead th:first-child {
+    text-align: left;
+    position: sticky;
+    left: 0;
+    background: #1F3E27;
+    z-index: 10;
+    min-width: 180px;
+}
+
+.user-payment-table tbody tr {
+    border-bottom: 1px solid rgba(31,62,39,0.08);
+    transition: background 0.15s;
+}
+
+.user-payment-table tbody tr:nth-child(even) {
+    background: #F6F4ED;
+}
+
+.user-payment-table tbody tr:hover {
+    background: rgba(201,158,53,0.08);
+}
+
+.user-payment-table tbody td {
+    padding: 12px;
+    text-align: right;
+    border-right: 1px solid rgba(31,62,39,0.05);
+}
+
+.user-payment-table tbody td:first-child {
+    text-align: left;
+    font-weight: 700;
+    color: #1F3E27;
+    position: sticky;
+    left: 0;
+    background: inherit;
+    z-index: 5;
+}
+
+.user-payment-amount {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #2D8A63;
+}
+
+.user-payment-amount.zero {
+    color: #999;
+    font-weight: 400;
+}
+
+/* Empty State */
+.user-no-payments-section {
+    text-align: center;
+    padding: 40px 20px;
+    color: #5C3A21;
+}
+
+.user-no-payments-section i {
+    font-size: 3rem;
+    color: #C99E35;
+    margin-bottom: 12px;
+}
+
+.user-no-payments-section p {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .user-payments-container {
+        padding: 15px;
+    }
+    
+    .user-page-header-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .user-page-header-right {
+        width: 100%;
+        align-items: stretch;
+    }
+    
+    .year-total-summary {
+        min-width: 100%;
+        max-width: 100%;
+    }
+    
+    .user-payment-table {
+        font-size: 0.75rem;
+    }
+    
+    .user-payment-table thead th,
+    .user-payment-table tbody td {
+        padding: 8px 6px;
+    }
+    
+    .year-total-summary .total-amount {
+        font-size: 1.8rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block title %}{{ year.year }} Payments - POTMPC Portal{% endblock %}
+{% block content %}
+<div class="user-payments-container">
+    <!-- Page Header -->
+    <div class="user-page-header-section">
+        <div class="user-page-header-left">
+            <h1 class="user-page-title">
+                <i class="la la-calendar-check"></i>
+                {{ year.year }} Payment Records
+            </h1>
+            <p class="user-page-subtitle">Detailed payment breakdown for {{ year.year }}</p>
+        </div>
+        <div class="user-page-header-right">
+            <a href="{% url 'user_payments' %}" class="back-button">
+                <i class="la la-arrow-left"></i>
+                Back to Years
+            </a>
+            <!-- Total Summary Card -->
+            <div class="year-total-summary">
+                <h3>Total Paid in {{ year.year }}</h3>
+                <p class="total-amount">
+                    <i class="la la-coins"></i>
+                    ₱{{ total_paid|floatformat:2 }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- From Members Payments Section -->
+    {% if from_members_data %}
+        <div class="user-payment-section-card">
+            <div class="user-payment-section-header">
+                <h2 class="user-payment-section-title">
+                    <i class="la la-users"></i>
+                    From Members Payments
+                </h2>
+            </div>
+            
+            <div class="user-payment-table-wrapper">
+                <table class="user-payment-table">
+                    <thead>
+                        <tr>
+                            <th>Payment Type</th>
+                            {% for month in months %}
+                                <th>{{ month }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for type_data in from_members_data %}
+                            <tr>
+                                <td>{{ type_data.payment_type.name }}</td>
+                                {% for total in type_data.monthly_totals %}
+                                    <td>
+                                        {% if total is not None and total > 0 %}
+                                            <span class="user-payment-amount">₱{{ total|floatformat:2 }}</span>
+                                        {% else %}
+                                            <span class="user-payment-amount zero">-</span>
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="user-payment-section-card">
+            <div class="user-payment-section-header">
+                <h2 class="user-payment-section-title">
+                    <i class="la la-users"></i>
+                    From Members Payments
+                </h2>
+            </div>
+            <div class="user-no-payments-section">
+                <i class="la la-info-circle"></i>
+                <p>No "From Members" payment types configured for {{ year.year }}</p>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Other Payments Section -->
+    {% if other_data %}
+        <div class="user-payment-section-card">
+            <div class="user-payment-section-header">
+                <h2 class="user-payment-section-title">
+                    <i class="la la-file-invoice-dollar"></i>
+                    Other Payments
+                </h2>
+            </div>
+            
+            <div class="user-payment-table-wrapper">
+                <table class="user-payment-table">
+                    <thead>
+                        <tr>
+                            <th>Payment Type</th>
+                            {% for month in months %}
+                                <th>{{ month }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for type_data in other_data %}
+                            <tr>
+                                <td>{{ type_data.payment_type.name }}</td>
+                                {% for total in type_data.monthly_totals %}
+                                    <td>
+                                        {% if total is not None and total > 0 %}
+                                            <span class="user-payment-amount">₱{{ total|floatformat:2 }}</span>
+                                        {% else %}
+                                            <span class="user-payment-amount zero">-</span>
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="user-payment-section-card">
+            <div class="user-payment-section-header">
+                <h2 class="user-payment-section-title">
+                    <i class="la la-file-invoice-dollar"></i>
+                    Other Payments
+                </h2>
+            </div>
+            <div class="user-no-payments-section">
+                <i class="la la-info-circle"></i>
+                <p>No "Other" payment types configured for {{ year.year }}</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

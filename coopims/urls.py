@@ -18,7 +18,9 @@ urlpatterns = [
     path("documents/reject/<int:doc_id>/", views.reject_document, name="reject_document"),
     path("broadcast/", views.broadcast, name="broadcast"),
     path("admin/", admin.site.urls),
-    path("", views.home, name="home"),
+    path("home/", views.home, name="home"),
+    path('login/', views.custom_login, name='login'),
+    path('', views.custom_login, name='root_login'),
     
     # BATCH
     path('batches/<int:pk>/', views.batch_detail, name='batch_detail'),
@@ -52,11 +54,12 @@ urlpatterns = [
     path('user/profile/', views.user_profile, name='user_profile'),
     path('user/announcements/', views.user_announcements, name='user_announcements'),
     path('user/documents/', views.user_documents, name='user_documents'),
+    path('user/payments/', views.user_payments, name='user_payments'),
+    path('user/payments/<int:year_id>/', views.user_payment_year_detail, name='user_payment_year_detail'),
     path('profile/', views.my_profile, name='my_profile'),
     path('user/profile/edit/', views.my_profile, name='user_profile_edit'),
 
     # AUTH
-    path('login/', views.custom_login, name='login'),
     path('register/', views.register, name='register'),
     path('logout/', views.custom_logout, name='logout'),
     path('accounts/', views.accounts_list, name='accounts_list'),
@@ -88,6 +91,11 @@ urlpatterns = [
     path('payments/<int:year_id>/other/add-entry/', views.add_other_payment_entry, name='add_other_payment_entry'),
     path('payments/<int:year_id>/from-members/<int:member_id>/', views.member_payment_list, name='member_payment_list'),
     path('payments/<int:year_id>/from-members/<int:member_id>/add-entry/', views.add_payment_entry, name='add_payment_entry_member'),
+    
+    # PDF EXPORTS
+    path('payments/<int:year_id>/export/<str:report_type>/', views.export_year_pdf, name='export_year_pdf'),
+    path('payments/<int:year_id>/member/<int:member_id>/export/', views.export_member_pdf, name='export_member_pdf'),
+    path('payments/<int:year_id>/member/<int:member_id>/email/', views.email_member_report, name='email_member_report'),
 
     # RENEWAL TRACKING
     path('renewals/<str:date>/', views.renewal_details, name='renewal_details'),
