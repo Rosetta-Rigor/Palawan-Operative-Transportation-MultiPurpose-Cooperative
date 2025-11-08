@@ -73,6 +73,7 @@ urlpatterns = [
     path('api/pending_counts/', views.pending_counts_api, name='api_pending_counts'),
     path('api/users/search/', views.user_search_api, name='user_search_api'),
     path('api/vehicle-member-select2/', views.vehicle_member_select2_api, name='vehicle_member_select2_api'),
+    path('api/vehicle-data/', views.get_vehicle_data, name='get_vehicle_data'),
     path('user/vehicles/', views.user_vehicles, name='user_vehicles'),
 
     # QR
@@ -97,7 +98,15 @@ urlpatterns = [
     path('payments/<int:year_id>/member/<int:member_id>/export/', views.export_member_pdf, name='export_member_pdf'),
     path('payments/<int:year_id>/member/<int:member_id>/email/', views.email_member_report, name='email_member_report'),
 
+    # CAR WASH
+    path('payments/<int:year_id>/carwash/', views.carwash_year_detail, name='carwash_year_detail'),
+    path('payments/<int:year_id>/carwash/compliance/', views.manage_carwash_compliance, name='manage_carwash_compliance'),
+    path('payments/<int:year_id>/carwash/add-type/', views.add_carwash_type, name='add_carwash_type'),
+    path('payments/<int:year_id>/carwash/edit-type/<int:type_id>/', views.edit_carwash_type, name='edit_carwash_type'),
+    path('payments/<int:year_id>/carwash/add-record/', views.add_carwash_record, name='add_carwash_record'),
+
     # RENEWAL TRACKING
+    path('renewals/', views.renewals_hub, name='renewals_hub'),
     path('renewals/<str:date>/', views.renewal_details, name='renewal_details'),
     path('renewals/<int:member_id>/<int:vehicle_id>/send-reminder/', views.send_renewal_reminder, name='send_renewal_reminder'),
     path('renewals/<int:member_id>/<int:vehicle_id>/mark-renewed/', views.mark_as_renewed, name='mark_as_renewed'),

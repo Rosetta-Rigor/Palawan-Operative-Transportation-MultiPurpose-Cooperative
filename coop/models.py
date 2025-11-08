@@ -234,6 +234,46 @@ class PaymentYear(models.Model):
         return str(self.year)
 
 
+class CarWashCompliance(models.Model):
+    """
+    Global car wash compliance configuration.
+    This is separate from payment types so compliance tracking is universal
+    regardless of which payment type (Basic, Premium, etc.) is used.
+    """
+    year = models.ForeignKey(
+        PaymentYear,
+        on_delete=models.CASCADE,
+        related_name='carwash_compliance'
+    )
+    monthly_threshold = models.PositiveIntegerField(
+        default=4,
+        help_text="Required number of car washes per vehicle per month"
+    )
+    penalty_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text="Penalty for non-compliance (optional)"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        'User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Staff member who last updated compliance settings"
+    )
+    
+    class Meta:
+        unique_together = ['year']
+        verbose_name = "Car Wash Compliance Setting"
+        verbose_name_plural = "Car Wash Compliance Settings"
+    
+    def __str__(self):
+        return f"{self.year.year} - Threshold: {self.monthly_threshold}/month"
+
+
 class PaymentType(models.Model):
     TYPE_CHOICES = [
         ('from_members', 'From Members'),
@@ -244,6 +284,16 @@ class PaymentType(models.Model):
     year = models.ForeignKey(PaymentYear, on_delete=models.CASCADE, related_name='payment_types')
     payment_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     members = models.ManyToManyField(Member, related_name='payment_types', blank=True)
+    
+    # Car Wash specific fields
+    is_car_wash = models.BooleanField(default=False, help_text="Is this a car wash payment type?")
+    car_wash_amount = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Service price for this car wash type (e.g., Basic=100, Premium=150)"
+    )
 
     def __str__(self):
         return f"{self.name} ({self.year.year})"
@@ -251,14 +301,38 @@ class PaymentType(models.Model):
 
 class PaymentEntry(models.Model):
     payment_type = models.ForeignKey(PaymentType, on_delete=models.CASCADE, related_name='entries')
-    member = models.ForeignKey('Member', on_delete=models.SET_NULL, null=True, blank=True, related_name='payment_entries')  # Only for "From Members"
+    member = models.ForeignKey('Member', on_delete=models.SET_NULL, null=True, blank=True, related_name='payment_entries')  # Optional now for public customers
     month = models.PositiveSmallIntegerField(choices=[(i, i) for i in range(1, 13)])  # 1=Jan, 12=Dec
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
-    recorded_at = models.DateTimeField(auto_now_add=True)  # Ensure this field exists
+    recorded_at = models.DateTimeField(auto_now_add=True)
     recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Car Wash specific fields
+    is_car_wash_record = models.BooleanField(default=False, help_text="Is this a car wash record entry?")
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True, related_name='carwash_entries', help_text="Specific vehicle for car wash record (optional for public customers)")
+    is_penalty = models.BooleanField(default=False, help_text="Is this a penalty payment for non-compliance?")
+    
+    # Public customer fields
+    is_public_customer = models.BooleanField(
+        default=False,
+        help_text="True if this is a public (non-member) car wash customer"
+    )
+    customer_name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Name of public customer (if not a member)"
+    )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['is_public_customer']),
+        ]
 
     def __str__(self):
-        if self.member:
+        if self.is_public_customer and self.customer_name:
+            return f"{self.payment_type.name} - {self.customer_name} (Public) - Month {self.month}"
+        elif self.member:
             return f"{self.payment_type.name} - {self.member.full_name} - Month {self.month}"
         return f"{self.payment_type.name} - Other - Month {self.month}"
 

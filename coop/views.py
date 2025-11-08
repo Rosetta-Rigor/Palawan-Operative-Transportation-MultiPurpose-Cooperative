@@ -868,8 +868,18 @@ def get_vehicle_data(request):
     - Used for autofilling vehicle form fields when assigning an existing vehicle.
     """
     vehicle_id = request.GET.get('vehicle_id')
+    member_id = request.GET.get('member_id')
     data = {}
-    if vehicle_id:
+    
+    # If member_id is provided, return all vehicles for that member
+    if member_id:
+        try:
+            vehicles = Vehicle.objects.filter(member_id=member_id).values('id', 'plate_number')
+            data = {'vehicles': list(vehicles)}
+        except Exception:
+            data = {'vehicles': []}
+    # If vehicle_id is provided, return vehicle details
+    elif vehicle_id:
         try:
             vehicle = Vehicle.objects.get(pk=vehicle_id)
             data = {
@@ -1972,15 +1982,28 @@ def payment_year_detail(request, year_id):
     for payment_type in from_members_types:
         monthly_totals = []
         for month in range(1, 13):  # January to December
-            # Sum all payments for this payment type and month across all members
-            total = PaymentEntry.objects.filter(
-                payment_type=payment_type,
-                month=month
-            ).aggregate(total=Sum('amount_paid'))['total']
-            monthly_totals.append(total if total is not None else None)
+            # CHECK IF CAR WASH TYPE
+            if payment_type.is_car_wash:
+                # Count all car wash entries for this month (all members)
+                count = PaymentEntry.objects.filter(
+                    payment_type=payment_type,
+                    month=month,
+                    is_car_wash_record=True,
+                    is_penalty=False
+                ).count()
+                monthly_totals.append(count if count > 0 else None)
+            else:
+                # Sum amounts for regular payments
+                total = PaymentEntry.objects.filter(
+                    payment_type=payment_type,
+                    month=month
+                ).aggregate(total=Sum('amount_paid'))['total']
+                monthly_totals.append(total if total is not None else None)
+        
         from_members_data.append({
             'payment_type': payment_type,
             'monthly_totals': monthly_totals,
+            'is_car_wash': payment_type.is_car_wash,  # Flag for template
         })
     
     # Process "Other" payment types - aggregate all entries
@@ -2149,15 +2172,29 @@ def member_payment_list(request, year_id, member_id):
     for payment_type in from_members_types:
         monthly_totals = []
         for month in range(1, 13):  # January to December
-            entries = member.payment_entries.filter(
-                payment_type=payment_type,
-                month=month
-            )
-            total = entries.aggregate(total=Sum('amount_paid'))['total']
-            monthly_totals.append(total if total is not None else None)
+            # CHECK IF CAR WASH TYPE
+            if payment_type.is_car_wash:
+                # For car wash: COUNT entries instead of sum
+                count = member.payment_entries.filter(
+                    payment_type=payment_type,
+                    month=month,
+                    is_car_wash_record=True,
+                    is_penalty=False
+                ).count()
+                monthly_totals.append(count if count > 0 else None)
+            else:
+                # For regular payments: SUM amounts
+                entries = member.payment_entries.filter(
+                    payment_type=payment_type,
+                    month=month
+                )
+                total = entries.aggregate(total=Sum('amount_paid'))['total']
+                monthly_totals.append(total if total is not None else None)
+        
         from_members_data.append({
             'payment_type': payment_type,
             'monthly_totals': monthly_totals,
+            'is_car_wash': payment_type.is_car_wash,  # Flag for template
         })
     
     # Process "Other" payment types
@@ -2358,6 +2395,161 @@ def send_renewal_reminder_email(member, vehicle, document_entry, request):
         return False, f"Failed to send email: {str(e)}"
 
 
+# ===== RENEWALS HUB =====
+from .models import Member, Vehicle, Document, DocumentEntry, Batch
+
+@staff_member_required
+def renewals_hub(request):
+    """
+    Central Renewals Hub - Main landing page for renewal management.
+    Shows overview cards, filters, and comprehensive table of all renewals.
+    """
+    today = timezone.localtime(timezone.now()).date()
+    
+    # Get filter parameters
+    filter_type = request.GET.get('filter', 'all')
+    search_query = request.GET.get('q', '')
+    batch_filter = request.GET.get('batch', '')
+    status_filter = request.GET.get('status', '')
+    
+    # Calculate date ranges based on filter
+    start_date = None
+    end_date = None
+    
+    if filter_type == 'today':
+        start_date = end_date = today
+    elif filter_type == 'this_week':
+        start_date = today
+        end_date = today + timedelta(days=7)
+    elif filter_type == 'this_month':
+        start_date = today
+        end_date = today + timedelta(days=30)
+    elif filter_type == 'next_60':
+        start_date = today
+        end_date = today + timedelta(days=60)
+    elif filter_type == 'urgent':
+        start_date = today
+        end_date = today + timedelta(days=29)
+    elif filter_type == 'upcoming':
+        start_date = today + timedelta(days=30)
+        end_date = today + timedelta(days=60)
+    elif filter_type == 'overdue':
+        start_date = today - timedelta(days=365)
+        end_date = today - timedelta(days=1)
+    
+    # Get all members with their vehicles and documents
+    members_query = Member.objects.select_related('user_account', 'batch').prefetch_related(
+        'vehicles__document__entries'
+    ).all()
+    
+    # Apply batch filter
+    if batch_filter:
+        members_query = members_query.filter(batch_id=batch_filter)
+    
+    # Apply search filter
+    if search_query:
+        members_query = members_query.filter(
+            Q(full_name__icontains=search_query) |
+            Q(vehicles__plate_number__icontains=search_query) |
+            Q(vehicles__document__tin__icontains=search_query)
+        ).distinct()
+    
+    # Collect all renewals
+    all_renewals = []
+    urgent_count = 0
+    upcoming_count = 0
+    this_month_count = 0
+    overdue_count = 0
+    
+    for member in members_query:
+        for vehicle in member.vehicles.all():
+            # Get latest approved document entry
+            latest_entry = DocumentEntry.objects.filter(
+                document__vehicle=vehicle
+            ).filter(
+                Q(status="approved") | Q(uploaded_by__isnull=True)
+            ).order_by('-renewal_date').first()
+            
+            if latest_entry and latest_entry.renewal_date:
+                candidate = latest_entry.renewal_date
+                
+                # Convert to date if datetime
+                if hasattr(candidate, "date"):
+                    candidate = candidate.date()
+                
+                # Normalize expiry date to future
+                attempts = 0
+                while candidate < today and attempts < 5:
+                    candidate = _add_years_safe(candidate, 1)
+                    attempts += 1
+                
+                days_left = (candidate - today).days
+                
+                # Determine status
+                status = 'normal'
+                status_class = 'secondary'
+                if days_left < 0:
+                    status = 'overdue'
+                    status_class = 'dark'
+                    overdue_count += 1
+                elif 0 <= days_left <= 29:
+                    status = 'urgent'
+                    status_class = 'danger'
+                    urgent_count += 1
+                elif 30 <= days_left <= 60:
+                    status = 'upcoming'
+                    status_class = 'warning'
+                    upcoming_count += 1
+                
+                # Count this month
+                if 0 <= days_left <= 30:
+                    this_month_count += 1
+                
+                # Apply status filter
+                if status_filter and status != status_filter:
+                    continue
+                
+                # Apply date range filter
+                if start_date and end_date:
+                    if not (start_date <= candidate <= end_date):
+                        continue
+                
+                renewal_info = {
+                    'id': latest_entry.id,
+                    'member': member,
+                    'vehicle': vehicle,
+                    'plate': vehicle.plate_number,
+                    'tin': getattr(vehicle.document, 'tin', 'N/A') if hasattr(vehicle, 'document') else 'N/A',
+                    'expiry_date': candidate,
+                    'days_left': days_left,
+                    'days_until_overdue': abs(days_left) if days_left < 0 else 0,
+                    'status': status,
+                    'status_class': status_class,
+                    'document_entry': latest_entry,
+                }
+                
+                all_renewals.append(renewal_info)
+    
+    # Sort by days left (ascending)
+    all_renewals.sort(key=lambda x: x['days_left'])
+    
+    # Get all batches for filter dropdown
+    batches = Batch.objects.all().order_by('number')
+    
+    context = {
+        'renewals': all_renewals,
+        'urgent_count': urgent_count,
+        'upcoming_count': upcoming_count,
+        'this_month_count': this_month_count,
+        'overdue_count': overdue_count,
+        'batches': batches,
+        'filter_type': filter_type,
+        'today': today,
+    }
+    
+    return render(request, 'renewals/hub.html', context)
+
+
 @staff_member_required
 @require_POST
 def send_renewal_reminder(request, member_id, vehicle_id):
@@ -2394,7 +2586,11 @@ def send_renewal_reminder(request, member_id, vehicle_id):
     except Exception as e:
         messages.error(request, f"Error sending reminder: {str(e)}")
     
-    # Redirect back to the renewal details page
+    # Redirect back to the appropriate page
+    from_hub = request.POST.get('from_hub')
+    if from_hub:
+        return redirect('renewals_hub')
+    
     date = request.POST.get('date')
     if date:
         return redirect('renewal_details', date=date)
@@ -2982,3 +3178,310 @@ POTMPC Management
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+# ==== CAR WASH VIEWS ====
+
+@staff_member_required
+def manage_carwash_compliance(request, year_id):
+    """
+    Manage global car wash compliance settings for a specific year.
+    Handles GET (display settings) and POST (update settings).
+    """
+    from .models import CarWashCompliance
+    from .forms import CarWashComplianceForm
+    
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    
+    # Get or create compliance settings for this year
+    compliance, created = CarWashCompliance.objects.get_or_create(
+        year=year,
+        defaults={
+            'monthly_threshold': 4,
+            'penalty_amount': 0,
+            'updated_by': request.user
+        }
+    )
+    
+    if request.method == 'POST':
+        form = CarWashComplianceForm(request.POST, instance=compliance)
+        if form.is_valid():
+            compliance = form.save(commit=False)
+            compliance.updated_by = request.user
+            compliance.save()
+            messages.success(request, 'Car wash compliance settings updated successfully.')
+            return redirect('coop:carwash_year_detail', year_id=year_id)
+    else:
+        form = CarWashComplianceForm(instance=compliance)
+    
+    context = {
+        'year': year,
+        'form': form,
+        'compliance': compliance,
+        'page_title': f'Car Wash Compliance Settings - {year.year}'
+    }
+    return render(request, 'payments/manage_carwash_compliance.html', context)
+
+@staff_member_required
+def carwash_year_detail(request, year_id):
+    """
+    Display car wash records for a specific year.
+    Shows COUNTS (not amounts) in a member × month grid.
+    Tracks both member and public customers, with service type breakdown.
+    """
+    from .models import CarWashCompliance
+    
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    
+    # Get global compliance settings
+    try:
+        compliance = CarWashCompliance.objects.get(year=year)
+    except CarWashCompliance.DoesNotExist:
+        compliance = None
+    
+    # Get car wash service types
+    carwash_types = PaymentType.objects.filter(
+        year=year,
+        is_car_wash=True
+    ).order_by('name')
+    
+    if not carwash_types.exists():
+        # Empty state - no service types configured yet
+        return render(request, 'payments/carwash_year_detail.html', {
+            'year': year,
+            'compliance': compliance,
+            'carwash_types': None,
+            'members_carwash_data': [],
+            'public_customer_data': [],
+            'service_type_breakdown': []
+        })
+    
+    # Get all members with vehicles
+    members_with_vehicles = Member.objects.filter(
+        vehicles__isnull=False
+    ).distinct().prefetch_related('vehicles')
+    
+    members_carwash_data = []
+    
+    for member in members_with_vehicles:
+        # Get all vehicles for this member
+        vehicles = member.vehicles.all()
+        
+        # Count car wash records per month (aggregated across all vehicles)
+        monthly_counts = []
+        total_count = 0
+        
+        for month_num in range(1, 13):
+            # Count entries for this member in this month (all vehicles combined)
+            count = PaymentEntry.objects.filter(
+                member=member,
+                payment_type__in=carwash_types,
+                month=month_num,
+                is_car_wash_record=True,
+                is_public_customer=False,  # Only member records
+                is_penalty=False
+            ).count()
+            
+            monthly_counts.append(count)
+            total_count += count
+        
+        # Check compliance using global threshold
+        if compliance:
+            # Monthly threshold applies per month
+            monthly_threshold = compliance.monthly_threshold
+            non_compliant_months = sum(1 for count in monthly_counts if count < monthly_threshold)
+            is_compliant = non_compliant_months == 0
+        else:
+            # No compliance settings configured
+            monthly_threshold = 0
+            non_compliant_months = 0
+            is_compliant = True
+        
+        members_carwash_data.append({
+            'member': member,
+            'vehicles': vehicles,
+            'monthly_counts': monthly_counts,
+            'total_count': total_count,
+            'is_compliant': is_compliant,
+            'non_compliant_months': non_compliant_months,
+            'monthly_threshold': monthly_threshold
+        })
+    
+    # Get public customer statistics (monthly breakdown)
+    public_customer_data = []
+    public_total = 0
+    
+    for month_num in range(1, 13):
+        count = PaymentEntry.objects.filter(
+            payment_type__in=carwash_types,
+            month=month_num,
+            is_car_wash_record=True,
+            is_public_customer=True,
+            is_penalty=False
+        ).count()
+        
+        public_customer_data.append(count)
+        public_total += count
+    
+    # Get individual public customer records with names
+    public_customer_records = PaymentEntry.objects.filter(
+        payment_type__in=carwash_types,
+        is_car_wash_record=True,
+        is_public_customer=True,
+        is_penalty=False
+    ).select_related('payment_type').order_by('customer_name', 'month')
+    
+    # Service type breakdown (how many times each service was used)
+    service_type_breakdown = []
+    for service_type in carwash_types:
+        member_count = PaymentEntry.objects.filter(
+            payment_type=service_type,
+            is_car_wash_record=True,
+            is_public_customer=False,
+            is_penalty=False
+        ).count()
+        
+        public_count = PaymentEntry.objects.filter(
+            payment_type=service_type,
+            is_car_wash_record=True,
+            is_public_customer=True,
+            is_penalty=False
+        ).count()
+        
+        service_type_breakdown.append({
+            'name': service_type.name,
+            'member_count': member_count,
+            'public_count': public_count,
+            'total_count': member_count + public_count
+        })
+    
+    context = {
+        'year': year,
+        'compliance': compliance,
+        'carwash_types': carwash_types,
+        'members_carwash_data': members_carwash_data,
+        'public_customer_data': public_customer_data,
+        'public_total': public_total,
+        'public_customer_records': public_customer_records,
+        'service_type_breakdown': service_type_breakdown,
+        'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    }
+    
+    return render(request, 'payments/carwash_year_detail.html', context)
+
+
+@staff_member_required
+def add_carwash_type(request, year_id):
+    """
+    Create a new car wash service type for the year (e.g., Basic, Premium, Deluxe).
+    This is used to track which type of service was provided, not for compliance settings.
+    Compliance settings are managed globally via manage_carwash_compliance view.
+    """
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    
+    if request.method == 'POST':
+        from .forms import CarWashTypeForm
+        form = CarWashTypeForm(request.POST)
+        
+        if form.is_valid():
+            carwash_type = form.save(commit=False)
+            carwash_type.year = year
+            carwash_type.payment_type = 'from_members'
+            # is_car_wash is set to True automatically in the form's save() method
+            carwash_type.save()
+            
+            messages.success(request, f'Car wash service type "{carwash_type.name}" created successfully!')
+            return redirect('carwash_year_detail', year_id=year.id)
+    else:
+        from .forms import CarWashTypeForm
+        form = CarWashTypeForm()
+    
+    return render(request, 'payments/add_carwash_type.html', {
+        'form': form,
+        'year': year
+    })
+
+
+@staff_member_required
+def edit_carwash_type(request, year_id, type_id):
+    """
+    Edit an existing car wash service type (e.g., rename Basic to Standard).
+    Only the name can be edited. Compliance settings are managed globally.
+    """
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    carwash_type = get_object_or_404(PaymentType, pk=type_id, year=year, is_car_wash=True)
+    
+    if request.method == 'POST':
+        from .forms import CarWashTypeForm
+        form = CarWashTypeForm(request.POST, instance=carwash_type)
+        
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Car wash service type "{carwash_type.name}" updated successfully!')
+            return redirect('carwash_year_detail', year_id=year.id)
+    else:
+        from .forms import CarWashTypeForm
+        form = CarWashTypeForm(instance=carwash_type)
+    
+    return render(request, 'payments/edit_carwash_type.html', {
+        'form': form,
+        'year': year,
+        'carwash_type': carwash_type
+    })
+
+
+@staff_member_required
+def add_carwash_record(request, year_id):
+    """
+    Log a car wash record for either a member's vehicle or a public customer.
+    Supports both member and public customer tracking with service type selection.
+    Amount is automatically set from the payment type's car_wash_amount.
+    """
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    
+    # Check if car wash service types exist
+    carwash_types = PaymentType.objects.filter(year=year, is_car_wash=True)
+    if not carwash_types.exists():
+        messages.error(request, 'No car wash service types configured for this year. Please add a service type first.')
+        return redirect('add_carwash_type', year_id=year.id)
+    
+    if request.method == 'POST':
+        from .forms import CarWashRecordForm
+        form = CarWashRecordForm(request.POST, year_id=year_id)
+        
+        if form.is_valid():
+            entry = form.save(commit=False)
+            
+            # Set car wash flags explicitly (cleaned_data values don't auto-transfer to model)
+            customer_type = form.cleaned_data.get('customer_type')
+            entry.is_car_wash_record = True
+            entry.is_public_customer = (customer_type == 'public')
+            
+            # Set amount from payment type (critical: amount_paid is NOT NULL in DB)
+            payment_type = form.cleaned_data.get('payment_type')
+            if payment_type and payment_type.car_wash_amount:
+                entry.amount_paid = payment_type.car_wash_amount
+            else:
+                entry.amount_paid = 0  # Fallback to 0 if no amount set
+            
+            entry.is_penalty = False
+            entry.recorded_by = request.user
+            entry.save()
+            
+            # Success message based on customer type
+            if entry.is_public_customer:
+                messages.success(request, f'Car wash record added for public customer: {entry.customer_name} (₱{entry.amount_paid})')
+            else:
+                messages.success(request, f'Car wash record added for {entry.member.full_name} - {entry.vehicle.plate_number} (₱{entry.amount_paid})')
+            
+            return redirect('carwash_year_detail', year_id=year.id)
+    else:
+        from .forms import CarWashRecordForm
+        form = CarWashRecordForm(year_id=year_id)
+    
+    return render(request, 'payments/add_carwash_record.html', {
+        'form': form,
+        'year': year,
+        'carwash_types': carwash_types
+    })
+

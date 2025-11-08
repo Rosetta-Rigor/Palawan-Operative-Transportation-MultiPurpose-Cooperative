@@ -189,6 +189,13 @@
                         <p>Payments</p>
                     </a>
                 </div>
+
+                <div class="nav-item {% if current == 'renewals_hub' or current == 'renewal_details' %}active{% endif %}">
+                    <a class="nav-link" href="{% url 'renewals_hub' %}">
+                        <i class="la la-calendar-check"></i>
+                        <p>Renewals</p>
+                    </a>
+                </div>
             </nav>
         </div>
         {% endwith %}

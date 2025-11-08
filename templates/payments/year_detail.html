@@ -80,9 +80,26 @@
         </tr>
         {% for data in from_members_data %}
           <tr>
-            <td style="font-weight: 700; color: var(--brand-600);">{{ data.payment_type.name }}</td>
+            <td style="font-weight: 700; color: var(--brand-600);">
+              {{ data.payment_type.name }}
+              {% if data.is_car_wash %}
+                <span class="carwash-info-badge" style="margin-left: 8px;">Counts</span>
+              {% endif %}
+            </td>
             {% for total in data.monthly_totals %}
-              <td class="text-right amount-cell">{{ total|default:"-" }}</td>
+              <td class="text-right amount-cell">
+                {% if data.is_car_wash %}
+                  <!-- Display COUNT for car wash -->
+                  {% if total %}
+                    <span class="count-badge">{{ total }}</span>
+                  {% else %}
+                    -
+                  {% endif %}
+                {% else %}
+                  <!-- Display AMOUNT for regular payments -->
+                  {{ total|default:"-" }}
+                {% endif %}
+              </td>
             {% endfor %}
           </tr>
         {% endfor %}

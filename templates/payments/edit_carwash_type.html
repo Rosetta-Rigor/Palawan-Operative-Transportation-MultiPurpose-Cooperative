@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_payments.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_forms.css' %}">
+{% endblock %}
+
+{% block title %}Edit Car Wash Type{% endblock %}
+
+{% block content %}
+<div class="content admin-dashboard">
+  <div class="payments-container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-md-10">
+        <div class="payment-form-card carwash-card">
+          <div class="payment-form-header" style="position: relative; background: linear-gradient(135deg, #17a2b8, #20c997);">
+            <a href="{% url 'carwash_year_detail' year.id %}" class="member-back-btn" title="Back to Car Wash Records">
+              <i class="las la-arrow-left"></i>
+            </a>
+            <h4 class="payment-form-title" style="color: white;">
+              <i class="las la-edit"></i> Edit Car Wash Service Type
+            </h4>
+            <p class="payment-form-subtitle" style="color: rgba(255,255,255,0.9);">Update service type name for {{ year.year }}</p>
+          </div>
+          
+          <div class="payment-form-content">
+            <div class="alert alert-info">
+              <i class="las la-info-circle"></i>
+              <strong>Service Types:</strong> Edit the name and price of this car wash service type.
+            </div>
+            
+            <form method="post">
+              {% csrf_token %}
+              
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+              {% endif %}
+              
+              <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">Service Type Name <span class="text-danger">*</span></label>
+                {{ form.name|add_class:"form-control" }}
+                {% if form.name.errors %}
+                  <div class="text-danger small mt-2">{{ form.name.errors }}</div>
+                {% endif %}
+                <small class="form-text text-muted">{{ form.name.help_text }}</small>
+              </div>
+
+              <div class="form-group">
+                <label for="{{ form.car_wash_amount.id_for_label }}">Service Price <span class="text-danger">*</span></label>
+                <div class="amount-input-wrapper">
+                  <span class="currency-prefix">₱</span>
+                  {{ form.car_wash_amount|add_class:"form-control" }}
+                </div>
+                {% if form.car_wash_amount.errors %}
+                  <div class="text-danger small mt-2">{{ form.car_wash_amount.errors }}</div>
+                {% endif %}
+                <small class="form-text text-muted">{{ form.car_wash_amount.help_text }}</small>
+              </div>
+              
+              <div class="alert alert-secondary">
+                <i class="las la-info-circle"></i>
+                <strong>Current:</strong> {{ carwash_type.name }} - ₱{{ carwash_type.car_wash_amount|default:"0.00" }}
+              </div>
+              
+              <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(31,62,39,0.1);">
+                <a href="{% url 'carwash_year_detail' year.id %}" class="btn btn-secondary">
+                  <i class="las la-times"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-success">
+                  <i class="las la-check"></i> Update Service Type
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

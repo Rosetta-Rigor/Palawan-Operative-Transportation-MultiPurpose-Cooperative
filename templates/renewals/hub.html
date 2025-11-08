@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/renewal_detail.css' %}">
+{% endblock %}
+
+{% block title %}Renewals Management - POTMPC Admin{% endblock %}
+
+{% block content %}
+<div class="renewal-details-container">
+    <!-- Page Header Card -->
+    <div class="page-header-card">
+        <div class="form-header-gradient">
+            <h1 class="form-header-title">
+                <i class="la la-calendar-check"></i>
+                Renewals Management
+            </h1>
+            <p class="form-header-sub">Track and manage all document renewals</p>
+            
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stat-box" onclick="location.href='?filter=urgent'" style="cursor: pointer;">
+                    <div class="label">🔴 Urgent (0-29 days)</div>
+                    <div class="value">{{ urgent_count }}</div>
+                </div>
+                <div class="stat-box" onclick="location.href='?filter=upcoming'" style="cursor: pointer;">
+                    <div class="label">🟡 Upcoming (30-60 days)</div>
+                    <div class="value">{{ upcoming_count }}</div>
+                </div>
+                <div class="stat-box" onclick="location.href='?filter=this_month'" style="cursor: pointer;">
+                    <div class="label">📅 This Month</div>
+                    <div class="value">{{ this_month_count }}</div>
+                </div>
+                <div class="stat-box" onclick="location.href='?filter=overdue'" style="cursor: pointer;">
+                    <div class="label">⚫ Overdue</div>
+                    <div class="value">{{ overdue_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Filters -->
+    <div class="renewal-hub-quick-filters">
+        <button class="filter-btn {% if filter_type == 'today' %}active{% endif %}" 
+                onclick="location.href='?filter=today'">
+            Today
+        </button>
+        <button class="filter-btn {% if filter_type == 'this_week' %}active{% endif %}" 
+                onclick="location.href='?filter=this_week'">
+            This Week
+        </button>
+        <button class="filter-btn {% if filter_type == 'this_month' %}active{% endif %}" 
+                onclick="location.href='?filter=this_month'">
+            This Month
+        </button>
+        <button class="filter-btn {% if filter_type == 'next_60' %}active{% endif %}" 
+                onclick="location.href='?filter=next_60'">
+            Next 60 Days
+        </button>
+        <button class="filter-btn {% if filter_type == 'all' %}active{% endif %}" 
+                onclick="location.href='{% url 'renewals_hub' %}'">
+            All
+        </button>
+    </div>
+
+    <!-- Search & Advanced Filters -->
+    <div class="renewal-hub-search-section">
+        <form method="get" class="search-form">
+            <input type="text" 
+                   name="q" 
+                   placeholder="Search by member, plate, or TIN" 
+                   value="{{ request.GET.q }}" 
+                   class="search-input">
+            
+            <select name="batch" class="filter-select">
+                <option value="">All Batches</option>
+                {% for batch in batches %}
+                    <option value="{{ batch.id }}" 
+                            {% if request.GET.batch == batch.id|stringformat:"s" %}selected{% endif %}>
+                        Batch {{ batch.number }}
+                    </option>
+                {% endfor %}
+            </select>
+            
+            <select name="status" class="filter-select">
+                <option value="">All Statuses</option>
+                <option value="urgent" {% if request.GET.status == 'urgent' %}selected{% endif %}>Urgent</option>
+                <option value="upcoming" {% if request.GET.status == 'upcoming' %}selected{% endif %}>Upcoming</option>
+                <option value="normal" {% if request.GET.status == 'normal' %}selected{% endif %}>Normal</option>
+                <option value="overdue" {% if request.GET.status == 'overdue' %}selected{% endif %}>Overdue</option>
+            </select>
+            
+            <button type="submit" class="btn-action btn-send-reminder">
+                <i class="la la-search"></i> Search
+            </button>
+            
+            {% if request.GET.q or request.GET.batch or request.GET.status %}
+                <a href="{% url 'renewals_hub' %}" class="btn-action btn-view-member">
+                    <i class="la la-times"></i> Clear
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="section-header">
+        <h2>
+            <i class="la la-list"></i>
+            {% if filter_type == 'today' %}
+                Renewals Today
+            {% elif filter_type == 'this_week' %}
+                Renewals This Week
+            {% elif filter_type == 'this_month' %}
+                Renewals This Month
+            {% elif filter_type == 'next_60' %}
+                Renewals in Next 60 Days
+            {% elif filter_type == 'urgent' %}
+                Urgent Renewals
+            {% elif filter_type == 'upcoming' %}
+                Upcoming Renewals
+            {% elif filter_type == 'overdue' %}
+                Overdue Renewals
+            {% else %}
+                All Renewals
+            {% endif %}
+        </h2>
+        <span class="badge badge-lg badge-secondary">{{ renewals|length }} Results</span>
+    </div>
+
+    <!-- Renewals Table -->
+    <div class="renewal-hub-table-wrapper">
+        {% if renewals %}
+            <table class="renewal-hub-table">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Member</th>
+                        <th>Batch</th>
+                        <th>Plate Number</th>
+                        <th>TIN</th>
+                        <th>Expiry Date</th>
+                        <th>Days Left</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for renewal in renewals %}
+                    <tr>
+                        <td style="text-align: left;">
+                            <a href="{% url 'member_view' renewal.member.id %}" 
+                               style="color: var(--brand-600); font-weight: 700; text-decoration: none;">
+                                {{ renewal.member.full_name }}
+                            </a>
+                        </td>
+                        <td>{{ renewal.member.batch.number|default:"N/A" }}</td>
+                        <td>
+                            <strong>{{ renewal.plate }}</strong>
+                        </td>
+                        <td>{{ renewal.tin|default:"N/A" }}</td>
+                        <td>{{ renewal.expiry_date|date:"M d, Y" }}</td>
+                        <td>
+                            {% if renewal.days_left < 0 %}
+                                <span style="color: var(--danger); font-weight: 700;">
+                                    {{ renewal.days_until_overdue }} days overdue
+                                </span>
+                            {% else %}
+                                <span style="color: var(--brand-600); font-weight: 600;">
+                                    {{ renewal.days_left }} days
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ renewal.status_class }}">
+                                {{ renewal.status|upper }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons" style="gap: 8px; padding: 0; border: none;">
+                                <form method="post" 
+                                      action="{% url 'send_renewal_reminder' renewal.member.id renewal.vehicle.id %}" 
+                                      style="display: inline-block;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="from_hub" value="1">
+                                    <button type="submit" 
+                                            class="btn-action btn-send-reminder" 
+                                            style="padding: 8px 16px; font-size: 0.85rem;"
+                                            title="Send Reminder">
+                                        <i class="la la-bell"></i>
+                                    </button>
+                                </form>
+                                <a href="{% url 'member_view' renewal.member.id %}" 
+                                   class="btn-action btn-view-member" 
+                                   style="padding: 8px 16px; font-size: 0.85rem;"
+                                   title="View Member">
+                                    <i class="la la-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <i class="la la-info-circle"></i>
+                <h3>No Renewals Found</h3>
+                <p>No renewals match your current filters.</p>
+                {% if request.GET.q or request.GET.batch or request.GET.status or filter_type != 'all' %}
+                    <a href="{% url 'renewals_hub' %}" class="btn-action btn-send-reminder" style="margin-top: 16px;">
+                        <i class="la la-refresh"></i> View All Renewals
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-dismiss messages after 5 seconds
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        var alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            var bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        });
+    }, 5000);
+});
+</script>
+{% endblock %}

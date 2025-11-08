@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import User, Member, Vehicle, Batch, Document, DocumentEntry, Announcement, PaymentType, PaymentEntry, PaymentYear
+from .models import User, Member, Vehicle, Batch, Document, DocumentEntry, Announcement, PaymentType, PaymentEntry, PaymentYear, CarWashCompliance
 
 User = get_user_model()
 
@@ -263,5 +263,256 @@ class PasswordResetConfirmForm(forms.Form):
         if new_password and confirm_password:
             if new_password != confirm_password:
                 raise forms.ValidationError("Passwords do not match.")
+        
+        return cleaned_data
+
+
+# Car Wash Forms
+class CarWashComplianceForm(forms.ModelForm):
+    """Form for configuring global car wash compliance threshold"""
+    class Meta:
+        model = CarWashCompliance
+        fields = ['monthly_threshold', 'penalty_amount']
+        widgets = {
+            'monthly_threshold': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '4',
+                'min': '1',
+                'max': '31'
+            }),
+            'penalty_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.01',
+                'min': '0'
+            })
+        }
+        labels = {
+            'monthly_threshold': 'Monthly Threshold (washes per vehicle)',
+            'penalty_amount': 'Penalty Amount (optional)'
+        }
+        help_texts = {
+            'monthly_threshold': 'Required car washes per vehicle per month (applies to all members)',
+            'penalty_amount': 'Penalty for non-compliance (leave as 0 if no penalty)'
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # All fields required
+        self.fields['monthly_threshold'].required = True
+        self.fields['penalty_amount'].required = False
+
+
+class CarWashTypeForm(forms.ModelForm):
+    """Form for creating car wash payment types (Basic, Premium, etc.)"""
+    class Meta:
+        model = PaymentType
+        fields = ['name', 'car_wash_amount']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Basic Wash, Premium Wash, Full Detail',
+                'maxlength': '100'
+            }),
+            'car_wash_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.01',
+                'min': '0'
+            })
+        }
+        labels = {
+            'name': 'Car Wash Service Name',
+            'car_wash_amount': 'Service Price'
+        }
+        help_texts = {
+            'name': 'Name of the car wash service (e.g., Basic, Premium, Deluxe)',
+            'car_wash_amount': 'Price for this service (members and public customers will pay this amount)'
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['name'].required = True
+        self.fields['car_wash_amount'].required = True
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.is_car_wash = True  # Automatically mark as car wash type
+        if commit:
+            instance.save()
+        return instance
+
+
+class CarWashRecordForm(forms.ModelForm):
+    """Form for logging car wash records (member or public)"""
+    
+    # NEW FIELD: Customer Type Selection
+    customer_type = forms.ChoiceField(
+        choices=[
+            ('member', 'Cooperative Member'),
+            ('public', 'Public Customer')
+        ],
+        initial='member',
+        widget=forms.RadioSelect(attrs={'class': 'customer-type-radio'}),
+        label='Customer Type'
+    )
+    
+    # NEW FIELD: Existing public customer selector (populated dynamically)
+    existing_customer = forms.ChoiceField(
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'id': 'id_existing_customer'
+        }),
+        label='Select Existing Customer',
+        help_text='Choose from previously registered public customers or enter a new name below'
+    )
+    
+    class Meta:
+        model = PaymentEntry
+        fields = [
+            'payment_type',     # Multiple car wash types available (Basic, Premium, etc.)
+            'member',           # Required for members, hidden for public
+            'vehicle',          # Required for members, optional for public
+            'customer_name',    # Hidden for members, required for public
+            'month'
+        ]
+        widgets = {
+            'payment_type': forms.Select(attrs={
+                'class': 'form-control',
+                'required': True
+            }),
+            'member': forms.Select(attrs={'class': 'form-control select2'}),
+            'vehicle': forms.Select(attrs={'class': 'form-control'}),
+            'customer_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Or enter a new customer name',
+                'id': 'id_customer_name_input'
+            }),
+            'month': forms.Select(attrs={'class': 'form-control'})
+        }
+        labels = {
+            'payment_type': 'Car Wash Service Type',
+            'member': 'Member',
+            'vehicle': 'Vehicle',
+            'customer_name': 'New Customer Name',
+            'customer_name': 'Customer Name',
+            'month': 'Month'
+        }
+        help_texts = {
+            'payment_type': 'Select the type of car wash service provided',
+            'member': 'Select member (only members with vehicles shown)',
+            'vehicle': 'Select the specific vehicle that was washed',
+            'customer_name': 'Enter the name of the public customer',
+            'month': 'Select the month for this record'
+        }
+    
+    def __init__(self, *args, **kwargs):
+        year_id = kwargs.pop('year_id', None)
+        super().__init__(*args, **kwargs)
+        
+        # Filter payment types to only car wash types
+        if year_id:
+            self.fields['payment_type'].queryset = PaymentType.objects.filter(
+                year_id=year_id,
+                is_car_wash=True
+            ).order_by('name')
+        else:
+            self.fields['payment_type'].queryset = PaymentType.objects.filter(
+                is_car_wash=True
+            ).order_by('name')
+        
+        # Populate existing public customers (distinct names from previous records)
+        existing_customers = PaymentEntry.objects.filter(
+            is_public_customer=True,
+            customer_name__isnull=False
+        ).exclude(
+            customer_name=''
+        ).values_list('customer_name', flat=True).distinct().order_by('customer_name')
+        
+        customer_choices = [('', '-- Select existing customer or enter new below --')]
+        customer_choices.extend([(name, name) for name in existing_customers])
+        self.fields['existing_customer'].choices = customer_choices
+        
+        # Filter members to only those with vehicles
+        from .models import Member
+        self.fields['member'].queryset = Member.objects.filter(
+            vehicles__isnull=False
+        ).distinct().order_by('full_name')
+        
+        # Make member and vehicle not required by default (conditional validation in clean())
+        self.fields['member'].required = False
+        self.fields['vehicle'].required = False
+        self.fields['customer_name'].required = False
+        
+        # Initial vehicle queryset (will be updated via AJAX based on member selection)
+        from .models import Vehicle
+        self.fields['vehicle'].queryset = Vehicle.objects.none()
+        
+        if 'member' in self.data:
+            try:
+                member_id = int(self.data.get('member'))
+                self.fields['vehicle'].queryset = Vehicle.objects.filter(
+                    member_id=member_id
+                ).order_by('plate_number')
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk and self.instance.member:
+            self.fields['vehicle'].queryset = self.instance.member.vehicles.order_by('plate_number')
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        customer_type = cleaned_data.get('customer_type')
+        member = cleaned_data.get('member')
+        vehicle = cleaned_data.get('vehicle')
+        customer_name = cleaned_data.get('customer_name')
+        existing_customer = cleaned_data.get('existing_customer')
+        payment_type = cleaned_data.get('payment_type')
+        
+        # Validate based on customer type
+        if customer_type == 'member':
+            # For members: require member and vehicle
+            if not member:
+                self.add_error('member', 'Member is required for member transactions.')
+            if not vehicle:
+                self.add_error('vehicle', 'Vehicle is required for member transactions.')
+            # Set flags
+            cleaned_data['is_public_customer'] = False
+            cleaned_data['customer_name'] = None  # Clear any public customer name
+            
+        elif customer_type == 'public':
+            # For public customers: use existing customer name or require new one
+            final_customer_name = None
+            
+            if existing_customer:
+                # User selected an existing customer
+                final_customer_name = existing_customer
+            elif customer_name and customer_name.strip():
+                # User entered a new customer name
+                final_customer_name = customer_name.strip()
+            else:
+                # Neither selected nor entered
+                self.add_error('customer_name', 'Please select an existing customer or enter a new name.')
+                self.add_error('existing_customer', 'Please select an existing customer or enter a new name.')
+            
+            cleaned_data['customer_name'] = final_customer_name
+            
+            # Set flags
+            cleaned_data['is_public_customer'] = True
+            cleaned_data['member'] = None  # Clear member
+            cleaned_data['vehicle'] = None  # Clear vehicle
+            
+        else:
+            raise forms.ValidationError('Invalid customer type selected.')
+        
+        # Set car wash specific flags and amount from payment type
+        cleaned_data['is_car_wash_record'] = True
+        
+        # Set amount from payment type (for both members and public customers)
+        if payment_type and payment_type.car_wash_amount:
+            cleaned_data['amount_paid'] = payment_type.car_wash_amount
+        else:
+            # Fallback to 0 if no amount is set
+            cleaned_data['amount_paid'] = 0
         
         return cleaned_data

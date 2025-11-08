@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_payments.css' %}">
+{% endblock %}
+
+{% block title %}Car Wash Records - {{ year.year }}{% endblock %}
+
+{% block content %}
+<div class="content admin-dashboard">
+  <div class="payments-container">
+    
+    <!-- Page Header -->
+    <div class="carwash-year-card">
+      <div class="carwash-year-header">
+        <div>
+          <h2 class="carwash-year-title">
+            <i class="las la-car-wash"></i>
+            Car Wash Records - {{ year.year }}
+          </h2>
+          <p style="color: var(--text-muted); margin: 0;">Track car wash compliance for all members with vehicles</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <a href="{% url 'manage_carwash_compliance' year.id %}" class="payment-action-btn" style="background: linear-gradient(135deg, #17a2b8, #20c997); color: white; padding: 10px 20px;">
+            <i class="las la-cog"></i> Settings
+          </a>
+          <a href="{% url 'add_carwash_type' year.id %}" class="payment-action-btn primary" style="padding: 10px 20px;">
+            <i class="las la-plus"></i> Add Service
+          </a>
+          <a href="{% url 'payment_year_list' %}" class="payment-action-btn secondary" style="padding: 10px 20px;">
+            <i class="las la-arrow-left"></i> Back
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {% if not carwash_types %}
+      <!-- Empty State: No Car Wash Service Types Configured -->
+      <div class="carwash-empty-state">
+        <i class="las la-car-wash"></i>
+        <h3>No Car Wash Service Types Configured</h3>
+        <p>You need to create car wash service types (e.g., Basic, Premium, Deluxe) before you can track records.</p>
+        <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px;">
+          <a href="{% url 'manage_carwash_compliance' year.id %}" class="carwash-action-btn secondary">
+            <i class="las la-cog"></i> Configure Compliance Settings
+          </a>
+          <a href="{% url 'add_carwash_type' year.id %}" class="carwash-action-btn">
+            <i class="las la-plus"></i> Add Service Type
+          </a>
+        </div>
+      </div>
+    {% else %}
+      <!-- Quick Info Card and Action Buttons Row -->
+      <div style="display: flex; gap: 20px; margin-bottom: 30px; align-items: stretch; flex-wrap: wrap;">
+        
+        <!-- Quick Info Card -->
+        <div class="carwash-card" style="flex: 1; min-width: 300px;">
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div>
+              <strong style="color: var(--text-muted); font-size: 0.9rem; display: block; margin-bottom: 6px;">
+                <i class="las la-check-circle"></i> Compliance Settings:
+              </strong>
+              <span style="color: #17a2b8; font-weight: 700; font-size: 1.1rem;">
+                {% if compliance %}
+                  {{ compliance.monthly_threshold }} washes/month (Penalty: ₱{{ compliance.penalty_amount }})
+                {% else %}
+                  Not configured
+                {% endif %}
+              </span>
+            </div>
+            <div>
+              <strong style="color: var(--text-muted); font-size: 0.9rem; display: block; margin-bottom: 8px;">
+                <i class="las la-spray-can"></i> Available Service Types:
+              </strong>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                {% for carwash_type in carwash_types %}
+                  <span class="carwash-info-badge" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; position: relative; padding-right: 32px;">
+                    {{ carwash_type.name }} (₱{{ carwash_type.car_wash_amount|default:"0.00" }})
+                    <a href="{% url 'edit_carwash_type' year.id carwash_type.id %}" 
+                       class="badge-edit-btn" 
+                       title="Edit {{ carwash_type.name }}"
+                       style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); color: #fff; opacity: 0.8; transition: opacity 0.2s;">
+                      <i class="las la-edit" style="font-size: 0.9rem;"></i>
+                    </a>
+                  </span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; flex-direction: column; gap: 12px; justify-content: center;">
+          <a href="{% url 'add_carwash_record' year.id %}" class="carwash-action-btn" style="white-space: nowrap;">
+            <i class="las la-plus"></i> Log Car Wash
+          </a>
+        </div>
+      </div>
+
+      {% if members_carwash_data %}
+        <!-- Member Car Wash Records Table -->
+        <div class="payment-table-container">
+          <div class="payment-table-header">
+            <h4 class="payment-table-title">
+              <i class="las la-users"></i> Member Car Wash Records
+            </h4>
+            <small style="color: rgba(255,255,255,0.9);">
+              <i class="las la-info-circle"></i> 
+              {% if compliance %}
+                Members must wash {{ compliance.monthly_threshold }} times each month to remain compliant
+              {% else %}
+                No compliance threshold configured
+              {% endif %}
+            </small>
+          </div>
+          
+          <div class="table-responsive">
+            <table class="payment-table">
+              <thead>
+                <tr>
+                  <th style="min-width: 200px;">Member</th>
+                  <th style="min-width: 150px;">Vehicles</th>
+                  {% for month in months %}
+                  <th style="text-align: center;">{{ month }}</th>
+                  {% endfor %}
+                  <th style="text-align: center;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for data in members_carwash_data %}
+                <tr class="carwash-member-row">
+                  <td class="carwash-member-name">{{ data.member.full_name }}</td>
+                  <td>
+                    {% for vehicle in data.vehicles %}
+                      <span class="vehicle-badge">
+                        <i class="las la-car"></i> {{ vehicle.plate_number }}
+                      </span>
+                    {% endfor %}
+                  </td>
+                  {% for count in data.monthly_counts %}
+                  <td class="carwash-count-cell {% if compliance and count < compliance.monthly_threshold %}non-compliant-month{% endif %}">
+                    {% if count > 0 %}
+                      <span class="count-badge">{{ count }}</span>
+                    {% else %}
+                      <span class="count-zero">-</span>
+                    {% endif %}
+                  </td>
+                  {% endfor %}
+                  <td class="carwash-count-cell">
+                    <strong style="color: #17a2b8; font-size: 1.1rem;">{{ data.total_count }}</strong>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Public Customer Car Wash Records -->
+        {% if public_customer_records %}
+        <div class="payment-table-container" style="margin-top: 30px;">
+          <div class="payment-table-header" style="background: linear-gradient(135deg, #20c997, #17a2b8);">
+            <h4 class="payment-table-title">
+              <i class="las la-user-friends"></i> Public Customer Car Wash Records
+            </h4>
+            <small style="color: rgba(255,255,255,0.9);">
+              <i class="las la-info-circle"></i> 
+              Individual records for public customers ({{ public_customer_records.count }} total)
+            </small>
+          </div>
+          
+          <div class="table-responsive">
+            <table class="payment-table">
+              <thead>
+                <tr>
+                  <th style="min-width: 200px;">Customer Name</th>
+                  <th style="min-width: 150px;">Service Type</th>
+                  <th style="text-align: center;">Month</th>
+                  <th style="text-align: center;">Amount Paid</th>
+                  <th style="min-width: 150px;">Date Recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for record in public_customer_records %}
+                <tr>
+                  <td>
+                    <strong style="color: #20c997;">
+                      <i class="las la-user"></i> {{ record.customer_name }}
+                    </strong>
+                  </td>
+                  <td>
+                    <span class="carwash-info-badge" style="display: inline-flex; font-size: 0.85rem;">
+                      {{ record.payment_type.name }}
+                    </span>
+                  </td>
+                  <td style="text-align: center;">
+                    <strong>
+                      {% if record.month == 1 %}Jan{% elif record.month == 2 %}Feb{% elif record.month == 3 %}Mar{% elif record.month == 4 %}Apr{% elif record.month == 5 %}May{% elif record.month == 6 %}Jun{% elif record.month == 7 %}Jul{% elif record.month == 8 %}Aug{% elif record.month == 9 %}Sep{% elif record.month == 10 %}Oct{% elif record.month == 11 %}Nov{% elif record.month == 12 %}Dec{% endif %}
+                    </strong>
+                  </td>
+                  <td style="text-align: center;">
+                    <span style="font-family: 'Courier New', monospace; font-weight: 700; color: #20c997; font-size: 1.05rem;">
+                      ₱{{ record.amount_paid }}
+                    </span>
+                  </td>
+                  <td style="color: var(--text-muted); font-size: 0.9rem;">
+                    <i class="las la-calendar"></i> {{ record.entry_date|date:"M d, Y" }}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Service Type Breakdown -->
+        {% if service_type_breakdown %}
+        <div class="carwash-card" style="margin-top: 30px;">
+          <h4 style="margin: 0 0 15px 0; color: #17a2b8;">
+            <i class="las la-chart-bar"></i> Service Type Breakdown
+          </h4>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Service Type</th>
+                  <th style="text-align: center;">Member Count</th>
+                  <th style="text-align: center;">Public Count</th>
+                  <th style="text-align: center;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for service in service_type_breakdown %}
+                <tr>
+                  <td><strong>{{ service.name }}</strong></td>
+                  <td style="text-align: center;">{{ service.member_count }}</td>
+                  <td style="text-align: center;">{{ service.public_count }}</td>
+                  <td style="text-align: center;"><strong>{{ service.total_count }}</strong></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+
+      {% else %}
+        <!-- Empty State: No Members with Vehicles -->
+        <div class="payment-empty-state">
+          <i class="las la-users-slash"></i>
+          <h3>No Members with Vehicles</h3>
+          <p>There are no members with registered vehicles to track car wash records.</p>
+          <p style="margin-top: 10px; color: var(--text-muted);">
+            <i class="las la-info-circle"></i> You can still log public customer records.
+          </p>
+        </div>
+      {% endif %}
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

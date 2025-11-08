@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_payments.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin_forms.css' %}">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block title %}Log Car Wash Record{% endblock %}
+
+{% block content %}
+<div class="content admin-dashboard">
+  <div class="payments-container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-md-10">
+        <div class="payment-form-card carwash-card">
+          <div class="payment-form-header" style="position: relative; background: linear-gradient(135deg, #17a2b8, #20c997);">
+            <a href="{% url 'carwash_year_detail' year.id %}" class="member-back-btn" title="Back to Car Wash Records">
+              <i class="las la-arrow-left"></i>
+            </a>
+            <h4 class="payment-form-title" style="color: white;">
+              <i class="las la-spray-can"></i> Log Car Wash Record
+            </h4>
+            <p class="payment-form-subtitle" style="color: rgba(255,255,255,0.9);">Record a car wash service for {{ year.year }}</p>
+          </div>
+          
+          <div class="payment-form-content">   
+            <form method="post" id="carwashRecordForm">
+              {% csrf_token %}
+              
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+              {% endif %}
+              
+              <div class="form-group">
+                <label for="{{ form.payment_type.id_for_label }}">Car Wash Service Type <span class="text-danger">*</span></label>
+                {{ form.payment_type|add_class:"form-control" }}
+                {% if form.payment_type.errors %}
+                  <div class="text-danger small mt-2">{{ form.payment_type.errors }}</div>
+                {% endif %}
+                <small class="form-text text-muted">{{ form.payment_type.help_text }}</small>
+              </div>
+
+              <div class="form-group">
+                <label>Customer Type <span class="text-danger">*</span></label>
+                <div class="customer-type-selector">
+                  {{ form.customer_type }}
+                </div>
+                {% if form.customer_type.errors %}
+                  <div class="text-danger small mt-2">{{ form.customer_type.errors }}</div>
+                {% endif %}
+                <small class="form-text text-muted">{{ form.customer_type.help_text }}</small>
+              </div>
+              
+              <div id="memberFields">
+                <div class="form-group">
+                  <label for="{{ form.member.id_for_label }}">Member <span class="text-danger member-required">*</span></label>
+                  {{ form.member|add_class:"form-control select2" }}
+                  {% if form.member.errors %}
+                    <div class="text-danger small mt-2">{{ form.member.errors }}</div>
+                  {% endif %}
+                  <small class="form-text text-muted">{{ form.member.help_text }}</small>
+                </div>
+                
+                <div class="form-group">
+                  <label for="{{ form.vehicle.id_for_label }}">Vehicle <span class="text-danger vehicle-required">*</span></label>
+                  {{ form.vehicle|add_class:"form-control" }}
+                  {% if form.vehicle.errors %}
+                    <div class="text-danger small mt-2">{{ form.vehicle.errors }}</div>
+                  {% endif %}
+                  <small class="form-text text-muted">{{ form.vehicle.help_text }}</small>
+                </div>
+              </div>
+
+              <div id="publicFields" style="display: none;">
+                <div class="form-group">
+                  <label for="{{ form.existing_customer.id_for_label }}">{{ form.existing_customer.label }}</label>
+                  {{ form.existing_customer|add_class:"form-control" }}
+                  {% if form.existing_customer.errors %}
+                    <div class="text-danger small mt-2">{{ form.existing_customer.errors }}</div>
+                  {% endif %}
+                  <small class="form-text text-muted">{{ form.existing_customer.help_text }}</small>
+                </div>
+                
+                <div class="form-group">
+                  <label for="{{ form.customer_name.id_for_label }}">{{ form.customer_name.label }}</label>
+                  {{ form.customer_name|add_class:"form-control" }}
+                  {% if form.customer_name.errors %}
+                    <div class="text-danger small mt-2">{{ form.customer_name.errors }}</div>
+                  {% endif %}
+                  <small class="form-text text-muted">{{ form.customer_name.help_text }}</small>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="{{ form.month.id_for_label }}">Month <span class="text-danger">*</span></label>
+                {{ form.month|add_class:"form-control" }}
+                {% if form.month.errors %}
+                  <div class="text-danger small mt-2">{{ form.month.errors }}</div>
+                {% endif %}
+                <small class="form-text text-muted">{{ form.month.help_text }}</small>
+              </div>
+              
+              <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(31,62,39,0.1);">
+                <a href="{% url 'carwash_year_detail' year.id %}" class="btn btn-secondary">
+                  <i class="las la-times"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-success">
+                  <i class="las la-check"></i> Log Car Wash
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Initialize Select2 for member dropdown
+    $('.select2').select2({
+        placeholder: 'Select a member',
+        allowClear: true
+    });
+    
+    // Handle customer type selection
+    $('input[name="customer_type"]').on('change', function() {
+        var customerType = $(this).val();
+        
+        if (customerType === 'member') {
+            $('#memberFields').show();
+            $('#publicFields').hide();
+            $('#id_customer_name_input').val('');  // Clear public customer name
+            $('#id_existing_customer').val('');  // Clear existing customer selection
+        } else if (customerType === 'public') {
+            $('#memberFields').hide();
+            $('#publicFields').show();
+            $('#id_member').val(null).trigger('change');  // Clear member selection
+            $('#id_vehicle').empty().append('<option value="">---------</option>');  // Clear vehicle
+        }
+    });
+    
+    // Handle existing customer selection - auto-fill name field
+    $('#id_existing_customer').on('change', function() {
+        var selectedName = $(this).val();
+        if (selectedName) {
+            $('#id_customer_name_input').val(selectedName);
+            $('#id_customer_name_input').attr('readonly', true);
+            $('#id_customer_name_input').css('background-color', '#f0f0f0');
+        } else {
+            $('#id_customer_name_input').val('');
+            $('#id_customer_name_input').attr('readonly', false);
+            $('#id_customer_name_input').css('background-color', '');
+        }
+    });
+    
+    // Initialize visibility based on initial selection
+    var initialCustomerType = $('input[name="customer_type"]:checked').val();
+    if (initialCustomerType === 'public') {
+        $('#memberFields').hide();
+        $('#publicFields').show();
+    }
+    
+    // Load vehicles when member is selected
+    $('#id_member').on('change', function() {
+        var memberId = $(this).val();
+        var $vehicleSelect = $('#id_vehicle');
+        
+        if (memberId) {
+            $.ajax({
+                url: '{% url "get_vehicle_data" %}',
+                data: {
+                    'member_id': memberId
+                },
+                success: function(data) {
+                    $vehicleSelect.empty();
+                    $vehicleSelect.append('<option value="">---------</option>');
+                    
+                    if (data.vehicles && data.vehicles.length > 0) {
+                        $.each(data.vehicles, function(index, vehicle) {
+                            $vehicleSelect.append(
+                                $('<option></option>')
+                                    .attr('value', vehicle.id)
+                                    .text(vehicle.plate_number)
+                            );
+                        });
+                    } else {
+                        $vehicleSelect.append('<option value="">No vehicles found</option>');
+                    }
+                }
+            });
+        } else {
+            $vehicleSelect.empty();
+            $vehicleSelect.append('<option value="">Select a member first</option>');
+        }
+    });
+});
+</script>
+{% endblock %}
