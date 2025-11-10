@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notification Center - POTMPC{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/notifications.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-panel">
+    <div class="content admin-dashboard">
+        <div class="notifications-page-wrapper">
+            <!-- Professional Page Header -->
+            <div class="notifications-page-header">
+                <div class="page-header-left">
+                    <div class="page-icon-wrapper">
+                        <i class="las la-bell"></i>
+                    </div>
+                    <div class="page-title-section">
+                        <h1 class="page-main-title">Notification Center</h1>
+                        <p class="page-subtitle">Manage all your notifications and alerts</p>
+                    </div>
+                </div>
+                <div class="page-header-actions">
+                    <a href="{% url 'admin_profile_edit' %}#settings-section" class="btn-settings" title="Notification Preferences">
+                        <i class="las la-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                    <form method="post" action="{% url 'notifications_mark_all_read' %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-action btn-mark-read" title="Mark All as Read">
+                            <i class="las la-check-double"></i>
+                            <span>Mark All Read</span>
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'notifications_delete_read' %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete all read notifications? This action cannot be undone.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-action btn-delete" title="Delete Read Notifications">
+                            <i class="las la-trash"></i>
+                            <span>Delete Read</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Professional Filters -->
+            <div class="notifications-filter-bar">
+                <div class="filter-tabs">
+                    <a href="?filter=all" class="filter-tab {% if filter == 'all' %}active{% endif %}">
+                        <i class="las la-inbox"></i>
+                        <span>All Notifications</span>
+                    </a>
+                    <a href="?filter=unread" class="filter-tab {% if filter == 'unread' %}active{% endif %}">
+                        <i class="las la-envelope"></i>
+                        <span>Unread</span>
+                        {% if unread_count > 0 %}
+                        <span class="filter-badge">{{ unread_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="?filter=urgent" class="filter-tab {% if filter == 'urgent' %}active{% endif %}">
+                        <i class="las la-exclamation-circle"></i>
+                        <span>Urgent</span>
+                    </a>
+                    <a href="?filter=high" class="filter-tab {% if filter == 'high' %}active{% endif %}">
+                        <i class="las la-exclamation-triangle"></i>
+                        <span>High Priority</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Professional Notifications List -->
+            <div class="notifications-container">
+                {% for notification in notifications %}
+                <div class="notification-card-modern {% if not notification.is_read %}unread{% endif %} priority-{{ notification.priority }}">
+                    <!-- Unread Indicator -->
+                    {% if not notification.is_read %}
+                    <div class="unread-indicator"></div>
+                    {% endif %}
+                    
+                    <!-- Priority Icon -->
+                    <div class="notification-icon-wrapper priority-{{ notification.priority }}">
+                        {% if notification.priority == 'urgent' %}
+                            <i class="las la-exclamation-circle"></i>
+                        {% elif notification.priority == 'high' %}
+                            <i class="las la-exclamation-triangle"></i>
+                        {% else %}
+                            <i class="las la-info-circle"></i>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Notification Content -->
+                    <div class="notification-content-wrapper">
+                        <div class="notification-header-row">
+                            <h3 class="notification-title">{{ notification.title }}</h3>
+                            <div class="notification-meta-row">
+                                <span class="priority-badge priority-{{ notification.priority }}">
+                                    {{ notification.get_priority_display }}
+                                </span>
+                                <span class="notification-timestamp">
+                                    <i class="las la-clock"></i>
+                                    {{ notification.created_at|timesince }} ago
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <p class="notification-message-text">{{ notification.message }}</p>
+                        
+                        <!-- Action Buttons -->
+                        {% if notification.action_url or not notification.is_read %}
+                        <div class="notification-actions-row">
+                            {% if notification.action_url %}
+                            <a href="{{ notification.action_url }}" class="btn-notification-action btn-primary-action">
+                                <i class="las la-external-link-alt"></i>
+                                {{ notification.action_text|default:"View Details" }}
+                            </a>
+                            {% endif %}
+                            
+                            {% if not notification.is_read %}
+                            <form method="post" action="{% url 'notification_mark_read' notification.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-notification-action btn-secondary-action">
+                                    <i class="las la-check"></i>
+                                    Mark as Read
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state-modern">
+                    <div class="empty-state-icon">
+                        <i class="las la-bell-slash"></i>
+                    </div>
+                    <h3 class="empty-state-title">
+                        {% if filter == 'unread' %}
+                            All Caught Up! 🎉
+                        {% elif filter == 'urgent' %}
+                            No Urgent Notifications
+                        {% elif filter == 'high' %}
+                            No High Priority Notifications
+                        {% else %}
+                            No Notifications Yet
+                        {% endif %}
+                    </h3>
+                    <p class="empty-state-description">
+                        {% if filter == 'unread' %}
+                            You've read all your notifications. Great job staying on top of things!
+                        {% elif filter == 'urgent' %}
+                            No urgent items require your attention at this time.
+                        {% elif filter == 'high' %}
+                            No high priority notifications to display.
+                        {% else %}
+                            When you receive notifications, they'll appear here.
+                        {% endif %}
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Professional Pagination -->
+            {% if is_paginated %}
+            <div class="pagination-modern">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&filter={{ filter }}" class="pagination-btn pagination-prev">
+                    <i class="las la-angle-left"></i>
+                    <span>Previous</span>
+                </a>
+                {% endif %}
+                
+                <span class="pagination-info">
+                    Page <strong>{{ page_obj.number }}</strong> of <strong>{{ page_obj.paginator.num_pages }}</strong>
+                </span>
+                
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&filter={{ filter }}" class="pagination-btn pagination-next">
+                    <span>Next</span>
+                    <i class="las la-angle-right"></i>
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

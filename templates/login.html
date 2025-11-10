@@ -30,7 +30,7 @@
         {% if messages %}
             <div class="mt-2">
                 {% for message in messages %}
-                    <div class="alert alert-danger text-center" role="alert">{{ message }}</div>
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} text-center" role="alert">{{ message }}</div>
                 {% endfor %}
             </div>
         {% endif %}
@@ -92,6 +92,16 @@
             <h1 class="auth-title">Create Account</h1>
             <p class="auth-subtitle">Register here</p>
         </div>
+
+        {% if messages %}
+            <div class="mt-2">
+                {% for message in messages %}
+                    {% if message.tags != 'success' %}
+                        <div class="alert alert-danger text-center" role="alert">{{ message }}</div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
 
         <form method="post" action="{% url 'register' %}" enctype="multipart/form-data" class="auth-form register-form" id="registerForm">
             {% csrf_token %}
@@ -175,6 +185,41 @@
             const showRegisterBtn = document.getElementById('showRegisterBtn');
             const showLoginBtn = document.getElementById('showLoginBtn');
             const backToLoginBtn = document.getElementById('backToLoginBtn');
+
+            // Check if there are registration-related error messages
+            // If so, automatically show the registration card
+            // Success messages should show on the login card
+            const alertMessages = document.querySelectorAll('.alert');
+            let hasRegistrationError = false;
+            let hasSuccessMessage = false;
+            
+            alertMessages.forEach(function(alert) {
+                const text = alert.textContent.toLowerCase();
+                
+                // Check if it's a success message
+                if (alert.classList.contains('alert-success')) {
+                    hasSuccessMessage = true;
+                }
+                
+                // Check if it's a registration error (not a success message)
+                if (!alert.classList.contains('alert-success') && 
+                    (text.includes('username') || text.includes('password') || 
+                     text.includes('email') || text.includes('phone') || 
+                     text.includes('registration') || text.includes('id image'))) {
+                    hasRegistrationError = true;
+                }
+            });
+
+            // Show registration card ONLY if there are registration errors (not success)
+            // Success messages should display on the login card
+            if (hasRegistrationError && !hasSuccessMessage) {
+                loginCard.style.display = 'none';
+                registerCard.style.display = 'flex';
+            } else {
+                // Default: show login card (for success messages or no messages)
+                loginCard.style.display = 'flex';
+                registerCard.style.display = 'none';
+            }
 
             showRegisterBtn.addEventListener('click', function() {
                 loginCard.classList.add('slide-out-right');

@@ -95,7 +95,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 url: "{% url 'member_search_api' %}",
                 dataType: 'json',
                 delay: 250,
-                data: function(params) { return { q: params.term }; },
+                data: function(params) { 
+                    var queryParams = { q: params.term };
+                    // Pass current member ID when editing to allow member with 2 vehicles
+                    {% if form.instance.member %}
+                    queryParams.current_member_id = {{ form.instance.member.id }};
+                    {% endif %}
+                    return queryParams;
+                },
                 processResults: function(data) { return { results: data.results }; },
                 cache: true
             },

@@ -59,19 +59,44 @@ from .forms import CustomUserRegistrationForm
 def register(request):
     from django.contrib.auth import logout
     from django.contrib.sessions.models import Session
-    logout(request)
-    request.session.flush()  # Clear all session data
+    from .notifications import notify_all_staff
+    
+    # Only handle POST requests for registration
     if request.method == 'POST':
-        form = CustomUserRegistrationForm(request.POST, request.FILES)  # <-- Add request.FILES
+        form = CustomUserRegistrationForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save(commit=False)
             user.is_active = False  # Require admin approval
+            user.role = 'client'  # Set role to client
             user.save()
-            request.session.cycle_key()
+            
+            # Create notification for all staff
+            notify_all_staff(
+                title="New User Registration Pending",
+                message=f"{user.full_name} ({user.username}) has registered and is awaiting account approval.",
+                category='user_registration',
+                priority='high',
+                action_url='/accounts/',
+                action_text='Review & Approve'
+            )
+            
+            messages.success(request, 'Registration successful! Please wait for admin approval.')
             return redirect('login')
-    else:
-        form = CustomUserRegistrationForm()
-    return render(request, 'registration/register_standalone.html', {'form': form})
+        else:
+            # Form has validation errors - show specific error messages
+            for field, errors in form.errors.items():
+                for error in errors:
+                    if field == '__all__':
+                        messages.error(request, f"{error}")
+                    else:
+                        messages.error(request, f"{field.replace('_', ' ').title()}: {error}")
+            
+            # Always redirect back to login page to avoid URL conflicts
+            return redirect('login')
+    
+    # GET requests should not access /register/ directly
+    # Redirect to login page where registration form is embedded
+    return redirect('login')
 # ==== Member Dormant/Activate Toggle ====
 from django.contrib.admin.views.decorators import staff_member_required
 
@@ -588,24 +613,63 @@ def approve_documents(request):
 @staff_member_required
 @require_POST
 def approve_document(request, doc_id):
+    from .notifications import create_notification
+    
     entry = get_object_or_404(DocumentEntry, pk=doc_id)
     entry.status = "approved"
     entry.approved_by = request.user
     entry.approved_at = timezone.now()
     entry.manager_notes = request.POST.get("manager_notes", "")
     entry.save()
+    
+    # Notify the uploader
+    if entry.uploaded_by:
+        vehicle_plate = entry.document.vehicle.plate_number if entry.document and entry.document.vehicle else "unknown vehicle"
+        create_notification(
+            recipient=entry.uploaded_by,
+            title="✅ Document Approved",
+            message=f"Your document for {vehicle_plate} has been approved.",
+            category='document_approved',
+            priority='normal',
+            action_url='/user/documents/',
+            action_text='View Documents',
+            related_object_type='document_entry',
+            related_object_id=entry.id,
+            created_by=request.user
+        )
+    
     messages.success(request, "Document entry approved.")
     return redirect("approve_documents")
 
 @staff_member_required
 @require_POST
 def reject_document(request, doc_id):
+    from .notifications import create_notification
+    
     entry = get_object_or_404(DocumentEntry, pk=doc_id)
     entry.status = "rejected"
     entry.approved_by = request.user
     entry.approved_at = timezone.now()
     entry.manager_notes = request.POST.get("manager_notes", "")
     entry.save()
+    
+    # Notify the uploader
+    if entry.uploaded_by:
+        vehicle_plate = entry.document.vehicle.plate_number if entry.document and entry.document.vehicle else "unknown vehicle"
+        reason = entry.manager_notes if entry.manager_notes else "Please check the document requirements."
+        create_notification(
+            recipient=entry.uploaded_by,
+            title="⚠️ Document Requires Resubmission",
+            message=f"Your document for {vehicle_plate} was not approved. Reason: {reason}",
+            category='document_rejected',
+            priority='high',
+            action_url='/user/documents/upload/',
+            action_text='Upload Again',
+            related_object_type='document_entry',
+            related_object_id=entry.id,
+            created_by=request.user
+        )
+    
     messages.success(request, "Document entry rejected.")
     return redirect("approve_documents")
 
@@ -638,6 +702,20 @@ def user_upload_document(request):
                     entry.created_at = dt
 
             entry.save()
+            
+            # Notify all staff that a new document was uploaded
+            from .notifications import notify_all_staff
+            member_name = user.member_profile.full_name if hasattr(user, 'member_profile') and user.member_profile else user.full_name
+            vehicle_plate = document.vehicle.plate_number if document and document.vehicle else "unknown vehicle"
+            notify_all_staff(
+                title="New Document Uploaded",
+                message=f"{member_name} uploaded documents for {vehicle_plate}.",
+                category='document_uploaded',
+                priority='high',
+                action_url='/documents/approve/',
+                action_text='Review Document'
+            )
+            
             messages.success(request, "Document uploaded successfully and is pending manager approval.")
             return redirect("user_upload_document")
         else:
@@ -780,24 +858,59 @@ class VehicleCreateView(CreateView):
     """
     Handles creation of a new Vehicle.
     - Uses VehicleForm for input.
+    - Validates that a member can only have a maximum of 2 vehicles.
     - Redirects to vehicle list after creation.
     """
     model = Vehicle
     form_class = VehicleForm
     template_name = "vehicle_add.html"
     success_url = reverse_lazy("vehicle_list")
+    
+    def form_valid(self, form):
+        # Check if member is selected and already has 2 vehicles
+        member = form.cleaned_data.get('member')
+        if member:
+            vehicle_count = Vehicle.objects.filter(member=member).count()
+            if vehicle_count >= 2:
+                messages.error(
+                    self.request,
+                    f"Cannot assign vehicle to {member.full_name}. "
+                    "This member already has 2 vehicles (cooperative maximum)."
+                )
+                return self.form_invalid(form)
+        
+        messages.success(self.request, "Vehicle added successfully!")
+        return super().form_valid(form)
 
 @method_decorator(login_required, name='dispatch')
 class VehicleUpdateView(UpdateView):
     """
     Handles editing of an existing Vehicle.
     - Uses VehicleForm for input.
+    - Validates that a member can only have a maximum of 2 vehicles.
     - Redirects to vehicle list after update.
     """
     model = Vehicle
     form_class = VehicleForm
     template_name = "vehicle_add.html"
     success_url = reverse_lazy("vehicle_list")
+    
+    def form_valid(self, form):
+        # Check if member is being changed and new member already has 2 vehicles
+        member = form.cleaned_data.get('member')
+        if member:
+            # Exclude the current vehicle being edited from the count
+            vehicle_count = Vehicle.objects.filter(member=member).exclude(pk=self.object.pk).count()
+            if vehicle_count >= 2:
+                messages.error(
+                    self.request,
+                    f"Cannot assign vehicle to {member.full_name}. "
+                    "This member already has 2 vehicles (cooperative maximum)."
+                )
+                return self.form_invalid(form)
+        
+        messages.success(self.request, "Vehicle updated successfully!")
+        return super().form_valid(form)
 
 @method_decorator(login_required, name='dispatch')
 class VehicleDeleteView(DeleteView):
@@ -1196,6 +1309,8 @@ def edit_account(request, user_id):
 @staff_member_required
 @require_POST
 def activate_account(request, user_id):
+    from .notifications import create_notification
+    
     user = get_object_or_404(User, pk=user_id)
 
     # If the account is being activated for the first time, set dormant=1
@@ -1204,6 +1319,19 @@ def activate_account(request, user_id):
 
     user.is_active = True
     user.save()
+    
+    # Create welcome notification for the user
+    create_notification(
+        recipient=user,
+        title="Welcome! Your Account is Active",
+        message="Your POTMPC account has been activated. You can now access all member features.",
+        category='account_activated',
+        priority='high',
+        action_url='/user_home/',
+        action_text='Explore Portal',
+        created_by=request.user
+    )
+    
     return redirect('accounts_list')
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -1268,6 +1396,41 @@ def user_documents(request):
 
     return render(request, "user_documents.html", {"documents": documents, "member": member, "allowed": True})
 
+@login_required
+def user_document_detail(request, document_id):
+    """
+    User-facing detailed document view.
+    Shows complete document information and renewal history for a single vehicle.
+    Only accessible if the user is linked to the member that owns the vehicle.
+    """
+    user = request.user
+    member = getattr(user, "member_profile", None)
+    
+    if not member:
+        messages.error(request, "Your account is not linked to a member. Contact the manager.")
+        return redirect('user_documents')
+    
+    # Get the document and verify ownership
+    document = get_object_or_404(Document, id=document_id)
+    vehicle = document.vehicle
+    
+    # Verify that this vehicle belongs to the user's member profile
+    if vehicle.member != member:
+        messages.error(request, "You don't have permission to view this document.")
+        return redirect('user_documents')
+    
+    # Get all document entries for this document, ordered by renewal date (newest first)
+    entries = document.entries.select_related('uploaded_by').order_by('-renewal_date')
+    
+    context = {
+        'document': document,
+        'vehicle': vehicle,
+        'member': member,
+        'entries': entries,
+    }
+    
+    return render(request, 'user_document_detail.html', context)
+
 from django.shortcuts import render, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
 from .models import Member, Document, DocumentEntry, User
@@ -1322,12 +1485,41 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.contrib.auth.decorators import login_required
 from .models import Member
+from django.db.models import Count
 
 @require_GET
 @login_required
 def member_search_api(request):
+    """
+    Search API for Member objects used by Select2 AJAX widgets.
+    Excludes members who already have 2 or more vehicles (cooperative rule).
+    When editing a vehicle, pass 'current_member_id' to include that member even if they have 2 vehicles.
+    Returns JSON in Select2 { results: [{id, text}, ...] } format.
+    """
     q = request.GET.get('q', '').strip()
-    members = Member.objects.filter(full_name__icontains=q)[:10] if q else []
+    current_member_id = request.GET.get('current_member_id', '').strip()
+    
+    if not q:
+        members = []
+    else:
+        # Annotate with vehicle count
+        members_query = Member.objects.annotate(
+            vehicle_count=Count('vehicles')
+        ).filter(full_name__icontains=q)
+        
+        # If editing and current member has 2 vehicles, include them
+        if current_member_id:
+            try:
+                current_id = int(current_member_id)
+                members = members_query.filter(
+                    Q(vehicle_count__lt=2) | Q(id=current_id)
+                )[:10]
+            except (ValueError, TypeError):
+                members = members_query.filter(vehicle_count__lt=2)[:10]
+        else:
+            # When adding new vehicle, exclude members with 2+ vehicles
+            members = members_query.filter(vehicle_count__lt=2)[:10]
+    
     results = [{'id': m.id, 'text': m.full_name} for m in members]
     return JsonResponse({'results': results})
 
@@ -1420,6 +1612,9 @@ def home(request):
 
     urgent_members = []
     warning_members = []
+    
+    # Track total renewals for whiteboard
+    total_renewals_count = 0
 
     batch_cards = []
     for batch in Batch.objects.all():
@@ -1463,11 +1658,13 @@ def home(request):
                     if 0 <= days_left <= 29:
                         status = 'urgent'
                         member_has_urgent = True
+                        total_renewals_count += 1  # Count for whiteboard
                     elif 30 <= days_left <= 60:
                         status = 'upcoming'
                         # only mark upcoming if not already urgent
                         if not member_has_urgent:
                             member_has_upcoming = True
+                        total_renewals_count += 1  # Count for whiteboard
                     vehicle_infos.append({
                         'plate': plate,
                         'expiry_date': expiry_date.strftime('%Y-%m-%d'),
@@ -1516,6 +1713,30 @@ def home(request):
         'urgent_members': urgent_members,
         'warning_members': warning_members,
     }
+    
+    # Add whiteboard data with renewal counts
+    from django.urls import reverse
+    try:
+        UserModel = get_user_model()
+        accounts_pending = UserModel.objects.filter(is_active=False, dormant=0).count()
+        documents_pending = DocumentEntry.objects.filter(status__iexact="pending", uploaded_by__isnull=False).count()
+        
+        pending_counts = {
+            'accounts': accounts_pending,
+            'documents': documents_pending,
+            'renewals': total_renewals_count
+        }
+        whiteboard_links = {
+            'accounts': reverse('accounts_list'),
+            'documents': reverse('approve_documents'),
+            'renewals': reverse('renewals_hub')
+        }
+        context['pending_counts_json'] = json.dumps(pending_counts)
+        context['whiteboard_links_json'] = json.dumps(whiteboard_links)
+    except Exception as e:
+        context['pending_counts_json'] = '{}'
+        context['whiteboard_links_json'] = '{}'
+    
     try:
         context['batch_cards_json'] = json.dumps(batch_cards, default=str)
     except Exception:
@@ -1536,6 +1757,28 @@ def broadcast(request):
             ann.created_by = request.user
             ann.save()
             form.save_m2m()
+            
+            # Create notifications for recipients
+            from .notifications import create_notification
+            recipients = ann.recipients.all()
+            if not recipients.exists():
+                # Broadcast to all active clients
+                recipients = User.objects.filter(role='client', is_active=True)
+            
+            for recipient in recipients:
+                create_notification(
+                    recipient=recipient,
+                    title="📢 New Announcement",
+                    message=ann.message[:200] + ('...' if len(ann.message) > 200 else ''),
+                    category='announcement_posted',
+                    priority='normal',
+                    action_url='/user/announcements/',
+                    action_text='Read More',
+                    related_object_type='announcement',
+                    related_object_id=ann.id,
+                    created_by=request.user
+                )
+            
             messages.success(request, "Announcement created.")
             # Placeholder for dispatch (email/push). Implement send logic here if desired.
             return redirect('broadcast')
@@ -1563,6 +1806,7 @@ def user_upload_document(request):
     Allow client users to add a DocumentEntry only if their account is tied:
     User -> Member -> Vehicle -> Document. Saves OR/CR and renewal_date under
     the existing Document. Redirects to user_documents on success.
+    Supports multiple vehicles - user can select which vehicle to upload for.
     """
     user = request.user
     if getattr(user, "role", None) != "client":
@@ -1574,17 +1818,32 @@ def user_upload_document(request):
         messages.error(request, "No member profile assigned to your account.")
         return redirect("user_home")
 
-    document = None
-    vehicle = None
+    # Get all vehicles with documents for this member
+    available_vehicles = []
     for v in member.vehicles.all():
         if getattr(v, "document", None):
-            vehicle = v
-            document = v.document
-            break
-
-    if not document:
-        messages.error(request, "No document assigned to your vehicle. Contact your manager.")
+            available_vehicles.append(v)
+    
+    if not available_vehicles:
+        messages.error(request, "No document assigned to any of your vehicles. Contact your manager.")
         return redirect("user_home")
+    
+    # Get selected vehicle ID from GET parameter, default to first vehicle
+    selected_vehicle_id = request.GET.get('vehicle_id')
+    vehicle = None
+    document = None
+    
+    if selected_vehicle_id:
+        try:
+            vehicle = next((v for v in available_vehicles if str(v.id) == str(selected_vehicle_id)), None)
+        except (ValueError, TypeError):
+            vehicle = None
+    
+    # If no valid selection, use first available vehicle
+    if not vehicle:
+        vehicle = available_vehicles[0]
+    
+    document = vehicle.document
 
     # List user's entries for this document
     user_entries = DocumentEntry.objects.filter(document=document, uploaded_by=user).order_by('-id')
@@ -1592,13 +1851,33 @@ def user_upload_document(request):
     if request.method == "POST":
         form = DocumentEntryForm(request.POST, request.FILES)
         if form.is_valid():
+            from .notifications import notify_all_staff
+            
             entry = form.save(commit=False)
             entry.document = document
             entry.uploaded_by = user
             entry.status = "pending"
             entry.save()
+            
+            # Notify all staff about the new document upload
+            member_name = member.full_name if member else user.username
+            vehicle_plate = vehicle.plate_number if vehicle else "Unknown Vehicle"
+            
+            notify_all_staff(
+                title="New Document Uploaded",
+                message=f"{member_name} uploaded documents for {vehicle_plate}.",
+                category='document_uploaded',
+                priority='high',
+                action_url='/documents/approve/',
+                action_text='Review Document',
+                related_object_type='document_entry',
+                related_object_id=entry.id,
+                created_by=user
+            )
+            
             messages.success(request, "Document uploaded successfully and is pending manager approval.")
-            return redirect("user_upload_document")
+            # Redirect with vehicle_id to maintain selection
+            return redirect(f"{reverse('user_upload_document')}?vehicle_id={vehicle.id}")
         else:
             messages.error(request, "Please fix the errors below.")
     else:
@@ -1617,6 +1896,8 @@ def user_upload_document(request):
         "vehicle": vehicle,
         "document": document,
         "entries": user_entries,
+        "available_vehicles": available_vehicles,
+        "selected_vehicle_id": vehicle.id,
     })
 
 
@@ -1652,11 +1933,47 @@ def pending_counts_api(request):
     Only accessible to staff members.
     """
     UserModel = get_user_model()
+    today = timezone.localtime(timezone.now()).date()
+    
     # pending accounts: client role and not active
     accounts_pending = UserModel.objects.filter(is_active=False, dormant=0).count()
 
     # documents pending: entries uploaded by users with status "pending"
     documents_pending = DocumentEntry.objects.filter(status__iexact="pending", uploaded_by__isnull=False).count()
+
+    # Calculate renewal counts (urgent + upcoming)
+    renewals_count = 0
+    members_query = Member.objects.select_related('user_account', 'batch').prefetch_related(
+        'vehicles__document__entries'
+    ).all()
+    
+    for member in members_query:
+        for vehicle in member.vehicles.all():
+            # Get latest approved document entry
+            latest_entry = DocumentEntry.objects.filter(
+                document__vehicle=vehicle
+            ).filter(
+                Q(status="approved") | Q(uploaded_by__isnull=True)
+            ).order_by('-renewal_date').first()
+            
+            if latest_entry and latest_entry.renewal_date:
+                candidate = latest_entry.renewal_date
+                
+                # Convert to date if datetime
+                if hasattr(candidate, "date"):
+                    candidate = candidate.date()
+                
+                # Normalize expiry date to future
+                attempts = 0
+                while candidate < today and attempts < 5:
+                    candidate = _add_years_safe(candidate, 1)
+                    attempts += 1
+                
+                days_left = (candidate - today).days
+                
+                # Count urgent (0-29 days) and upcoming (30-60 days)
+                if 0 <= days_left <= 60:
+                    renewals_count += 1
 
     # resolve links with reverse (safe fallback)
     try:
@@ -1667,14 +1984,20 @@ def pending_counts_api(request):
         documents_link = reverse('approve_documents')
     except:
         documents_link = '/approve_documents/'
+    try:
+        renewals_link = reverse('renewals_hub')
+    except:
+        renewals_link = '/renewals/'
 
     counts = {
         'accounts': accounts_pending,
-        'documents': documents_pending
+        'documents': documents_pending,
+        'renewals': renewals_count
     }
     links = {
         'accounts': accounts_link,
-        'documents': documents_link
+        'documents': documents_link,
+        'renewals': renewals_link
     }
 
     return JsonResponse({'counts': counts, 'links': links})
@@ -2547,7 +2870,97 @@ def renewals_hub(request):
         'today': today,
     }
     
-    return render(request, 'renewals/hub.html', context)
+    return render(request, 'renewals/renewal_list.html', context)
+
+
+@staff_member_required
+@require_POST
+def send_bulk_renewal_reminders(request):
+    """
+    Send renewal reminders in bulk based on filter criteria.
+    Supports: batch, this_week, this_month, next_60, all
+    """
+    filter_type = request.POST.get('filter_type', 'all')
+    batch_id = request.POST.get('batch_id', '')
+    
+    today = timezone.localtime(timezone.now()).date()
+    
+    # Calculate date ranges based on filter
+    start_date = None
+    end_date = None
+    
+    if filter_type == 'this_week':
+        start_date = today
+        end_date = today + timedelta(days=7)
+    elif filter_type == 'this_month':
+        start_date = today
+        end_date = today + timedelta(days=30)
+    elif filter_type == 'next_60':
+        start_date = today
+        end_date = today + timedelta(days=60)
+    elif filter_type == 'all':
+        start_date = today
+        end_date = today + timedelta(days=365)
+    
+    # Get members based on filters
+    members_query = Member.objects.select_related('user_account', 'batch').prefetch_related(
+        'vehicles__document__entries'
+    ).all()
+    
+    # Apply batch filter
+    if batch_id:
+        members_query = members_query.filter(batch_id=batch_id)
+    
+    # Collect renewals to send
+    reminders_sent = 0
+    reminders_failed = 0
+    
+    for member in members_query:
+        for vehicle in member.vehicles.all():
+            # Get latest approved document entry
+            latest_entry = DocumentEntry.objects.filter(
+                document__vehicle=vehicle
+            ).filter(
+                Q(status="approved") | Q(uploaded_by__isnull=True)
+            ).order_by('-renewal_date').first()
+            
+            if latest_entry and latest_entry.renewal_date:
+                candidate = latest_entry.renewal_date
+                
+                # Convert to date if datetime
+                if hasattr(candidate, "date"):
+                    candidate = candidate.date()
+                
+                # Normalize expiry date to future
+                attempts = 0
+                while candidate < today and attempts < 5:
+                    candidate = _add_years_safe(candidate, 1)
+                    attempts += 1
+                
+                # Apply date range filter
+                if start_date and end_date:
+                    if start_date <= candidate <= end_date:
+                        # Send reminder
+                        try:
+                            success, message = send_renewal_reminder_email(member, vehicle, latest_entry, request)
+                            if success:
+                                reminders_sent += 1
+                            else:
+                                reminders_failed += 1
+                        except Exception as e:
+                            reminders_failed += 1
+    
+    # Display summary message
+    if reminders_sent > 0:
+        messages.success(request, f"✅ Successfully sent {reminders_sent} renewal reminder(s)!")
+    
+    if reminders_failed > 0:
+        messages.warning(request, f"⚠️ Failed to send {reminders_failed} reminder(s).")
+    
+    if reminders_sent == 0 and reminders_failed == 0:
+        messages.info(request, "No renewals found matching the selected criteria.")
+    
+    return redirect('renewals_hub')
 
 
 @staff_member_required
@@ -2578,6 +2991,24 @@ def send_renewal_reminder(request, member_id, vehicle_id):
         
         if success:
             messages.success(request, f"✅ {message}")
+            
+            # Create in-app notification
+            from .notifications import create_notification
+            if member.user_account:
+                today = timezone.now().date()
+                days_left = (latest_entry.renewal_date - today).days
+                create_notification(
+                    recipient=member.user_account,
+                    title="🔔 Vehicle Renewal Reminder",
+                    message=f"Your vehicle {vehicle.plate_number} renewal expires on {latest_entry.renewal_date.strftime('%B %d, %Y')} ({days_left} days).",
+                    category='renewal_reminder',
+                    priority='urgent',
+                    action_url='/user/documents/upload/',
+                    action_text='Submit Documents',
+                    related_object_type='vehicle',
+                    related_object_id=vehicle.id,
+                    created_by=request.user
+                )
         else:
             messages.error(request, f"❌ {message}")
             
@@ -3484,4 +3915,102 @@ def add_carwash_record(request, year_id):
         'year': year,
         'carwash_types': carwash_types
     })
+
+
+# ============================================================================
+# NOTIFICATION SYSTEM VIEWS
+# ============================================================================
+
+@login_required
+def notification_count_api(request):
+    """Get unread notification count (API endpoint)"""
+    from .notifications import get_unread_count
+    count = get_unread_count(request.user)
+    return JsonResponse({'count': count})
+
+
+@login_required
+@require_POST
+def notification_mark_read(request, notification_id):
+    """Mark single notification as read"""
+    from .models import Notification
+    notification = get_object_or_404(
+        Notification, 
+        pk=notification_id, 
+        recipient=request.user
+    )
+    notification.mark_as_read()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True})
+    return redirect(request.META.get('HTTP_REFERER', 'notifications_center'))
+
+
+@login_required
+@require_POST
+def notifications_mark_all_read(request):
+    """Mark all notifications as read"""
+    from .notifications import mark_all_as_read
+    count = mark_all_as_read(request.user)
+    messages.success(request, f"Marked {count} notification{'s' if count != 1 else ''} as read.")
+    return redirect('notifications_center')
+
+
+@login_required
+@require_POST
+def notifications_delete_read(request):
+    """Delete all read notifications"""
+    from .models import Notification
+    count, _ = Notification.objects.filter(
+        recipient=request.user,
+        is_read=True
+    ).delete()
+    messages.success(request, f"Deleted {count} read notification{'s' if count != 1 else ''}.")
+    return redirect('notifications_center')
+
+
+@login_required
+def notifications_center(request):
+    """Notification center page with filters and pagination"""
+    from .models import Notification
+    from django.core.paginator import Paginator
+    
+    filter_type = request.GET.get('filter', 'all')
+    
+    notifications_qs = Notification.objects.filter(
+        recipient=request.user
+    )
+    
+    if filter_type == 'unread':
+        notifications_qs = notifications_qs.filter(is_read=False)
+    elif filter_type == 'urgent':
+        notifications_qs = notifications_qs.filter(priority='urgent')
+    elif filter_type == 'high':
+        notifications_qs = notifications_qs.filter(priority='high')
+    
+    unread_count = Notification.objects.filter(
+        recipient=request.user,
+        is_read=False
+    ).count()
+    
+    # Pagination
+    paginator = Paginator(notifications_qs, 20)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'notifications': page_obj,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'filter': filter_type,
+        'unread_count': unread_count,
+    }
+    
+    # Use different template based on user role
+    if hasattr(request.user, 'role') and request.user.role == 'client':
+        template_name = 'notifications/user_notifications_center.html'
+    else:
+        template_name = 'notifications/notifications_center.html'
+    
+    return render(request, template_name, context)
 

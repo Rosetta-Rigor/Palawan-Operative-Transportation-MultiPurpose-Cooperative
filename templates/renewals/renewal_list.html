@@ -64,6 +64,60 @@
         </button>
     </div>
 
+    <!-- Bulk Actions Section -->
+    <div class="renewal-hub-search-section" style="margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+            <div>
+                <h4 style="margin: 0 0 8px 0; color: var(--brand-600); font-weight: 700; font-size: 1.1rem;">
+                    <i class="la la-paper-plane"></i> Bulk Reminder Actions
+                </h4>
+                <p style="margin: 0; color: var(--muted-2); font-size: 0.9rem;">
+                    Send renewal reminders to multiple members at once based on time frame or batch
+                </p>
+            </div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <form method="post" action="{% url 'send_bulk_renewal_reminders' %}" style="display: inline-block;">
+                    {% csrf_token %}
+                    <input type="hidden" name="filter_type" value="this_week">
+                    <button type="submit" class="btn-action btn-send-reminder" style="padding: 10px 20px;">
+                        <i class="la la-bell"></i> Send This Week
+                    </button>
+                </form>
+                
+                <form method="post" action="{% url 'send_bulk_renewal_reminders' %}" style="display: inline-block;">
+                    {% csrf_token %}
+                    <input type="hidden" name="filter_type" value="this_month">
+                    <button type="submit" class="btn-action btn-send-reminder" style="padding: 10px 20px; background: linear-gradient(135deg, #F59E0B, #D97706);">
+                        <i class="la la-bell"></i> Send This Month
+                    </button>
+                </form>
+                
+                <form method="post" action="{% url 'send_bulk_renewal_reminders' %}" style="display: inline-block;">
+                    {% csrf_token %}
+                    <input type="hidden" name="filter_type" value="next_60">
+                    <button type="submit" class="btn-action btn-send-reminder" style="padding: 10px 20px; background: linear-gradient(135deg, #3B82F6, #2563EB);">
+                        <i class="la la-bell"></i> Send Next 60 Days
+                    </button>
+                </form>
+
+                <!-- Batch-based bulk send with dropdown -->
+                <form method="post" action="{% url 'send_bulk_renewal_reminders' %}" style="display: inline-flex; align-items: center; gap: 8px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="filter_type" value="all">
+                    <select name="batch_id" class="filter-select" style="padding: 10px 14px; min-width: 150px;" required>
+                        <option value="">Select Batch</option>
+                        {% for batch in batches %}
+                            <option value="{{ batch.id }}">Batch {{ batch.number }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn-action btn-view-member" style="padding: 10px 20px;">
+                        <i class="la la-bell"></i> Send to Batch
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Search & Advanced Filters -->
     <div class="renewal-hub-search-section">
         <form method="get" class="search-form">
@@ -228,6 +282,35 @@ document.addEventListener('DOMContentLoaded', function() {
             bsAlert.close();
         });
     }, 5000);
+    
+    // Add confirmation for bulk reminder sends
+    const bulkForms = document.querySelectorAll('form[action*="bulk-send"]');
+    bulkForms.forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            const filterType = form.querySelector('input[name="filter_type"]').value;
+            const batchSelect = form.querySelector('select[name="batch_id"]');
+            
+            let confirmMessage = 'Are you sure you want to send renewal reminders to ';
+            
+            if (batchSelect && batchSelect.value) {
+                const batchText = batchSelect.options[batchSelect.selectedIndex].text;
+                confirmMessage += 'all members in ' + batchText + '?';
+            } else if (filterType === 'this_week') {
+                confirmMessage += 'all renewals due this week?';
+            } else if (filterType === 'this_month') {
+                confirmMessage += 'all renewals due this month?';
+            } else if (filterType === 'next_60') {
+                confirmMessage += 'all renewals due in the next 60 days?';
+            } else {
+                confirmMessage += 'the selected group?';
+            }
+            
+            if (!confirm(confirmMessage)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
 });
 </script>
 {% endblock %}

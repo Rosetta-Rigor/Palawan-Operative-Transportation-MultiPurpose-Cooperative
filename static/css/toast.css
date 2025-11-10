@@ -1,0 +1,116 @@
+/* ===== TOAST NOTIFICATION SYSTEM ===== 
+   Global toast notifications for both admin and user portals
+   Color-coded by message type with smooth animations
+*/
+
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.toast-notification {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    min-width: 320px;
+    max-width: 500px;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    pointer-events: auto;
+    font-weight: 600;
+}
+
+.toast-notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.toast-close i {
+    font-size: 1.2rem;
+}
+
+.toast-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Toast Types - Color Coded */
+.toast-success {
+    background: linear-gradient(135deg, #2D8A63 0%, #247552 100%);
+    color: #FFFFFF;
+    border-left: 4px solid #1F5F42;
+}
+
+.toast-error,
+.toast-danger {
+    background: linear-gradient(135deg, #D64545 0%, #B83636 100%);
+    color: #FFFFFF;
+    border-left: 4px solid #A02929;
+}
+
+.toast-warning {
+    background: linear-gradient(135deg, #F0AD4E 0%, #EC971F 100%);
+    color: #FFFFFF;
+    border-left: 4px solid #D58512;
+}
+
+.toast-info {
+    background: linear-gradient(135deg, #5BC0DE 0%, #31B0D5 100%);
+    color: #FFFFFF;
+    border-left: 4px solid #269ABC;
+}
+
+/* Mobile Toast Positioning */
+@media (max-width: 768px) {
+    .toast-container {
+        top: 50%;
+        left: 50%;
+        right: auto;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 400px;
+        align-items: center;
+    }
+
+    .toast-notification {
+        min-width: 100%;
+        transform: translateY(400px);
+    }
+
+    .toast-notification.show {
+        transform: translateY(0);
+    }
+}

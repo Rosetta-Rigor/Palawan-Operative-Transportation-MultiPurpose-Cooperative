@@ -1,68 +1,134 @@
 {% extends 'user_base.html' %}
 {% load static %}
 {% block title %}My Documents{% endblock %}
+
 {% block content %}
-<div class="container mt-4" style="max-width:1000px; margin:0 auto;">
-    <br><br>
-  <h2 class="mb-3">My Documents</h2>
+<div class="user-documents-content">
+  <!-- Page Header -->
+  <div class="user-page-header-section">
+    <div class="user-page-title">
+      <i class="las la-file-alt"></i>
+      My Vehicle Documents
+    </div>
+    <p class="user-page-subtitle">View and manage your vehicle registration documents</p>
+  </div>
 
   {% if not allowed %}
-    <div class="alert alert-info">
-      You currently have no documents available to view.
-      {% if member %}
-        <div class="small text-muted">Manager must assign a vehicle with a document to your member account ({{ member.full_name }}).</div>
-      {% else %}
-        <div class="small text-muted">Ask the manager to link your account to a member record.</div>
-      {% endif %}
+    <!-- Empty State -->
+    <div class="user-empty-state">
+      <i class="las la-folder-open"></i>
+      <h3>No Documents Available</h3>
+      <p>
+        {% if member %}
+          Your account ({{ member.full_name }}) is not assigned to any vehicles yet.
+          <br>Please contact the manager to assign a vehicle with documents to your account.
+        {% else %}
+          Your account is not linked to a member record.
+          <br>Please contact the manager to link your account.
+        {% endif %}
+      </p>
     </div>
   {% else %}
-    <div class="row">
+    <!-- Documents Grid -->
+    <div class="user-documents-grid">
       {% for item in documents %}
-        <div class="col-md-6 mb-4">
-          <div class="card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <div>
-                <strong>{{ item.vehicle.plate_number }}</strong>
-                <div class="small text-muted">{{ item.vehicle.make_brand }} {% if item.vehicle.year_model %}• {{ item.vehicle.year_model }}{% endif %}</div>
+        <div class="user-document-card">
+          <!-- Card Header -->
+          <div class="user-document-card-header">
+            <div class="user-document-vehicle-info">
+              <div class="user-document-plate-number">
+                <i class="las la-car"></i>
+                {{ item.vehicle.plate_number }}
               </div>
-              <div class="text-end">
-                <span class="badge bg-primary">TIN: {{ item.document.tin }}</span>
-              </div>
-            </div>
-
-            <div class="card-body">
-              {% if item.entries %}
-                <ul class="list-unstyled">
-                  {% for e in item.entries %}
-                    <li class="mb-3">
-                      <div class="small text-muted">Renewal: {{ e.renewal_date|date:"M d, Y" }}</div>
-                      <div class="mt-1">
-                        {% if e.official_receipt %}
-                          <a class="btn btn-sm btn-outline-primary" href="{{ e.official_receipt.url }}" target="_blank">View OR</a>
-                        {% endif %}
-                        {% if e.certificate_of_registration %}
-                          <a class="btn btn-sm btn-outline-secondary" href="{{ e.certificate_of_registration.url }}" target="_blank">View CR</a>
-                        {% endif %}
-                      </div>
-                    </li>
-                  {% endfor %}
-                </ul>
-              {% else %}
-                <div class="text-muted small">No document entries uploaded yet.</div>
-              {% endif %}
-            </div>
-
-            <div class="card-footer d-flex justify-content-between">
-              <div class="small text-muted">Vehicle ID: {{ item.vehicle.id }}</div>
-              <div>
-                {% if item.document %}
-                  <a class="btn btn-sm btn-outline-secondary" href="{% url 'document_detail' item.document.id %}">Open Document</a>
+              <div class="user-document-vehicle-details">
+                {{ item.vehicle.make_brand }}
+                {% if item.vehicle.year_model %}
+                  <span class="user-document-separator">•</span>
+                  {{ item.vehicle.year_model }}
                 {% endif %}
               </div>
+            </div>
+            <div class="user-document-tin-badge">
+              <i class="las la-id-card"></i>
+              TIN: {{ item.document.tin }}
+            </div>
+          </div>
+
+          <!-- Card Body -->
+          <div class="user-document-card-body">
+            {% if item.entries %}
+              <div class="user-document-entries-section">
+                <h4 class="user-document-section-title">
+                  <i class="las la-history"></i>
+                  Recent Renewals
+                </h4>
+                <div class="user-document-entries-list">
+                  {% for e in item.entries|slice:":3" %}
+                    <div class="user-document-entry-item">
+                      <div class="user-document-entry-date">
+                        <i class="las la-calendar-check"></i>
+                        <span>{{ e.renewal_date|date:"M d, Y" }}</span>
+                      </div>
+                      <div class="user-document-entry-actions">
+                        {% if e.official_receipt %}
+                          <a class="user-document-btn user-document-btn-primary" href="{{ e.official_receipt.url }}" target="_blank">
+                            <i class="las la-receipt"></i>
+                            Official Receipt
+                          </a>
+                        {% endif %}
+                        {% if e.certificate_of_registration %}
+                          <a class="user-document-btn user-document-btn-secondary" href="{{ e.certificate_of_registration.url }}" target="_blank">
+                            <i class="las la-certificate"></i>
+                            Certificate
+                          </a>
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+                {% if item.entries|length > 3 %}
+                  <div class="user-document-more-entries">
+                    <i class="las la-info-circle"></i>
+                    {{ item.entries|length|add:"-3" }} more renewal(s) available
+                  </div>
+                {% endif %}
+              </div>
+            {% else %}
+              <div class="user-document-no-entries">
+                <i class="las la-inbox"></i>
+                <p>No renewal records uploaded yet</p>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Card Footer -->
+          <div class="user-document-card-footer">
+            <div class="user-document-vehicle-id">
+              <i class="las la-hashtag"></i>
+              Vehicle ID: {{ item.vehicle.id }}
+            </div>
+            <div class="user-document-card-actions">
+              {% if item.document %}
+                <a class="user-document-btn user-document-btn-view" href="{% url 'user_document_detail' item.document.id %}">
+                  <i class="las la-eye"></i>
+                  View Details
+                </a>
+              {% endif %}
             </div>
           </div>
         </div>
       {% endfor %}
+    </div>
+
+    <!-- Info Section -->
+    <div class="user-documents-info-section">
+      <div class="user-documents-info-card">
+        <i class="las la-info-circle"></i>
+        <div>
+          <h4>Document Information</h4>
+          <p>You can view up to 2 vehicles assigned to your account. Contact the manager if you need to update or add vehicles.</p>
+        </div>
+      </div>
     </div>
   {% endif %}
 </div>

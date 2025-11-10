@@ -1,87 +1,268 @@
 {% extends 'user_base.html' %}
-{% block title %}Upload Document - User{% endblock %}
+{% load static %}
+{% block title %}Upload Document{% endblock %}
+
 {% block content %}
-<br><br>
-<div class="user-dashboard-card" style="max-width:900px; margin:20px auto;">
-  <h4>Your Uploads / Status</h4>
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Renewal Date</th>
-        <th>Status</th>
-        <th>Manager Notes</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for e in entries %}
-      <tr>
-        <td>{{ e.renewal_date }}</td>
-        <td>
-          {% if e.status == "pending" %}
-            <span class="badge bg-warning text-dark">Pending</span>
-          {% elif e.status == "approved" %}
-            <span class="badge bg-success">Approved</span>
-          {% else %}
-            <span class="badge bg-danger">Rejected</span>
-          {% endif %}
-          {% if e.approved_at %}<div class="small text-muted">{{ e.approved_at|date:"M d, Y H:i" }}</div>{% endif %}
-        </td>
-        <td>{{ e.manager_notes|default:"—" }}</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="3" class="text-muted">No uploads yet.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+<div class="user-upload-content">
+  <!-- Page Header -->
+  <div class="user-page-header-section">
+    <div class="user-page-title">
+      <i class="las la-cloud-upload-alt"></i>
+      Upload Vehicle Documents
+    </div>
+    <p class="user-page-subtitle">Submit your vehicle registration documents for approval</p>
+  </div>
 
-{% if vehicle and document %}
-    <p class="small text-muted">Vehicle: <strong>{{ vehicle.plate_number }}</strong> — TIN: <strong>{{ document.tin }}</strong></p>
-{% endif %}
+  <!-- Vehicle Selection (only show if member has multiple vehicles) -->
+  {% if available_vehicles|length > 1 %}
+  <div class="user-upload-vehicle-selector">
+    <div class="user-upload-selector-label">
+      <i class="las la-car-side"></i>
+      Select Vehicle
+    </div>
+    <div class="user-upload-selector-wrapper">
+      <select id="vehicleSelector" class="user-upload-vehicle-select" onchange="switchVehicle(this.value)">
+        {% for v in available_vehicles %}
+        <option value="{{ v.id }}" {% if v.id == selected_vehicle_id %}selected{% endif %}>
+          {{ v.plate_number }} - {{ v.make_brand|default:"" }} {{ v.series|default:"" }} {% if v.color %}({{ v.color }}){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      <i class="las la-chevron-down user-upload-selector-arrow"></i>
+    </div>
+  </div>
+  {% endif %}
 
-{% if messages %}
-      {% for msg in messages %}
-        <div class="alert alert-{{ msg.tags }}">{{ msg }}</div>
-      {% endfor %}
-{% endif %}
+  <!-- Vehicle Info Card -->
+  {% if vehicle and document %}
+  <div class="user-upload-info-card">
+    <div class="user-upload-info-icon">
+      <i class="las la-info-circle"></i>
+    </div>
+    <div class="user-upload-info-content">
+      <h4>Uploading for Vehicle</h4>
+      <div class="user-upload-vehicle-details">
+        <span class="user-upload-vehicle-plate">
+          <i class="las la-car"></i>
+          {{ vehicle.plate_number }}
+        </span>
+        <span class="user-upload-vehicle-tin">
+          <i class="las la-id-card"></i>
+          TIN: {{ document.tin }}
+        </span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
-<form id="user-upload-form" method="post" enctype="multipart/form-data" action="{% url 'user_upload_document' %}">
+  <!-- Upload History Card -->
+  <div class="user-upload-card">
+    <div class="user-upload-card-header">
+      <i class="las la-history"></i>
+      Your Upload History
+    </div>
+    <div class="user-upload-card-body">
+      {% if entries %}
+        <div class="user-upload-table-responsive">
+          <table class="user-upload-table">
+            <thead>
+              <tr>
+                <th><i class="las la-calendar"></i> Renewal Date</th>
+                <th><i class="las la-check-circle"></i> Status</th>
+                <th><i class="las la-comment"></i> Manager Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for e in entries %}
+              <tr>
+                <td>
+                  <span class="user-upload-date">{{ e.renewal_date|date:"F d, Y" }}</span>
+                </td>
+                <td>
+                  <div class="user-upload-status-cell">
+                    {% if e.status == "pending" %}
+                      <span class="user-upload-status-badge user-upload-status-pending">
+                        <i class="las la-clock"></i>
+                        Pending
+                      </span>
+                    {% elif e.status == "approved" %}
+                      <span class="user-upload-status-badge user-upload-status-approved">
+                        <i class="las la-check-circle"></i>
+                        Approved
+                      </span>
+                    {% else %}
+                      <span class="user-upload-status-badge user-upload-status-rejected">
+                        <i class="las la-times-circle"></i>
+                        Rejected
+                      </span>
+                    {% endif %}
+                    {% if e.approved_at %}
+                      <span class="user-upload-timestamp">{{ e.approved_at|date:"M d, Y • h:i A" }}</span>
+                    {% endif %}
+                  </div>
+                </td>
+                <td>
+                  <span class="user-upload-notes">{{ e.manager_notes|default:"—" }}</span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="user-upload-empty-state">
+          <i class="las la-inbox"></i>
+          <p>No uploads yet</p>
+          <span>Submit your first document below</span>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Upload Form Card -->
+  <div class="user-upload-card">
+    <div class="user-upload-card-header">
+      <i class="las la-file-upload"></i>
+      Upload New Documents
+    </div>
+    <div class="user-upload-card-body">
+      <form id="user-upload-form" method="post" enctype="multipart/form-data" action="{% url 'user_upload_document' %}">
         {% csrf_token %}
-        {{ form.non_field_errors }}
+        
+        <!-- Non-field errors -->
+        {% if form.non_field_errors %}
+          <div class="user-upload-form-errors">
+            {% for error in form.non_field_errors %}
+              <div class="user-upload-error-item">
+                <i class="las la-exclamation-circle"></i>
+                {{ error }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
         <input type="hidden" id="uploaded-at" name="uploaded_at" value="">
 
-        <div class="form-group mb-3">
-            {{ form.renewal_date.label_tag }}
-            {{ form.renewal_date }}
-            {% if form.renewal_date.errors %}<div class="text-danger small">{{ form.renewal_date.errors }}</div>{% endif %}
+        <!-- Renewal Date Field -->
+        <div class="user-upload-form-group">
+          <label for="{{ form.renewal_date.id_for_label }}" class="user-upload-form-label">
+            <i class="las la-calendar-check"></i>
+            {{ form.renewal_date.label }}
+          </label>
+          {{ form.renewal_date }}
+          {% if form.renewal_date.errors %}
+            <div class="user-upload-field-error">
+              {% for error in form.renewal_date.errors %}
+                <i class="las la-exclamation-triangle"></i>
+                {{ error }}
+              {% endfor %}
+            </div>
+          {% endif %}
+          <div class="user-upload-field-help">
+            <i class="las la-info-circle"></i>
+            Select the renewal date for your vehicle documents
+          </div>
         </div>
 
-        <div class="form-group mb-3">
-            {{ form.official_receipt.label_tag }}
+        <!-- Official Receipt Field -->
+        <div class="user-upload-form-group">
+          <label for="{{ form.official_receipt.id_for_label }}" class="user-upload-form-label">
+            <i class="las la-receipt"></i>
+            {{ form.official_receipt.label }}
+          </label>
+          <div class="user-upload-file-input-wrapper">
             {{ form.official_receipt }}
-            {% if form.official_receipt.errors %}<div class="text-danger small">{{ form.official_receipt.errors }}</div>{% endif %}
+            <div class="user-upload-file-input-overlay">
+              <i class="las la-cloud-upload-alt"></i>
+              <span>Choose Official Receipt (PDF/Image)</span>
+            </div>
+          </div>
+          {% if form.official_receipt.errors %}
+            <div class="user-upload-field-error">
+              {% for error in form.official_receipt.errors %}
+                <i class="las la-exclamation-triangle"></i>
+                {{ error }}
+              {% endfor %}
+            </div>
+          {% endif %}
         </div>
 
-        <div class="form-group mb-3">
-            {{ form.certificate_of_registration.label_tag }}
+        <!-- Certificate of Registration Field -->
+        <div class="user-upload-form-group">
+          <label for="{{ form.certificate_of_registration.id_for_label }}" class="user-upload-form-label">
+            <i class="las la-certificate"></i>
+            {{ form.certificate_of_registration.label }}
+          </label>
+          <div class="user-upload-file-input-wrapper">
             {{ form.certificate_of_registration }}
-            {% if form.certificate_of_registration.errors %}<div class="text-danger small">{{ form.certificate_of_registration.errors }}</div>{% endif %}
+            <div class="user-upload-file-input-overlay">
+              <i class="las la-cloud-upload-alt"></i>
+              <span>Choose Certificate (PDF/Image)</span>
+            </div>
+          </div>
+          {% if form.certificate_of_registration.errors %}
+            <div class="user-upload-field-error">
+              {% for error in form.certificate_of_registration.errors %}
+                <i class="las la-exclamation-triangle"></i>
+                {{ error }}
+              {% endfor %}
+            </div>
+          {% endif %}
         </div>
 
-        <button type="submit" class="btn btn-primary">Upload</button>
-        <a href="{% url 'user_documents' %}" class="btn btn-secondary">Cancel</a>
-    </form>
+        <!-- Form Actions -->
+        <div class="user-upload-form-actions">
+          <button type="submit" class="user-upload-btn user-upload-btn-primary">
+            <i class="las la-upload"></i>
+            Upload Documents
+          </button>
+          <a href="{% url 'user_documents' %}" class="user-upload-btn user-upload-btn-secondary">
+            <i class="las la-times"></i>
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 <script>
+// Vehicle switcher function
+function switchVehicle(vehicleId) {
+  if (vehicleId) {
+    window.location.href = '{% url "user_upload_document" %}?vehicle_id=' + vehicleId;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function(){
   var form = document.getElementById('user-upload-form');
   if (!form) return;
+  
+  // Set uploaded timestamp on submit
   form.addEventListener('submit', function(){
     var nowIso = new Date().toISOString();
     var el = document.getElementById('uploaded-at');
     if (el) el.value = nowIso;
   });
+
+  // File input styling
+  const fileInputs = document.querySelectorAll('input[type="file"]');
+  fileInputs.forEach(input => {
+    input.addEventListener('change', function(e) {
+      const wrapper = this.closest('.user-upload-file-input-wrapper');
+      const overlay = wrapper.querySelector('.user-upload-file-input-overlay span');
+      if (this.files.length > 0) {
+        overlay.textContent = this.files[0].name;
+        wrapper.classList.add('has-file');
+      } else {
+        const label = this.getAttribute('id').includes('official') ? 
+          'Choose Official Receipt (PDF/Image)' : 
+          'Choose Certificate (PDF/Image)';
+        overlay.textContent = label;
+        wrapper.classList.remove('has-file');
+      }
+    });
+  });
 });
 </script>
-</div>
 {% endblock %}

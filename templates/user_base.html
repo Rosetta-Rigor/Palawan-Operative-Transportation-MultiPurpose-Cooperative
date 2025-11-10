@@ -11,28 +11,37 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900">
     <link rel="stylesheet" href="{% static 'css/ready.css' %}">
     <link rel="stylesheet" href="{% static 'css/demo.css' %}">
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    <link rel="stylesheet" href="{% static 'css/toast.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notifications.css' %}">
     <link rel="stylesheet" href="{% static 'css/user_responsive.css' %}">
     <link rel="stylesheet" href="{% static 'css/user_custom.css' %}">
     
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
     {% if messages %}
-      <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                  z-index: 99999; width: auto; max-width: 90%; text-align: center; pointer-events: none;">
-          {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-lg"
-                 role="alert"
-                 style="display: inline-block; pointer-events: auto; max-width: 90%; margin: 10px auto; border-radius: 8px; padding: 15px; background-color: #f8f9fa; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);">
-              <div style="font-size: 1rem; color: #333;">
-                {{ message }}
-              </div>
-              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true" style="font-weight: bold;">&times;</span>
-              </button>
-            </div>
-          {% endfor %}
-      </div>
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          const messages = [
+            {% for message in messages %}
+            {
+              text: "{{ message|escapejs }}",
+              type: "{{ message.tags }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+          ];
+          
+          messages.forEach(function(msg, index) {
+            setTimeout(function() {
+              showToast(msg.text, msg.type);
+            }, index * 300);
+          });
+        });
+      </script>
     {% endif %}
 
     <div class="wrapper">
@@ -54,6 +63,72 @@
             <nav class="navbar navbar-header navbar-expand-lg">
                 <div class="container-fluid">
                     <ul class="navbar-nav topbar-nav ml-md-auto align-items-center">
+                        <!-- Notification Bell -->
+                        <li class="nav-item notification-bell-container" style="margin-right: 20px;">
+                            <button class="notification-bell-btn" id="notificationBellBtn" aria-label="Notifications" title="Notifications">
+                                <i class="las la-bell"></i>
+                                {% if unread_notifications_count > 0 %}
+                                <span class="notification-badge">{{ unread_notifications_count }}</span>
+                                {% endif %}
+                            </button>
+                            
+                            <!-- Dropdown -->
+                            <div class="notification-dropdown" id="notificationDropdown">
+                                <div class="notification-dropdown-header">
+                                    <h4>Notifications</h4>
+                                    <div class="notification-actions">
+                                        <form method="post" action="{% url 'notifications_mark_all_read' %}" style="display:inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="mark-all-read-btn" title="Mark all as read">
+                                                <i class="las la-check-double"></i>
+                                            </button>
+                                        </form>
+                                        <a href="{% url 'notifications_center' %}" title="View all">
+                                            <i class="las la-external-link-alt"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <div class="notification-list">
+                                    {% if recent_notifications %}
+                                        {% for notification in recent_notifications %}
+                                        <a href="{{ notification.action_url|default:'#' }}" 
+                                           class="notification-item {% if not notification.is_read %}unread{% endif %} priority-{{ notification.priority }}"
+                                           data-notification-id="{{ notification.id }}">
+                                            <div class="notification-icon">
+                                                {% if notification.priority == 'urgent' %}
+                                                    <i class="las la-exclamation-circle"></i>
+                                                {% elif notification.priority == 'high' %}
+                                                    <i class="las la-exclamation"></i>
+                                                {% else %}
+                                                    <i class="las la-info-circle"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div class="notification-content">
+                                                <div class="notification-title">{{ notification.title }}</div>
+                                                <div class="notification-message">{{ notification.message|truncatewords:15 }}</div>
+                                                <div class="notification-time">{{ notification.created_at|timesince }} ago</div>
+                                            </div>
+                                            {% if not notification.is_read %}
+                                            <div class="notification-unread-dot"></div>
+                                            {% endif %}
+                                        </a>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="notification-empty">
+                                            <i class="las la-bell-slash"></i>
+                                            <p>No notifications</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="notification-dropdown-footer">
+                                    <a href="{% url 'notifications_center' %}">View All Notifications</a>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <!-- User Avatar Dropdown -->
                         <li class="nav-item dropdown">
                             <a href="#" class="dropdown-toggle profile-pic" id="userAvatarDropdown" data-toggle="dropdown" aria-expanded="false" style="text-decoration: none; display: flex; align-items: center; gap: 12px;">
                                 <!-- User Name -->
@@ -184,9 +259,47 @@
     <script src="{% static 'js/plugin/chart-circle/circles.min.js' %}"></script>
     <script src="{% static 'js/plugin/jquery-scrollbar/jquery.scrollbar.min.js' %}"></script>
     <script src="{% static 'js/ready.min.js' %}"></script>
+    <script src="{% static 'js/notifications.js' %}"></script>
     {% block extra_js %}{% endblock %}
 
     <script>
+    // Toast Notification System
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification toast-' + type;
+        
+        // Determine icon based on type
+        let icon = 'la-info-circle';
+        if (type === 'success') icon = 'la-check-circle';
+        else if (type === 'error' || type === 'danger') icon = 'la-exclamation-circle';
+        else if (type === 'warning') icon = 'la-exclamation-triangle';
+        
+        toast.innerHTML = `
+            <i class="las ${icon} toast-icon"></i>
+            <span class="toast-message">${message}</span>
+            <button class="toast-close" onclick="closeToast(this)">
+                <i class="las la-times"></i>
+            </button>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Trigger animation
+        setTimeout(() => toast.classList.add('show'), 10);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            closeToast(toast.querySelector('.toast-close'));
+        }, 5000);
+    }
+
+    function closeToast(button) {
+        const toast = button.closest('.toast-notification');
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }
+
     // Mobile Sidebar Toggle
     document.addEventListener('DOMContentLoaded', function() {
         var sidebarToggle = document.getElementById('sidebarToggle');

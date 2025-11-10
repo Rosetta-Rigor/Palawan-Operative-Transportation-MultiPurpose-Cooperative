@@ -1,0 +1,192 @@
+{% extends 'user_base.html' %}
+{% load static %}
+{% block title %}Document Details - {{ vehicle.plate_number }}{% endblock %}
+
+{% block content %}
+<div class="user-document-detail-content">
+  <!-- Back Button -->
+  <div class="user-document-detail-back">
+    <a href="{% url 'user_documents' %}" class="user-document-btn user-document-btn-back">
+      <i class="las la-arrow-left"></i>
+      Back to My Documents
+    </a>
+  </div>
+
+  <!-- Page Header -->
+  <div class="user-page-header-section">
+    <div class="user-page-title">
+      <i class="las la-file-contract"></i>
+      Vehicle Document Details
+    </div>
+    <p class="user-page-subtitle">Complete document history for {{ vehicle.plate_number }}</p>
+  </div>
+
+  <!-- Vehicle Information Card -->
+  <div class="user-document-detail-card">
+    <div class="user-document-detail-card-header">
+      <i class="las la-car"></i>
+      Vehicle Information
+    </div>
+    <div class="user-document-detail-card-body">
+      <div class="user-document-detail-info-grid">
+        <div class="user-document-detail-info-item">
+          <label>
+            <i class="las la-id-badge"></i>
+            Plate Number
+          </label>
+          <div class="user-document-detail-info-value user-document-detail-highlight">
+            {{ vehicle.plate_number }}
+          </div>
+        </div>
+        <div class="user-document-detail-info-item">
+          <label>
+            <i class="las la-car-side"></i>
+            Make & Brand
+          </label>
+          <div class="user-document-detail-info-value">
+            {{ vehicle.make_brand }}
+          </div>
+        </div>
+        <div class="user-document-detail-info-item">
+          <label>
+            <i class="las la-calendar"></i>
+            Year Model
+          </label>
+          <div class="user-document-detail-info-value">
+            {{ vehicle.year_model|default:"N/A" }}
+          </div>
+        </div>
+        <div class="user-document-detail-info-item">
+          <label>
+            <i class="las la-id-card"></i>
+            TIN Number
+          </label>
+          <div class="user-document-detail-info-value">
+            {{ document.tin }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Owner Card -->
+  <div class="user-document-detail-card">
+    <div class="user-document-detail-card-header">
+      <i class="las la-user"></i>
+      Document Owner
+    </div>
+    <div class="user-document-detail-card-body">
+      <div class="user-document-detail-info-grid">
+        <div class="user-document-detail-info-item">
+          <label>
+            <i class="las la-user-circle"></i>
+            Full Name
+          </label>
+          <div class="user-document-detail-info-value">
+            {{ member.full_name }}
+          </div>
+        </div>
+        <div class="user-document-detail-info-item">
+          <label>
+            <i class="las la-users"></i>
+            Batch Number
+          </label>
+          <div class="user-document-detail-info-value">
+            {{ member.batch.number|default:"N/A" }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Renewal History Card -->
+  <div class="user-document-detail-card">
+    <div class="user-document-detail-card-header">
+      <i class="las la-history"></i>
+      Renewal History
+      <span class="user-document-detail-count-badge">
+        {{ entries|length }} Record{{ entries|length|pluralize }}
+      </span>
+    </div>
+    <div class="user-document-detail-card-body">
+      {% if entries %}
+        <div class="user-document-detail-timeline">
+          {% for entry in entries %}
+            <div class="user-document-detail-timeline-item">
+              <div class="user-document-detail-timeline-marker">
+                <i class="las la-check-circle"></i>
+              </div>
+              <div class="user-document-detail-timeline-content">
+                <div class="user-document-detail-timeline-header">
+                  <div class="user-document-detail-timeline-date">
+                    <i class="las la-calendar-check"></i>
+                    {{ entry.renewal_date|date:"F d, Y" }}
+                  </div>
+                  <div class="user-document-detail-timeline-status">
+                    <span class="user-document-detail-status-badge user-document-detail-status-{{ entry.status }}">
+                      {{ entry.status|title }}
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="user-document-detail-timeline-documents">
+                  {% if entry.official_receipt %}
+                    <div class="user-document-detail-doc-item">
+                      <i class="las la-receipt"></i>
+                      <div class="user-document-detail-doc-info">
+                        <strong>Official Receipt</strong>
+                        <span class="user-document-detail-doc-name">{{ entry.official_receipt.name }}</span>
+                      </div>
+                      <a href="{{ entry.official_receipt.url }}" target="_blank" class="user-document-btn user-document-btn-download">
+                        <i class="las la-download"></i>
+                        Download
+                      </a>
+                    </div>
+                  {% endif %}
+                  
+                  {% if entry.certificate_of_registration %}
+                    <div class="user-document-detail-doc-item">
+                      <i class="las la-certificate"></i>
+                      <div class="user-document-detail-doc-info">
+                        <strong>Certificate of Registration</strong>
+                        <span class="user-document-detail-doc-name">{{ entry.certificate_of_registration.name }}</span>
+                      </div>
+                      <a href="{{ entry.certificate_of_registration.url }}" target="_blank" class="user-document-btn user-document-btn-download">
+                        <i class="las la-download"></i>
+                        Download
+                      </a>
+                    </div>
+                  {% endif %}
+                </div>
+
+                {% if entry.uploaded_by %}
+                  <div class="user-document-detail-timeline-footer">
+                    <i class="las la-user"></i>
+                    Uploaded by: {{ entry.uploaded_by.full_name|default:entry.uploaded_by.username }}
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="user-document-detail-no-entries">
+          <i class="las la-inbox"></i>
+          <p>No renewal records available yet</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Actions Card -->
+  <div class="user-document-detail-actions-card">
+    <div class="user-document-detail-actions-content">
+      <i class="las la-info-circle"></i>
+      <div>
+        <h4>Need to Update Documents?</h4>
+        <p>Contact the manager to upload new renewal documents for your vehicle.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

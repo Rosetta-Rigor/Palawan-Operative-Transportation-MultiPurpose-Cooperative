@@ -341,6 +341,158 @@ class PaymentEntry(models.Model):
         self.carry_over = max(0, self.amount_due - self.amount_paid)
         self.save()
 
+
+class Notification(models.Model):
+    """
+    Universal notification model for both admin and user notifications
+    """
+    
+    # Recipient
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+        help_text="User who receives this notification"
+    )
+    
+    # Notification Content
+    title = models.CharField(
+        max_length=200,
+        help_text="Short notification title"
+    )
+    message = models.TextField(
+        help_text="Detailed notification message"
+    )
+    
+    # Categorization
+    CATEGORY_CHOICES = [
+        # Admin/Manager Categories
+        ('user_registration', 'New User Registration'),
+        ('document_uploaded', 'Document Uploaded'),
+        ('renewal_urgent', 'Urgent Renewal'),
+        ('renewal_upcoming', 'Upcoming Renewal'),
+        ('payment_missing', 'Payment Missing'),
+        ('carwash_noncompliance', 'Car Wash Non-Compliance'),
+        ('batch_deadline', 'Batch Deadline'),
+        ('system_alert', 'System Alert'),
+        
+        # User/Member Categories
+        ('account_activated', 'Account Activated'),
+        ('document_approved', 'Document Approved'),
+        ('document_rejected', 'Document Rejected'),
+        ('renewal_reminder', 'Renewal Reminder'),
+        ('renewal_due_soon', 'Renewal Due Soon'),
+        ('payment_recorded', 'Payment Recorded'),
+        ('carwash_reminder', 'Car Wash Reminder'),
+        ('announcement_posted', 'New Announcement'),
+        ('account_warning', 'Account Warning'),
+        ('welcome_message', 'Welcome Message'),
+    ]
+    category = models.CharField(
+        max_length=30,
+        choices=CATEGORY_CHOICES,
+        db_index=True
+    )
+    
+    # Priority
+    PRIORITY_CHOICES = [
+        ('urgent', 'Urgent'),      # Red - Immediate action required
+        ('high', 'High'),          # Orange - Important, action soon
+        ('normal', 'Normal'),      # Blue - Standard notification
+        ('low', 'Low'),            # Gray - Informational only
+    ]
+    priority = models.CharField(
+        max_length=10,
+        choices=PRIORITY_CHOICES,
+        default='normal',
+        db_index=True
+    )
+    
+    # Action Link (optional)
+    action_url = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="URL to redirect user when notification is clicked"
+    )
+    action_text = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Text for action button (e.g., 'View Document', 'Approve Now')"
+    )
+    
+    # Related Objects (generic foreign keys for flexibility)
+    related_object_type = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Type of related object (e.g., 'member', 'vehicle', 'document')"
+    )
+    related_object_id = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text="ID of related object"
+    )
+    
+    # Status
+    is_read = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Whether notification has been read"
+    )
+    read_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Timestamp when notification was read"
+    )
+    
+    # Metadata
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='notifications_created',
+        help_text="Admin/system that triggered this notification"
+    )
+    
+    # Expiry
+    expires_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Optional expiry date for time-sensitive notifications"
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['recipient', '-created_at']),
+            models.Index(fields=['recipient', 'is_read']),
+            models.Index(fields=['category', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.recipient.username} - {self.title}"
+    
+    def mark_as_read(self):
+        """Mark notification as read"""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save(update_fields=['is_read', 'read_at'])
+    
+    def is_expired(self):
+        """Check if notification has expired"""
+        if self.expires_at:
+            return timezone.now() > self.expires_at
+        return False
+
+
 # Signals or logic should be added in views/forms to:
 # - Sync Member info to User account
 # - Only show unassigned vehicles in member add/edit forms

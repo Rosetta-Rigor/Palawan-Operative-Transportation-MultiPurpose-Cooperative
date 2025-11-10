@@ -14,7 +14,8 @@
   // Default whiteboard items (scalable: add new keys here when needed)
   var ITEMS = [
     { key: 'documents', title: 'Documents', icon: 'la la-file', defaultLink: '/approve_documents/' },
-    { key: 'accounts', title: 'User accounts', icon: 'la la-user', defaultLink: '/accounts/' }
+    { key: 'accounts', title: 'User accounts', icon: 'la la-user', defaultLink: '/accounts/' },
+    { key: 'renewals', title: 'Renewals', icon: 'la la-calendar-check', defaultLink: '/renewals/' }
     // add new items here (must match keys returned by the API)
   ];
 

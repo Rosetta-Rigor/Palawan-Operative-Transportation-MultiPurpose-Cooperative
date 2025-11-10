@@ -54,6 +54,7 @@ urlpatterns = [
     path('user/profile/', views.user_profile, name='user_profile'),
     path('user/announcements/', views.user_announcements, name='user_announcements'),
     path('user/documents/', views.user_documents, name='user_documents'),
+    path('user/documents/<int:document_id>/', views.user_document_detail, name='user_document_detail'),
     path('user/payments/', views.user_payments, name='user_payments'),
     path('user/payments/<int:year_id>/', views.user_payment_year_detail, name='user_payment_year_detail'),
     path('profile/', views.my_profile, name='my_profile'),
@@ -107,6 +108,7 @@ urlpatterns = [
 
     # RENEWAL TRACKING
     path('renewals/', views.renewals_hub, name='renewals_hub'),
+    path('renewals/bulk-send/', views.send_bulk_renewal_reminders, name='send_bulk_renewal_reminders'),
     path('renewals/<str:date>/', views.renewal_details, name='renewal_details'),
     path('renewals/<int:member_id>/<int:vehicle_id>/send-reminder/', views.send_renewal_reminder, name='send_renewal_reminder'),
     path('renewals/<int:member_id>/<int:vehicle_id>/mark-renewed/', views.mark_as_renewed, name='mark_as_renewed'),
@@ -115,6 +117,13 @@ urlpatterns = [
     path('password-reset/', views.password_reset_request, name='registration/password_reset_request'),
     path('password-reset/verify/', views.password_reset_verify, name='registration/password_reset_verify'),
     path('password-reset/confirm/', views.password_reset_confirm, name='registration/password_reset_confirm'),
+    
+    # NOTIFICATIONS
+    path('notifications/', views.notifications_center, name='notifications_center'),
+    path('notifications/mark-all-read/', views.notifications_mark_all_read, name='notifications_mark_all_read'),
+    path('notifications/delete-read/', views.notifications_delete_read, name='notifications_delete_read'),
+    path('notifications/<int:notification_id>/mark-read/', views.notification_mark_read, name='notification_mark_read'),
+    path('api/notification-count/', views.notification_count_api, name='notification_count_api'),
 ]
 
 

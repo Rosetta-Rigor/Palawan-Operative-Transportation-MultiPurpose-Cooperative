@@ -1,43 +1,82 @@
 {% extends 'user_base.html' %}
 {% load static %}
 {% block title %}Announcements{% endblock %}
+
 {% block content %}
-<div class="container mt-4" style="max-width:900px; margin:0 auto;">
-    <br><br>
-  <h2>Announcements</h2>
-  <p class="text-muted small">Announcements</p>
+<div class="user-announcements-content">
+  <!-- Page Header -->
+  <div class="user-page-header-section">
+    <div class="user-page-title">
+      <i class="las la-bullhorn"></i>
+      Announcements
+    </div>
+    <p class="user-page-subtitle">Stay updated with the latest news and important notices</p>
+  </div>
 
   {% if announcements %}
-    <ul class="list-unstyled">
+    <!-- Announcements List -->
+    <div class="user-announcements-list">
       {% for ann in announcements %}
-        <li class="mb-3 p-3 border rounded">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <strong>
-                {{ ann.created_by.full_name|default:ann.created_by.username|default:"System" }}
-              </strong>
-              <div class="small text-muted">
-                {{ ann.created_at|date:"M d, Y H:i" }}
+        <div class="user-announcement-card">
+          <!-- Card Header -->
+          <div class="user-announcement-card-header">
+            <div class="user-announcement-author-info">
+              <div class="user-announcement-avatar">
+                {% if ann.created_by.profile_picture %}
+                  <img src="{{ ann.created_by.profile_picture.url }}" alt="{{ ann.created_by.full_name }}">
+                {% else %}
+                  <i class="las la-user-circle"></i>
+                {% endif %}
+              </div>
+              <div class="user-announcement-author-details">
+                <div class="user-announcement-author-name">
+                  {{ ann.created_by.full_name|default:ann.created_by.username|default:"System" }}
+                </div>
+                <div class="user-announcement-date">
+                  <i class="las la-clock"></i>
+                  {{ ann.created_at|date:"F d, Y • h:i A" }}
+                </div>
               </div>
             </div>
-            <div class="text-end">
+            <div class="user-announcement-badge-wrapper">
               {% if ann.recipients.count %}
-                <span class="badge bg-info">Targeted</span>
+                <span class="user-announcement-badge user-announcement-badge-targeted">
+                  <i class="las la-user-tag"></i>
+                  Targeted
+                </span>
               {% else %}
-                <span class="badge bg-secondary">Broadcast</span>
+                <span class="user-announcement-badge user-announcement-badge-broadcast">
+                  <i class="las la-broadcast-tower"></i>
+                  Broadcast
+                </span>
               {% endif %}
             </div>
           </div>
-          <p class="mt-2 mb-0">{{ ann.message }}</p>
 
+          <!-- Card Body -->
+          <div class="user-announcement-card-body">
+            <div class="user-announcement-message">
+              {{ ann.message|linebreaks }}
+            </div>
+          </div>
+
+          <!-- Card Footer -->
           {% if ann.recipients.count %}
-            <div class="small text-muted mt-2">Recipients: {{ ann.recipients.count }}</div>
+            <div class="user-announcement-card-footer">
+              <i class="las la-users"></i>
+              <span>Sent to {{ ann.recipients.count }} recipient{{ ann.recipients.count|pluralize }}</span>
+            </div>
           {% endif %}
-        </li>
+        </div>
       {% endfor %}
-    </ul>
+    </div>
   {% else %}
-    <div class="alert alert-light">No announcements.</div>
+    <!-- Empty State -->
+    <div class="user-empty-state">
+      <i class="las la-inbox"></i>
+      <h3>No Announcements Yet</h3>
+      <p>There are no announcements to display at this time.<br>Check back later for updates and important notices.</p>
+    </div>
   {% endif %}
 </div>
 {% endblock %}

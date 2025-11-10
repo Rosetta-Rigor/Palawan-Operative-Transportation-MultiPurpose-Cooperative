@@ -1,0 +1,140 @@
+{% extends 'user_base.html' %}
+{% load static %}
+
+{% block title %}Notification Center - POTMPC Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .main-panel {
+        background: #f5f7fa;
+        min-height: 100vh;
+    }
+    
+    .content {
+        padding: 30px;
+    }
+    
+    @media (max-width: 768px) {
+        .content {
+            padding: 20px 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content">
+    <div class="notifications-page">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1><i class="las la-bell"></i> My Notifications</h1>
+            <div class="header-actions">
+                <form method="post" action="{% url 'notifications_mark_all_read' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary">
+                        <i class="las la-check-double"></i> Mark All Read
+                    </button>
+                </form>
+                <form method="post" action="{% url 'notifications_delete_read' %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete all read notifications? This action cannot be undone.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="las la-trash"></i> Delete Read
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Filters -->
+        <div class="notification-filters">
+            <button class="filter-btn {% if filter == 'all' %}active{% endif %}" 
+                    onclick="location.href='?filter=all'">
+                All
+            </button>
+            <button class="filter-btn {% if filter == 'unread' %}active{% endif %}" 
+                    onclick="location.href='?filter=unread'">
+                Unread {% if unread_count > 0 %}({{ unread_count }}){% endif %}
+            </button>
+            <button class="filter-btn {% if filter == 'urgent' %}active{% endif %}" 
+                    onclick="location.href='?filter=urgent'">
+                Urgent
+            </button>
+            <button class="filter-btn {% if filter == 'high' %}active{% endif %}" 
+                    onclick="location.href='?filter=high'">
+                High Priority
+            </button>
+        </div>
+        
+        <!-- Notifications List -->
+        <div class="notifications-list">
+            {% for notification in notifications %}
+            <div class="notification-card {% if not notification.is_read %}unread{% endif %} priority-{{ notification.priority }}">
+                <div class="notification-card-header">
+                    <span class="priority-badge priority-{{ notification.priority }}">
+                        {{ notification.get_priority_display }}
+                    </span>
+                    <span class="notification-time" style="color: #999; font-size: 0.85rem;">
+                        {{ notification.created_at|date:"M d, Y g:i A" }}
+                    </span>
+                </div>
+                <h3 class="notification-card-title">{{ notification.title }}</h3>
+                <p class="notification-card-message">{{ notification.message }}</p>
+                
+                {% if notification.action_url or not notification.is_read %}
+                <div class="notification-card-actions">
+                    {% if notification.action_url %}
+                    <a href="{{ notification.action_url }}" class="btn btn-primary btn-sm">
+                        <i class="las la-external-link-alt"></i> {{ notification.action_text|default:"View" }}
+                    </a>
+                    {% endif %}
+                    
+                    {% if not notification.is_read %}
+                    <form method="post" action="{% url 'notification_mark_read' notification.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary btn-sm">
+                            <i class="las la-check"></i> Mark as Read
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <i class="las la-bell-slash"></i>
+                <h3>No Notifications</h3>
+                <p>
+                    {% if filter == 'unread' %}
+                        You're all caught up! No unread notifications.
+                    {% elif filter == 'urgent' %}
+                        No urgent notifications at this time.
+                    {% elif filter == 'high' %}
+                        No high priority notifications.
+                    {% else %}
+                        You don't have any notifications yet.
+                    {% endif %}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&filter={{ filter }}">
+                <i class="las la-angle-left"></i> Previous
+            </a>
+            {% endif %}
+            
+            <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&filter={{ filter }}">
+                Next <i class="las la-angle-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -142,6 +142,26 @@
   background:#F6F4ED; color:var(--accent-500); display:flex; align-items:center; justify-content:center; font-size:1.15rem; /* Muted Gold */
   border:1px solid rgba(201,158,53,0.2);
 }
+
+/* Specific icon colors for different whiteboard items */
+.admin-dashboard .whiteboard-item[data-key="renewals"] .wb-icon {
+  background: linear-gradient(135deg, rgba(45,138,99,0.15), rgba(36,117,82,0.1));
+  color: var(--success);
+  border-color: rgba(45,138,99,0.3);
+}
+
+.admin-dashboard .whiteboard-item[data-key="documents"] .wb-icon {
+  background: linear-gradient(135deg, rgba(201,158,53,0.15), rgba(184,141,47,0.1));
+  color: var(--accent-500);
+  border-color: rgba(201,158,53,0.3);
+}
+
+.admin-dashboard .whiteboard-item[data-key="accounts"] .wb-icon {
+  background: linear-gradient(135deg, rgba(59,107,143,0.15), rgba(31,62,39,0.1));
+  color: var(--brand-600);
+  border-color: rgba(31,62,39,0.3);
+}
+
 .admin-dashboard .wb-meta { flex:1 1 auto; display:flex; flex-direction:column; }
 .admin-dashboard .wb-title { font-weight:700; color:var(--brand-600); font-size:0.98rem; } /* Deep Forest */
 .admin-dashboard .wb-sub { font-size:0.85rem; color:var(--muted-2); } /* Earth Brown */
