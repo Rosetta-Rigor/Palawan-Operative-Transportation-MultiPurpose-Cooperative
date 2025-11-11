@@ -257,6 +257,105 @@
           </p>
         </div>
       {% endif %}
+      
+      <!-- Recent Car Wash Logs Section -->
+      {% if recent_carwash_logs %}
+      <div class="payment-table-container" style="margin-top: 30px;">
+        <div class="payment-table-header" style="background: linear-gradient(135deg, #17a2b8, #20c997);">
+          <h4 class="payment-table-title">
+            <i class="las la-history"></i> Recent Car Wash Logs
+          </h4>
+          <small style="color: rgba(255,255,255,0.9);">
+            <i class="las la-info-circle"></i> Last 5 car wash services for {{ year.year }}
+          </small>
+        </div>
+        <div class="table-responsive">
+          <table class="payment-table">
+            <thead>
+              <tr>
+                <th>Transaction ID</th>
+                <th>Date & Time</th>
+                <th>Customer Type</th>
+                <th>Customer</th>
+                <th>Vehicle</th>
+                <th>Service Type</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Logged By</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in recent_carwash_logs %}
+              <tr>
+                <td>
+                  <span style="font-family: 'Courier New', monospace; font-weight: 600; color: #17a2b8; font-size: 0.9rem;">
+                    {{ log.transaction_id }}
+                  </span>
+                </td>
+                <td style="font-size: 0.9rem;">{{ log.timestamp|date:"M d, Y H:i" }}</td>
+                <td>
+                  {% if log.customer_type == 'member' %}
+                  <span class="carwash-info-badge" style="background: #2196F3;">
+                    <i class="las la-user"></i> Member
+                  </span>
+                  {% else %}
+                  <span class="carwash-info-badge" style="background: #9C27B0;">
+                    <i class="las la-globe"></i> Public
+                  </span>
+                  {% endif %}
+                </td>
+                <td>
+                  <strong>{{ log.get_display_name }}</strong>
+                  {% if log.member %}
+                  <br><small style="color: var(--text-muted);">{{ log.member.batch }} | #{{ log.member.batch_monitoring_number }}</small>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if log.vehicle %}
+                  <span class="vehicle-badge">
+                    <i class="las la-car"></i> {{ log.vehicle.plate_number }}
+                  </span>
+                  {% else %}
+                  <span style="color: var(--text-muted);">{{ log.vehicle_plate|default:"N/A" }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ log.service_type_name }}</td>
+                <td>
+                  {% if log.service_amount == 0 %}
+                  <span class="carwash-info-badge" style="background: #4CAF50;">Free</span>
+                  {% else %}
+                  <strong style="font-family: 'Courier New', monospace; color: #20c997; font-size: 1.05rem;">
+                    ₱{{ log.service_amount|floatformat:2 }}
+                  </strong>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if log.status == 'completed' %}
+                  <span class="carwash-info-badge" style="background: #4CAF50;">
+                    <i class="las la-check-circle"></i> Completed
+                  </span>
+                  {% else %}
+                  <span class="carwash-info-badge" style="background: #f44336;">
+                    <i class="las la-times-circle"></i> Cancelled
+                  </span>
+                  {% endif %}
+                </td>
+                <td style="color: var(--text-muted); font-size: 0.9rem;">
+                  {{ log.logged_by.username|default:"System" }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div style="padding: 20px; text-align: center; background: #f9f9f9; border-top: 1px solid #e0e0e0;">
+          <a href="{% url 'carwash_logs' %}?carwash_year={{ year.year }}" class="carwash-action-btn" style="font-size: 1rem; padding: 12px 24px;">
+            <i class="las la-list"></i> View All Car Wash Logs for {{ year.year }}
+          </a>
+        </div>
+      </div>
+      {% endif %}
+      
     {% endif %}
 
   </div>

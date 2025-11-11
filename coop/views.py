@@ -2345,11 +2345,18 @@ def payment_year_detail(request, year_id):
             'monthly_totals': monthly_totals,
         })
 
+    # Get recent payment logs for this year
+    from .models import PaymentLog
+    recent_payment_logs = PaymentLog.objects.filter(
+        payment_year=year.year
+    ).select_related('member', 'logged_by').order_by('-timestamp')[:5]
+    
     return render(request, 'payments/year_detail.html', {
         'year': year,
         'from_members_data': from_members_data,
         'other_data': other_data,
         'months': months,
+        'recent_payment_logs': recent_payment_logs,
     })
 
 @login_required
@@ -2407,6 +2414,24 @@ def add_payment_entry(request, year_id, member_id=None):
                 return render(request, 'payments/add_payment_entry.html', {'form': form, 'year': year, 'member': member})
             payment_entry.recorded_by = request.user
             payment_entry.save()
+            
+            # Create payment log entry for member payment
+            from .models import PaymentLog
+            payment_log = PaymentLog.objects.create(
+                transaction_id=PaymentLog.generate_transaction_id('from_members'),
+                category='from_members',
+                logged_by=request.user,
+                member=payment_entry.member,
+                payment_type=payment_entry.payment_type,
+                payment_type_name=payment_entry.payment_type.name,
+                amount=payment_entry.amount_paid,
+                payment_year=year.year,
+                payment_month=payment_entry.month,
+                payment_method='cash',  # Default method, can be enhanced later
+                status='confirmed',
+                notes=f'Payment recorded via system for {payment_entry.member.full_name}'
+            )
+            
             messages.success(request, "Payment entry added successfully.")
             # Redirect to the specific member's payment table
             return redirect('member_payment_list', year_id=year.id, member_id=payment_entry.member.id)
@@ -2445,6 +2470,28 @@ def add_other_payment_entry(request, year_id):
             payment_entry = form.save(commit=False)
             payment_entry.recorded_by = request.user
             payment_entry.save()
+            
+            # Create payment log entry for other payment
+            from .models import PaymentLog
+            # Determine payee name (could be member or someone else)
+            payee_name = payment_entry.member.full_name if payment_entry.member else "Other Payee"
+            
+            payment_log = PaymentLog.objects.create(
+                transaction_id=PaymentLog.generate_transaction_id('other'),
+                category='other',
+                logged_by=request.user,
+                member=payment_entry.member if payment_entry.member else None,
+                payee_name=payee_name,
+                payment_type=payment_entry.payment_type,
+                payment_type_name=payment_entry.payment_type.name,
+                amount=payment_entry.amount_paid,
+                payment_year=year.year,
+                payment_month=payment_entry.month if payment_entry.month else None,
+                payment_method='cash',  # Default method
+                status='confirmed',
+                notes=f'Other payment recorded via system'
+            )
+            
             messages.success(request, "Other payment entry added successfully.")
             return redirect('other_payments_view', year_id=year.id)
         else:
@@ -3786,6 +3833,12 @@ def carwash_year_detail(request, year_id):
             'total_count': member_count + public_count
         })
     
+    # Get recent car wash logs for this year
+    from .models import CarWashLog
+    recent_carwash_logs = CarWashLog.objects.filter(
+        carwash_year=year.year
+    ).select_related('member', 'vehicle', 'logged_by').order_by('-timestamp')[:5]
+    
     context = {
         'year': year,
         'compliance': compliance,
@@ -3796,6 +3849,7 @@ def carwash_year_detail(request, year_id):
         'public_customer_records': public_customer_records,
         'service_type_breakdown': service_type_breakdown,
         'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        'recent_carwash_logs': recent_carwash_logs,
     }
     
     return render(request, 'payments/carwash_year_detail.html', context)
@@ -3898,6 +3952,27 @@ def add_carwash_record(request, year_id):
             entry.is_penalty = False
             entry.recorded_by = request.user
             entry.save()
+            
+            # Create car wash log entry
+            from .models import CarWashLog
+            carwash_log = CarWashLog.objects.create(
+                transaction_id=CarWashLog.generate_transaction_id(),
+                logged_by=request.user,
+                customer_type='public' if entry.is_public_customer else 'member',
+                member=entry.member if not entry.is_public_customer else None,
+                vehicle=entry.vehicle if not entry.is_public_customer else None,
+                customer_name=entry.customer_name if entry.is_public_customer else '',
+                vehicle_plate='' if not entry.is_public_customer else '',  # Could capture this if needed
+                service_type=payment_type,
+                service_type_name=payment_type.name,
+                service_amount=entry.amount_paid,
+                carwash_year=year.year,
+                carwash_month=entry.month,
+                is_compliance=not entry.is_public_customer,  # Member services count as compliance
+                compliance_status='' if entry.is_public_customer else 'Service Recorded',
+                status='completed',
+                notes=f'Car wash service recorded via system'
+            )
             
             # Success message based on customer type
             if entry.is_public_customer:
@@ -4013,4 +4088,534 @@ def notifications_center(request):
         template_name = 'notifications/notifications_center.html'
     
     return render(request, template_name, context)
+
+
+# ============================================================================
+# LOGGING SYSTEM VIEWS
+# ============================================================================
+
+from .models import PaymentLog, CarWashLog, LogEmailHistory
+from django.core.paginator import Paginator
+from django.db.models import Q, Count, Sum
+from datetime import datetime, date
+
+@staff_member_required
+def payment_logs_view(request):
+    """
+    Display all payment transaction logs with filters and search.
+    Staff-only access.
+    """
+    # Get filter parameters
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    category = request.GET.get('category', '')
+    payment_type_id = request.GET.get('payment_type', '')
+    payment_year = request.GET.get('payment_year', '')  # NEW: Year filter
+    logged_by_id = request.GET.get('logged_by', '')
+    status = request.GET.get('status', '')
+    search = request.GET.get('search', '').strip()
+    
+    # Base queryset
+    logs = PaymentLog.objects.select_related(
+        'member', 'payment_type', 'logged_by'
+    ).all()
+    
+    # Apply filters
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+            logs = logs.filter(timestamp__date__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+            logs = logs.filter(timestamp__date__lte=date_to_obj)
+        except ValueError:
+            pass
+    
+    if category:
+        logs = logs.filter(category=category)
+    
+    if payment_type_id:
+        logs = logs.filter(payment_type_id=payment_type_id)
+    
+    if payment_year:  # NEW: Filter by year
+        try:
+            logs = logs.filter(payment_year=int(payment_year))
+        except ValueError:
+            pass
+    
+    if logged_by_id:
+        logs = logs.filter(logged_by_id=logged_by_id)
+    
+    if status:
+        logs = logs.filter(status=status)
+    
+    # Apply search
+    if search:
+        logs = logs.filter(
+            Q(transaction_id__icontains=search) |
+            Q(member__full_name__icontains=search) |
+            Q(payee_name__icontains=search) |
+            Q(receipt_number__icontains=search) |
+            Q(payment_type_name__icontains=search)
+        )
+    
+    # Calculate statistics
+    total_logs = logs.count()
+    total_amount = logs.aggregate(total=Sum('amount'))['total'] or 0
+    confirmed_count = logs.filter(status='confirmed').count()
+    pending_count = logs.filter(status='pending').count()
+    
+    # Pagination
+    paginator = Paginator(logs, 50)  # 50 logs per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    # Get filter options
+    payment_types = PaymentType.objects.all().order_by('name')
+    staff_users = User.objects.filter(is_staff=True).order_by('username')
+    
+    # Get distinct years from logs for year filter dropdown
+    payment_years = PaymentLog.objects.values_list('payment_year', flat=True).distinct().order_by('-payment_year')
+    
+    context = {
+        'logs': page_obj,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'total_logs': total_logs,
+        'total_amount': total_amount,
+        'confirmed_count': confirmed_count,
+        'pending_count': pending_count,
+        'payment_types': payment_types,
+        'logged_by_list': staff_users,  # Fixed: Template expects logged_by_list
+        'staff_users': staff_users,
+        'payment_years': payment_years,  # NEW: Available years
+        # Preserve filter values
+        'date_from': date_from,
+        'date_to': date_to,
+        'category': category,
+        'payment_type_id': payment_type_id,
+        'payment_year': payment_year,  # NEW: Preserve year filter
+        'logged_by_id': logged_by_id,
+        'status': status,
+        'search': search,
+    }
+    
+    return render(request, 'logs/payment_logs.html', context)
+
+
+@staff_member_required
+def carwash_logs_view(request):
+    """
+    Display all car wash transaction logs with filters and search.
+    Staff-only access.
+    """
+    # Get filter parameters
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    customer_type = request.GET.get('customer_type', '')
+    service_type_id = request.GET.get('service_type', '')
+    carwash_year = request.GET.get('carwash_year', '')  # NEW: Year filter
+    logged_by_id = request.GET.get('logged_by', '')
+    status = request.GET.get('status', '')
+    search = request.GET.get('search', '').strip()
+    
+    # Base queryset
+    logs = CarWashLog.objects.select_related(
+        'member', 'vehicle', 'service_type', 'logged_by'
+    ).all()
+    
+    # Apply filters
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+            logs = logs.filter(timestamp__date__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+            logs = logs.filter(timestamp__date__lte=date_to_obj)
+        except ValueError:
+            pass
+    
+    if customer_type:
+        logs = logs.filter(customer_type=customer_type)
+    
+    if service_type_id:
+        logs = logs.filter(service_type_id=service_type_id)
+    
+    if carwash_year:  # NEW: Filter by year
+        try:
+            logs = logs.filter(carwash_year=int(carwash_year))
+        except ValueError:
+            pass
+    
+    if logged_by_id:
+        logs = logs.filter(logged_by_id=logged_by_id)
+    
+    if status:
+        logs = logs.filter(status=status)
+    
+    # Apply search
+    if search:
+        logs = logs.filter(
+            Q(transaction_id__icontains=search) |
+            Q(member__full_name__icontains=search) |
+            Q(customer_name__icontains=search) |
+            Q(vehicle__plate_number__icontains=search) |
+            Q(vehicle_plate__icontains=search) |
+            Q(service_type_name__icontains=search)
+        )
+    
+    # Calculate statistics
+    total_logs = logs.count()
+    member_services = logs.filter(customer_type='member').count()
+    public_services = logs.filter(customer_type='public').count()
+    total_revenue = logs.aggregate(total=Sum('service_amount'))['total'] or 0
+    
+    # Pagination
+    paginator = Paginator(logs, 50)  # 50 logs per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    # Get filter options
+    service_types = PaymentType.objects.filter(is_car_wash=True).order_by('name')
+    staff_users = User.objects.filter(is_staff=True).order_by('username')
+    
+    # Get distinct years from logs for year filter dropdown
+    carwash_years = CarWashLog.objects.values_list('carwash_year', flat=True).distinct().order_by('-carwash_year')
+    
+    context = {
+        'logs': page_obj,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'total_logs': total_logs,
+        'member_services': member_services,
+        'public_services': public_services,
+        'total_revenue': total_revenue,
+        'service_types': service_types,
+        'staff_users': staff_users,
+        'carwash_years': carwash_years,  # NEW: Available years
+        # Preserve filter values
+        'date_from': date_from,
+        'date_to': date_to,
+        'customer_type': customer_type,
+        'service_type_id': service_type_id,
+        'carwash_year': carwash_year,  # NEW: Preserve year filter
+        'logged_by_id': logged_by_id,
+        'status': status,
+        'search': search,
+    }
+    
+    return render(request, 'logs/carwash_logs.html', context)
+
+
+@staff_member_required
+def member_logs_view(request, member_id):
+    """
+    Display all logs for a specific member (payment + car wash).
+    Staff-only access for transparency - can show to member or email them.
+    """
+    member = get_object_or_404(Member, pk=member_id)
+    
+    # Get filter parameters
+    log_type = request.GET.get('log_type', 'all')  # all, payment, carwash
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    # Get payment logs
+    payment_logs = PaymentLog.objects.filter(
+        member=member
+    ).select_related('payment_type', 'logged_by')
+    
+    # Get car wash logs
+    carwash_logs = CarWashLog.objects.filter(
+        member=member
+    ).select_related('vehicle', 'service_type', 'logged_by')
+    
+    # Apply date filters
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+            payment_logs = payment_logs.filter(timestamp__date__gte=date_from_obj)
+            carwash_logs = carwash_logs.filter(timestamp__date__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+            payment_logs = payment_logs.filter(timestamp__date__lte=date_to_obj)
+            carwash_logs = carwash_logs.filter(timestamp__date__lte=date_to_obj)
+        except ValueError:
+            pass
+    
+    # Apply log type filter
+    if log_type == 'payment':
+        carwash_logs = CarWashLog.objects.none()
+    elif log_type == 'carwash':
+        payment_logs = PaymentLog.objects.none()
+    
+    # Calculate statistics
+    total_payments = payment_logs.count()
+    total_payment_amount = payment_logs.aggregate(total=Sum('amount'))['total'] or 0
+    total_carwash = carwash_logs.count()
+    
+    # Get email history for this member
+    email_history = LogEmailHistory.objects.filter(
+        recipient_member=member
+    ).select_related('sent_by').order_by('-sent_at')[:10]  # Last 10 emails
+    
+    context = {
+        'member': member,
+        'payment_logs': payment_logs,
+        'carwash_logs': carwash_logs,
+        'total_payments': total_payments,
+        'total_payment_amount': total_payment_amount,
+        'total_carwash': total_carwash,
+        'email_history': email_history,
+        # Preserve filter values
+        'log_type': log_type,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+    
+    return render(request, 'logs/member_logs.html', context)
+
+
+@staff_member_required
+@require_POST
+def send_member_logs_email(request, member_id):
+    """
+    Send member's transaction logs via email with optional PDF attachment.
+    Staff-only action for transparency.
+    """
+    member = get_object_or_404(Member, pk=member_id)
+    
+    # Get parameters
+    log_type = request.POST.get('log_type', 'combined')  # payment, carwash, combined
+    date_from = request.POST.get('date_from', '')
+    date_to = request.POST.get('date_to', '')
+    include_pdf = request.POST.get('include_pdf') == 'on'
+    custom_message = request.POST.get('custom_message', '').strip()
+    
+    # Get member's email
+    recipient_email = None
+    if member.user_account and member.user_account.email:
+        recipient_email = member.user_account.email
+    else:
+        messages.error(request, f"Cannot send email: {member.full_name} does not have an email address on file.")
+        return redirect('member_logs', member_id=member.id)
+    
+    # Build log queryset
+    payment_logs = PaymentLog.objects.filter(member=member)
+    carwash_logs = CarWashLog.objects.filter(member=member)
+    
+    # Apply date filters
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+            payment_logs = payment_logs.filter(timestamp__date__gte=date_from_obj)
+            carwash_logs = carwash_logs.filter(timestamp__date__gte=date_from_obj)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+            payment_logs = payment_logs.filter(timestamp__date__lte=date_to_obj)
+            carwash_logs = carwash_logs.filter(timestamp__date__lte=date_to_obj)
+        except ValueError:
+            pass
+    
+    # Filter by log type
+    if log_type == 'payment':
+        carwash_logs = CarWashLog.objects.none()
+    elif log_type == 'carwash':
+        payment_logs = PaymentLog.objects.none()
+    
+    total_records = payment_logs.count() + carwash_logs.count()
+    
+    # Check if there are logs to send
+    if total_records == 0:
+        messages.warning(request, "No transaction logs found for the selected criteria.")
+        return redirect('member_logs', member_id=member.id)
+    
+    # Prepare email content
+    subject = f"Transaction History - {member.full_name}"
+    
+    # Render HTML email template
+    email_html = render_to_string('logs/email_member_logs.html', {
+        'member': member,
+        'payment_logs': payment_logs,
+        'carwash_logs': carwash_logs,
+        'log_type': log_type,
+        'date_from': date_from,
+        'date_to': date_to,
+        'custom_message': custom_message,
+        'sent_by': request.user,
+        'total_records': total_records,
+    })
+    
+    # Create email
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=f"Dear {member.full_name},\n\nPlease find your transaction history attached.\n\nBest regards,\nPalawan Operative Transportation Cooperative",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[recipient_email]
+    )
+    email.attach_alternative(email_html, "text/html")
+    
+    # Generate and attach PDF if requested
+    pdf_generated = False
+    if include_pdf:
+        try:
+            from reportlab.lib.pagesizes import letter, A4
+            from reportlab.lib import colors
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.units import inch
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+            from reportlab.lib.enums import TA_CENTER, TA_LEFT
+            from io import BytesIO
+            
+            # Create PDF in memory
+            buffer = BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=letter)
+            elements = []
+            styles = getSampleStyleSheet()
+            
+            # Title
+            title_style = ParagraphStyle(
+                'CustomTitle',
+                parent=styles['Heading1'],
+                fontSize=18,
+                textColor=colors.HexColor('#1F3E27'),
+                spaceAfter=30,
+                alignment=TA_CENTER
+            )
+            elements.append(Paragraph(f"Transaction History - {member.full_name}", title_style))
+            elements.append(Spacer(1, 0.2*inch))
+            
+            # Member info
+            info_text = f"<b>Member:</b> {member.full_name}<br/>"
+            info_text += f"<b>Batch:</b> {member.batch}<br/>"
+            if date_from and date_to:
+                info_text += f"<b>Period:</b> {date_from} to {date_to}<br/>"
+            elements.append(Paragraph(info_text, styles['Normal']))
+            elements.append(Spacer(1, 0.3*inch))
+            
+            # Payment logs section
+            if payment_logs.exists():
+                elements.append(Paragraph("<b>Payment Transactions</b>", styles['Heading2']))
+                elements.append(Spacer(1, 0.1*inch))
+                
+                payment_data = [['Date', 'Type', 'Amount', 'Status']]
+                for log in payment_logs:
+                    payment_data.append([
+                        log.timestamp.strftime('%Y-%m-%d'),
+                        log.payment_type_name,
+                        f"₱{log.amount:,.2f}",
+                        log.get_status_display()
+                    ])
+                
+                payment_table = Table(payment_data, colWidths=[1.5*inch, 2*inch, 1.5*inch, 1.5*inch])
+                payment_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F3E27')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 12),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                ]))
+                elements.append(payment_table)
+                elements.append(Spacer(1, 0.3*inch))
+            
+            # Car wash logs section
+            if carwash_logs.exists():
+                elements.append(Paragraph("<b>Car Wash Services</b>", styles['Heading2']))
+                elements.append(Spacer(1, 0.1*inch))
+                
+                carwash_data = [['Date', 'Vehicle', 'Service', 'Status']]
+                for log in carwash_logs:
+                    vehicle_info = log.vehicle.plate_number if log.vehicle else 'N/A'
+                    carwash_data.append([
+                        log.timestamp.strftime('%Y-%m-%d'),
+                        vehicle_info,
+                        log.service_type_name,
+                        log.get_status_display()
+                    ])
+                
+                carwash_table = Table(carwash_data, colWidths=[1.5*inch, 1.5*inch, 2*inch, 1.5*inch])
+                carwash_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F3E27')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 12),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
+                ]))
+                elements.append(carwash_table)
+            
+            # Build PDF
+            doc.build(elements)
+            pdf_content = buffer.getvalue()
+            buffer.close()
+            
+            # Attach PDF to email
+            email.attach(
+                f'TransactionHistory_{member.full_name.replace(" ", "_")}.pdf',
+                pdf_content,
+                'application/pdf'
+            )
+            pdf_generated = True
+        except Exception as e:
+            messages.warning(request, f"PDF generation failed: {str(e)}. Email will be sent without PDF.")
+    
+    # Send email
+    try:
+        email.send()
+        
+        # Create email history record
+        LogEmailHistory.objects.create(
+            sent_by=request.user,
+            recipient_member=member,
+            recipient_email=recipient_email,
+            log_type=log_type,
+            date_range_start=datetime.strptime(date_from, '%Y-%m-%d').date() if date_from else None,
+            date_range_end=datetime.strptime(date_to, '%Y-%m-%d').date() if date_to else None,
+            total_records=total_records,
+            pdf_generated=pdf_generated,
+            delivery_status='sent',
+            notes=custom_message
+        )
+        
+        messages.success(request, f"Transaction history successfully sent to {member.full_name} at {recipient_email}")
+    except Exception as e:
+        # Log failed email
+        LogEmailHistory.objects.create(
+            sent_by=request.user,
+            recipient_member=member,
+            recipient_email=recipient_email,
+            log_type=log_type,
+            date_range_start=datetime.strptime(date_from, '%Y-%m-%d').date() if date_from else None,
+            date_range_end=datetime.strptime(date_to, '%Y-%m-%d').date() if date_to else None,
+            total_records=total_records,
+            pdf_generated=pdf_generated,
+            delivery_status='failed',
+            error_message=str(e),
+            notes=custom_message
+        )
+        
+        messages.error(request, f"Failed to send email: {str(e)}")
+    
+    return redirect('member_logs', member_id=member.id)
 

@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_logs.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="log-container">
+    <!-- Header -->
+    <div class="log-header">
+        <h1 class="log-title">
+            <i class="fas fa-car"></i> Car Wash Transaction Logs
+        </h1>
+        <p class="log-subtitle">Complete audit trail of all car wash services</p>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="log-stats-grid">
+        <div class="log-stat-card">
+            <div class="log-stat-icon" style="background: rgba(31,62,39,0.1); color: #1F3E27;">
+                <i class="fas fa-list"></i>
+            </div>
+            <div class="log-stat-content">
+                <div class="log-stat-value">{{ total_logs }}</div>
+                <div class="log-stat-label">Total Services</div>
+            </div>
+        </div>
+        <div class="log-stat-card">
+            <div class="log-stat-icon" style="background: rgba(33,150,243,0.1); color: #2196F3;">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="log-stat-content">
+                <div class="log-stat-value">{{ member_services }}</div>
+                <div class="log-stat-label">Member Services</div>
+            </div>
+        </div>
+        <div class="log-stat-card">
+            <div class="log-stat-icon" style="background: rgba(156,39,176,0.1); color: #9C27B0;">
+                <i class="fas fa-globe"></i>
+            </div>
+            <div class="log-stat-content">
+                <div class="log-stat-value">{{ public_services }}</div>
+                <div class="log-stat-label">Public Customers</div>
+            </div>
+        </div>
+        <div class="log-stat-card">
+            <div class="log-stat-icon" style="background: rgba(34,139,34,0.1); color: #228B22;">
+                <i class="fas fa-peso-sign"></i>
+            </div>
+            <div class="log-stat-content">
+                <div class="log-stat-value">₱{{ total_revenue|floatformat:2 }}</div>
+                <div class="log-stat-label">Total Revenue</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="log-filters">
+        <div class="log-filters-header">
+            <h3 class="log-filters-title">
+                <i class="fas fa-filter"></i> Filters
+            </h3>
+        </div>
+        <form method="get" action="{% url 'carwash_logs' %}">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-calendar-alt"></i> Date From
+                    </label>
+                    <input type="date" name="date_from" value="{{ date_from }}" class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-calendar-alt"></i> Date To
+                    </label>
+                    <input type="date" name="date_to" value="{{ date_to }}" class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-user-tag"></i> Customer Type
+                    </label>
+                    <select name="customer_type" class="filter-select">
+                        <option value="">All Customers</option>
+                        <option value="member" {% if customer_type == 'member' %}selected{% endif %}>Members</option>
+                        <option value="public" {% if customer_type == 'public' %}selected{% endif %}>Public</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-spray-can"></i> Service Type
+                    </label>
+                    <select name="service_type" class="filter-select">
+                        <option value="">All Services</option>
+                        {% for st in service_types %}
+                        <option value="{{ st.id }}" {% if service_type_id == st.id|stringformat:"s" %}selected{% endif %}>
+                            {{ st.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-user-tie"></i> Logged By
+                    </label>
+                    <select name="logged_by" class="filter-select">
+                        <option value="">All Staff</option>
+                        {% for staff in staff_users %}
+                        <option value="{{ staff.id }}" {% if logged_by_id == staff.id|stringformat:"s" %}selected{% endif %}>
+                            {{ staff.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-info-circle"></i> Status
+                    </label>
+                    <select name="status" class="filter-select">
+                        <option value="">All Status</option>
+                        <option value="completed" {% if status == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Search -->
+            <div class="filter-search">
+                <div class="filter-group" style="flex: 1;">
+                    <label class="filter-label">
+                        <i class="fas fa-search"></i> Search
+                    </label>
+                    <input 
+                        type="text" 
+                        name="search" 
+                        value="{{ search }}" 
+                        placeholder="Transaction ID, member name, plate number..."
+                        class="filter-input"
+                    >
+                </div>
+            </div>
+            
+            <!-- Filter Actions -->
+            <div class="filter-actions">
+                <button type="submit" class="filter-btn apply">
+                    <i class="fas fa-check"></i> Apply Filters
+                </button>
+                <a href="{% url 'carwash_logs' %}" class="filter-btn reset">
+                    <i class="fas fa-redo"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Results Table -->
+    <div class="log-table-container">
+        {% if logs %}
+        <table class="log-table">
+            <thead>
+                <tr>
+                    <th>Transaction ID</th>
+                    <th>Timestamp</th>
+                    <th>Customer Type</th>
+                    <th>Customer</th>
+                    <th>Vehicle</th>
+                    <th>Service</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Logged By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>
+                        <span class="log-transaction-id">{{ log.transaction_id }}</span>
+                    </td>
+                    <td>{{ log.timestamp|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        {% if log.customer_type == 'member' %}
+                        <span class="log-badge log-badge-primary">
+                            <i class="fas fa-user"></i> Member
+                        </span>
+                        {% else %}
+                        <span class="log-badge log-badge-info">
+                            <i class="fas fa-globe"></i> Public
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>{{ log.get_display_name }}</strong>
+                        {% if log.member %}
+                        <br><small class="log-text-muted">{{ log.member.batch }} | #{{ log.member.batch_monitoring_number }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.vehicle %}
+                        <strong>{{ log.vehicle.plate_number }}</strong>
+                        <br><small class="log-text-muted">{{ log.vehicle.make_brand }}</small>
+                        {% else %}
+                        <span class="log-text-muted">{{ log.vehicle_plate|default:"N/A" }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ log.service_type_name }}</td>
+                    <td>
+                        {% if log.service_amount == 0 %}
+                        <span class="log-badge log-badge-success">Free</span>
+                        {% else %}
+                        <strong>₱{{ log.service_amount|floatformat:2 }}</strong>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.status == 'completed' %}
+                        <span class="log-badge log-badge-success">
+                            <i class="fas fa-check-circle"></i> Completed
+                        </span>
+                        {% else %}
+                        <span class="log-badge log-badge-danger">
+                            <i class="fas fa-times-circle"></i> Cancelled
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>{{ log.logged_by.username|default:"System" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="log-pagination">
+            <div class="log-pagination-info">
+                Showing {{ logs.start_index }} to {{ logs.end_index }} of {{ page_obj.paginator.count }} entries
+            </div>
+            <div class="log-pagination-controls">
+                {% if logs.has_previous %}
+                <a href="?page=1{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if customer_type %}&customer_type={{ customer_type }}{% endif %}{% if service_type_id %}&service_type={{ service_type_id }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
+                   class="log-pagination-btn">
+                    <i class="fas fa-angle-double-left"></i>
+                </a>
+                <a href="?page={{ logs.previous_page_number }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if customer_type %}&customer_type={{ customer_type }}{% endif %}{% if service_type_id %}&service_type={{ service_type_id }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
+                   class="log-pagination-btn">
+                    <i class="fas fa-angle-left"></i> Previous
+                </a>
+                {% endif %}
+                
+                <span class="log-pagination-current">
+                    Page {{ logs.number }} of {{ logs.paginator.num_pages }}
+                </span>
+                
+                {% if logs.has_next %}
+                <a href="?page={{ logs.next_page_number }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if customer_type %}&customer_type={{ customer_type }}{% endif %}{% if service_type_id %}&service_type={{ service_type_id }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
+                   class="log-pagination-btn">
+                    Next <i class="fas fa-angle-right"></i>
+                </a>
+                <a href="?page={{ logs.paginator.num_pages }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if customer_type %}&customer_type={{ customer_type }}{% endif %}{% if service_type_id %}&service_type={{ service_type_id }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
+                   class="log-pagination-btn">
+                    <i class="fas fa-angle-double-right"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="log-empty-state">
+            <i class="fas fa-inbox"></i>
+            <p class="log-empty-title">No Car Wash Logs Found</p>
+            <p class="log-empty-message">
+                {% if search or date_from or date_to or customer_type or service_type_id or logged_by_id or status %}
+                Try adjusting your filters to see more results.
+                {% else %}
+                Car wash logs will appear here once services are recorded.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

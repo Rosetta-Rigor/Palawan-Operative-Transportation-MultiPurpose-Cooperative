@@ -124,6 +124,12 @@ urlpatterns = [
     path('notifications/delete-read/', views.notifications_delete_read, name='notifications_delete_read'),
     path('notifications/<int:notification_id>/mark-read/', views.notification_mark_read, name='notification_mark_read'),
     path('api/notification-count/', views.notification_count_api, name='notification_count_api'),
+    
+    # LOGGING SYSTEM
+    path('logs/payments/', views.payment_logs_view, name='payment_logs'),
+    path('logs/carwash/', views.carwash_logs_view, name='carwash_logs'),
+    path('logs/member/<int:member_id>/', views.member_logs_view, name='member_logs'),
+    path('logs/member/<int:member_id>/send-email/', views.send_member_logs_email, name='send_member_logs_email'),
 ]
 
 

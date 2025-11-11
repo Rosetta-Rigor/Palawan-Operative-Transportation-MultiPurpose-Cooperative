@@ -137,6 +137,95 @@
       </table>
     </div>
   </div>
+  
+  <!-- Recent Payment Logs Section -->
+  {% if recent_payment_logs %}
+  <div class="payment-table-container" style="margin-top: 30px;">
+    <div class="payment-table-header" style="background: linear-gradient(135deg, #C99E35, #B8922F);">
+      <h4 class="payment-table-title">
+        <i class="las la-history"></i> Recent Payment Logs
+      </h4>
+      <small style="color: rgba(255,255,255,0.9);">
+        <i class="las la-info-circle"></i> Last 5 payment transactions for {{ year.year }}
+      </small>
+    </div>
+    <div class="table-responsive">
+      <table class="payment-table">
+        <thead>
+          <tr>
+            <th>Transaction ID</th>
+            <th>Date & Time</th>
+            <th>Category</th>
+            <th>Member/Payee</th>
+            <th>Payment Type</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Logged By</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in recent_payment_logs %}
+          <tr>
+            <td>
+              <span style="font-family: 'Courier New', monospace; font-weight: 600; color: var(--brand-600); font-size: 0.9rem;">
+                {{ log.transaction_id }}
+              </span>
+            </td>
+            <td style="font-size: 0.9rem;">{{ log.timestamp|date:"M d, Y H:i" }}</td>
+            <td>
+              {% if log.category == 'from_members' %}
+              <span class="carwash-info-badge" style="background: var(--brand-600);">
+                <i class="las la-users"></i> From Members
+              </span>
+              {% else %}
+              <span class="carwash-info-badge" style="background: var(--accent-500);">
+                <i class="las la-file-alt"></i> Other
+              </span>
+              {% endif %}
+            </td>
+            <td>
+              <strong>{{ log.get_display_name }}</strong>
+              {% if log.member %}
+              <br><small style="color: var(--text-muted);">{{ log.member.batch }} | #{{ log.member.batch_monitoring_number }}</small>
+              {% endif %}
+            </td>
+            <td>{{ log.payment_type_name }}</td>
+            <td>
+              <strong style="font-family: 'Courier New', monospace; color: #228B22; font-size: 1.05rem;">
+                ₱{{ log.amount|floatformat:2 }}
+              </strong>
+            </td>
+            <td>
+              {% if log.status == 'confirmed' %}
+              <span class="carwash-info-badge" style="background: #4CAF50;">
+                <i class="las la-check-circle"></i> Confirmed
+              </span>
+              {% elif log.status == 'pending' %}
+              <span class="carwash-info-badge" style="background: #FF9800;">
+                <i class="las la-clock"></i> Pending
+              </span>
+              {% else %}
+              <span class="carwash-info-badge" style="background: #f44336;">
+                <i class="las la-times-circle"></i> Reversed
+              </span>
+              {% endif %}
+            </td>
+            <td style="color: var(--text-muted); font-size: 0.9rem;">
+              {{ log.logged_by.username|default:"System" }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div style="padding: 20px; text-align: center; background: #f9f9f9; border-top: 1px solid #e0e0e0;">
+      <a href="{% url 'payment_logs' %}?payment_year={{ year.year }}" class="payment-action-btn btn-filter" style="font-size: 1rem; padding: 12px 24px;">
+        <i class="las la-list"></i> View All Payment Logs for {{ year.year }}
+      </a>
+    </div>
+  </div>
+  {% endif %}
+  
   </div>
 </div>
 {% endblock %}

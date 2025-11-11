@@ -1,0 +1,467 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/payment_logs.css' %}">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+{% endblock %}
+
+{% block content %}
+<div class="payment-logs-container">
+    <!-- Material Header -->
+    <div class="payment-logs-header">
+        <div class="payment-logs-header-content">
+            <div class="payment-logs-header-icon">
+                <i class="material-icons">receipt_long</i>
+            </div>
+            <div class="payment-logs-header-text">
+                <h1 class="payment-logs-header-title">Payment Transaction Logs</h1>
+                <p class="payment-logs-header-subtitle">Complete audit trail of all payment transactions</p>
+            </div>
+        </div>
+        <div class="payment-logs-header-actions">
+            <button onclick="openFilterModal()" class="payment-logs-btn payment-logs-btn-outlined">
+                <i class="material-icons">filter_list</i>
+                <span>Filters</span>
+                {% if date_from or date_to or category or payment_type_id or payment_year or logged_by_id or status or search %}
+                <span class="payment-logs-filter-badge">●</span>
+                {% endif %}
+            </button>
+            <button class="payment-logs-btn payment-logs-btn-icon" title="Export">
+                <i class="material-icons">download</i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Material Statistics Cards (Single Row) -->
+    <div class="payment-logs-stats">
+        <div class="payment-logs-stat-card">
+            <div class="payment-logs-stat-icon blue">
+                <i class="material-icons">receipt</i>
+            </div>
+            <div class="payment-logs-stat-content">
+                <div class="payment-logs-stat-label">Total Logs</div>
+                <div class="payment-logs-stat-value">{{ total_logs|default:0 }}</div>
+            </div>
+        </div>
+        <div class="payment-logs-stat-card">
+            <div class="payment-logs-stat-icon green">
+                <i class="material-icons">payments</i>
+            </div>
+            <div class="payment-logs-stat-content">
+                <div class="payment-logs-stat-label">Total Amount</div>
+                <div class="payment-logs-stat-value">₱{{ total_amount|default:0|floatformat:2 }}</div>
+            </div>
+        </div>
+        <div class="payment-logs-stat-card">
+            <div class="payment-logs-stat-icon success">
+                <i class="material-icons">check_circle</i>
+            </div>
+            <div class="payment-logs-stat-content">
+                <div class="payment-logs-stat-label">Confirmed</div>
+                <div class="payment-logs-stat-value">{{ confirmed_count|default:0 }}</div>
+            </div>
+        </div>
+        <div class="payment-logs-stat-card">
+            <div class="payment-logs-stat-icon warning">
+                <i class="material-icons">schedule</i>
+            </div>
+            <div class="payment-logs-stat-content">
+                <div class="payment-logs-stat-label">Pending</div>
+                <div class="payment-logs-stat-value">{{ pending_count|default:0 }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search Bar & Staff Filter (Full Width Row) -->
+    <div class="payment-logs-search-row">
+        <div class="payment-logs-search-box">
+            <i class="material-icons payment-logs-search-icon">search</i>
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Search by Transaction ID, Member Name, Receipt Number..." 
+                class="payment-logs-search-input"
+                value="{{ search }}"
+            >
+            <button id="clearSearch" class="payment-logs-clear-btn" style="display: {% if search %}flex{% else %}none{% endif %};">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        <div class="payment-logs-staff-filter">
+            <label class="payment-logs-staff-label">
+                <i class="material-icons">person</i>
+                <span>Logged By</span>
+            </label>
+            <select name="logged_by" id="staffFilter" class="payment-logs-staff-select">
+                <option value="">All Staff</option>
+                {% for staff in logged_by_list %}
+                <option value="{{ staff.id }}" {% if staff.id|stringformat:"s" == logged_by_id|stringformat:"s" %}selected{% endif %}>
+                    {{ staff.get_full_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <!-- Active Filters (Compact Card) -->
+    {% if date_from or date_to or category or payment_type_id or payment_year or logged_by_id or status or search %}
+    <div class="payment-logs-active-filters">
+        <div class="payment-logs-filters-label">
+            <i class="material-icons">filter_alt</i>
+            <span>Filters:</span>
+        </div>
+        <div class="payment-logs-filters-chips">
+            {% if date_from %}
+            <div class="payment-logs-chip">
+                <span>From: {{ date_from }}</span>
+                <a href="?{% if date_to %}date_to={{ date_to }}&{% endif %}{% if category %}category={{ category }}&{% endif %}{% if payment_type_id %}payment_type={{ payment_type_id }}&{% endif %}{% if payment_year %}payment_year={{ payment_year }}&{% endif %}{% if logged_by_id %}logged_by={{ logged_by_id }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if search %}search={{ search }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+            {% if date_to %}
+            <div class="payment-logs-chip">
+                <span>To: {{ date_to }}</span>
+                <a href="?{% if date_from %}date_from={{ date_from }}&{% endif %}{% if category %}category={{ category }}&{% endif %}{% if payment_type_id %}payment_type={{ payment_type_id }}&{% endif %}{% if payment_year %}payment_year={{ payment_year }}&{% endif %}{% if logged_by_id %}logged_by={{ logged_by_id }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if search %}search={{ search }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+            {% if category %}
+            <div class="payment-logs-chip">
+                <span>{{ category }}</span>
+                <a href="?{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if payment_type_id %}payment_type={{ payment_type_id }}&{% endif %}{% if payment_year %}payment_year={{ payment_year }}&{% endif %}{% if logged_by_id %}logged_by={{ logged_by_id }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if search %}search={{ search }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+            {% if payment_type_id %}
+            <div class="payment-logs-chip">
+                <span>Type</span>
+                <a href="?{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if category %}category={{ category }}&{% endif %}{% if payment_year %}payment_year={{ payment_year }}&{% endif %}{% if logged_by_id %}logged_by={{ logged_by_id }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if search %}search={{ search }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+            {% if payment_year %}
+            <div class="payment-logs-chip">
+                <span>{{ payment_year }}</span>
+                <a href="?{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if category %}category={{ category }}&{% endif %}{% if payment_type_id %}payment_type={{ payment_type_id }}&{% endif %}{% if logged_by_id %}logged_by={{ logged_by_id }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if search %}search={{ search }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+            {% if logged_by_id %}
+            <div class="payment-logs-chip">
+                <span>Staff</span>
+                <a href="?{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if category %}category={{ category }}&{% endif %}{% if payment_type_id %}payment_type={{ payment_type_id }}&{% endif %}{% if payment_year %}payment_year={{ payment_year }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if search %}search={{ search }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+            {% if status %}
+            <div class="payment-logs-chip">
+                <span>{{ status }}</span>
+                <a href="?{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if category %}category={{ category }}&{% endif %}{% if payment_type_id %}payment_type={{ payment_type_id }}&{% endif %}{% if payment_year %}payment_year={{ payment_year }}&{% endif %}{% if logged_by_id %}logged_by={{ logged_by_id }}&{% endif %}{% if search %}search={{ search }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+            {% if search %}
+            <div class="payment-logs-chip">
+                <span>"{{ search }}"</span>
+                <a href="?{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if category %}category={{ category }}&{% endif %}{% if payment_type_id %}payment_type={{ payment_type_id }}&{% endif %}{% if payment_year %}payment_year={{ payment_year }}&{% endif %}{% if logged_by_id %}logged_by={{ logged_by_id }}&{% endif %}{% if status %}status={{ status }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        <button onclick="window.location.href='{% url 'payment_logs' %}'" class="payment-logs-clear-all-btn">
+            <i class="material-icons">clear_all</i>
+            <span>Clear All</span>
+        </button>
+    </div>
+    {% endif %}
+    
+    <!-- Filter Modal -->
+    <div id="filterModal" class="payment-logs-modal">
+        <div class="payment-logs-modal-overlay" onclick="closeFilterModal()"></div>
+        <div class="payment-logs-modal-content">
+            <div class="payment-logs-modal-header">
+                <h2 class="payment-logs-modal-title">
+                    <i class="material-icons">tune</i>
+                    Filter Options
+                </h2>
+                <button onclick="closeFilterModal()" class="payment-logs-modal-close">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+            <form method="get" action="{% url 'payment_logs' %}" id="filterForm">
+                <div class="payment-logs-modal-body">
+                    <!-- Date Range -->
+                    <div class="payment-logs-filter-section">
+                        <h3 class="payment-logs-filter-section-title">
+                            <i class="material-icons">date_range</i>
+                            Date Range
+                        </h3>
+                        <div class="payment-logs-filter-row">
+                            <div class="payment-logs-input-group">
+                                <label class="payment-logs-label">From Date</label>
+                                <input type="date" name="date_from" value="{{ date_from }}" class="payment-logs-input">
+                            </div>
+                            <div class="payment-logs-input-group">
+                                <label class="payment-logs-label">To Date</label>
+                                <input type="date" name="date_to" value="{{ date_to }}" class="payment-logs-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category & Year -->
+                    <div class="payment-logs-filter-section">
+                        <h3 class="payment-logs-filter-section-title">
+                            <i class="material-icons">category</i>
+                            Category & Year
+                        </h3>
+                        <div class="payment-logs-filter-row">
+                            <div class="payment-logs-input-group">
+                                <label class="payment-logs-label">Category</label>
+                                <select name="category" class="payment-logs-select">
+                                    <option value="">All Categories</option>
+                                    <option value="from_members" {% if category == 'from_members' %}selected{% endif %}>From Members</option>
+                                    <option value="other" {% if category == 'other' %}selected{% endif %}>Other Payments</option>
+                                </select>
+                            </div>
+                            <div class="payment-logs-input-group">
+                                <label class="payment-logs-label">Payment Year</label>
+                                <select name="payment_year" class="payment-logs-select">
+                                    <option value="">All Years</option>
+                                    {% for year in payment_years %}
+                                    <option value="{{ year }}" {% if payment_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Details -->
+                    <div class="payment-logs-filter-section">
+                        <h3 class="payment-logs-filter-section-title">
+                            <i class="material-icons">payment</i>
+                            Payment Details
+                        </h3>
+                        <div class="payment-logs-filter-row">
+                            <div class="payment-logs-input-group">
+                                <label class="payment-logs-label">Payment Type</label>
+                                <select name="payment_type" class="payment-logs-select">
+                                    <option value="">All Types</option>
+                                    {% for pt in payment_types %}
+                                    <option value="{{ pt.id }}" {% if payment_type_id == pt.id|stringformat:"s" %}selected{% endif %}>{{ pt.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="payment-logs-input-group">
+                                <label class="payment-logs-label">Status</label>
+                                <select name="status" class="payment-logs-select">
+                                    <option value="">All Status</option>
+                                    <option value="confirmed" {% if status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                    <option value="pending" {% if status == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="reversed" {% if status == 'reversed' %}selected{% endif %}>Reversed</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="payment-logs-modal-footer">
+                    <button type="button" onclick="window.location.href='{% url 'payment_logs' %}'" class="payment-logs-btn payment-logs-btn-outlined">
+                        <i class="material-icons">clear_all</i>
+                        <span>Clear Filters</span>
+                    </button>
+                    
+                    <!-- Pagination Info in Modal -->
+                    {% if is_paginated %}
+                    <span class="payment-logs-pagination-badge">{{ page_obj.paginator.count }} results</span>
+                    {% endif %}
+                    
+                    <div style="display: flex; gap: var(--plog-md-spacing-xs);">
+                        <button type="button" onclick="closeFilterModal()" class="payment-logs-btn payment-logs-btn-text">
+                            Cancel
+                        </button>
+                        <button type="submit" class="payment-logs-btn payment-logs-btn-primary">
+                            <i class="material-icons">check</i>
+                            <span>Apply Filters</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Material Table -->
+    <div class="payment-logs-table-card">
+        {% if logs %}
+        <div class="payment-logs-table-wrapper">
+            <table class="payment-logs-table">
+                <thead>
+                    <tr>
+                        <th>Transaction</th>
+                        <th>Date</th>
+                        <th>Details</th>
+                        <th class="text-right">Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr class="payment-logs-table-row" onclick="showLogDetail('{{ log.id }}')">
+                        <td>
+                            <div class="payment-logs-transaction-cell">
+                                <span class="payment-logs-transaction-id">{{ log.transaction_id }}</span>
+                                <span class="payment-logs-transaction-method">{{ log.get_payment_method_display }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="payment-logs-date-cell">
+                                <span class="payment-logs-date-primary">{{ log.timestamp|date:"M d, Y" }}</span>
+                                <span class="payment-logs-date-secondary">{{ log.timestamp|date:"h:i A" }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="payment-logs-details-cell">
+                                <div class="payment-logs-details-main">
+                                    <span class="payment-logs-member-name">{{ log.get_display_name }}</span>
+                                    {% if log.category == 'from_members' %}
+                                    <span class="payment-logs-category-chip primary">
+                                        <i class="material-icons">groups</i>
+                                        <span>Member</span>
+                                    </span>
+                                    {% else %}
+                                    <span class="payment-logs-category-chip secondary">
+                                        <i class="material-icons">attach_money</i>
+                                        <span>Other</span>
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="payment-logs-details-meta">
+                                    <span class="payment-logs-payment-type">{{ log.payment_type_name }}</span>
+                                    {% if log.member %}
+                                    <span class="payment-logs-member-badge">{{ log.member.batch }} • #{{ log.member.batch_monitoring_number }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="payment-logs-details-footer">
+                                    <span class="payment-logs-logged-by">
+                                        <i class="material-icons">person</i>
+                                        {{ log.logged_by.username|default:"System" }}
+                                    </span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-right">
+                            <span class="payment-logs-amount">₱{{ log.amount|floatformat:2 }}</span>
+                        </td>
+                        <td>
+                            {% if log.status == 'confirmed' %}
+                            <span class="payment-logs-status success">
+                                <i class="material-icons">check_circle</i>
+                                <span>Confirmed</span>
+                            </span>
+                            {% elif log.status == 'pending' %}
+                            <span class="payment-logs-status warning">
+                                <i class="material-icons">schedule</i>
+                                <span>Pending</span>
+                            </span>
+                            {% else %}
+                            <span class="payment-logs-status error">
+                                <i class="material-icons">cancel</i>
+                                <span>Reversed</span>
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Material Pagination -->
+        {% if is_paginated %}
+        <div class="payment-logs-pagination">
+            <div class="payment-logs-pagination-info">
+                <span class="payment-logs-pagination-text">{{ logs.start_index }}-{{ logs.end_index }}</span>
+                <span class="pagination-divider">of</span>
+                <span class="payment-logs-pagination-total">{{ page_obj.paginator.count }}</span>
+            </div>
+            <div class="payment-logs-pagination-controls">
+                {% if logs.has_previous %}
+                <a href="?page=1{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if payment_type_id %}&payment_type={{ payment_type_id }}{% endif %}{% if payment_year %}&payment_year={{ payment_year }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
+                   class="payment-logs-pagination-btn" title="First page">
+                    <i class="material-icons">first_page</i>
+                </a>
+                <a href="?page={{ logs.previous_page_number }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if payment_type_id %}&payment_type={{ payment_type_id }}{% endif %}{% if payment_year %}&payment_year={{ payment_year }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
+                   class="payment-logs-pagination-btn" title="Previous page">
+                    <i class="material-icons">chevron_left</i>
+                </a>
+                {% else %}
+                <button class="payment-logs-pagination-btn" disabled>
+                    <i class="material-icons">first_page</i>
+                </button>
+                <button class="payment-logs-pagination-btn" disabled>
+                    <i class="material-icons">chevron_left</i>
+                </button>
+                {% endif %}
+                
+                <span class="payment-logs-pagination-current">
+                    <span class="payment-logs-current-page">{{ logs.number }}</span>
+                    <span class="pagination-divider">/</span>
+                    <span class="payment-logs-total-pages">{{ logs.paginator.num_pages }}</span>
+                </span>
+                
+                {% if logs.has_next %}
+                <a href="?page={{ logs.next_page_number }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if payment_type_id %}&payment_type={{ payment_type_id }}{% endif %}{% if payment_year %}&payment_year={{ payment_year }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
+                   class="payment-logs-pagination-btn" title="Next page">
+                    <i class="material-icons">chevron_right</i>
+                </a>
+                <a href="?page={{ logs.paginator.num_pages }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if category %}&category={{ category }}{% endif %}{% if payment_type_id %}&payment_type={{ payment_type_id }}{% endif %}{% if payment_year %}&payment_year={{ payment_year }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
+                   class="payment-logs-pagination-btn" title="Last page">
+                    <i class="material-icons">last_page</i>
+                </a>
+                {% else %}
+                <button class="payment-logs-pagination-btn" disabled>
+                    <i class="material-icons">chevron_right</i>
+                </button>
+                <button class="payment-logs-pagination-btn" disabled>
+                    <i class="material-icons">last_page</i>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="payment-logs-empty">
+            <div class="payment-logs-empty-icon">
+                <i class="material-icons">inbox</i>
+            </div>
+            <h3 class="payment-logs-empty-title">No Payment Logs Found</h3>
+            <p class="payment-logs-empty-message">
+                {% if search or date_from or date_to or category or payment_type_id or payment_year or logged_by_id or status %}
+                Try adjusting your filters to see more results.
+                {% else %}
+                Payment logs will appear here once transactions are recorded.
+                {% endif %}
+            </p>
+            {% if search or date_from or date_to or category or payment_type_id or payment_year or logged_by_id or status %}
+            <button onclick="window.location.href='{% url 'payment_logs' %}'" class="payment-logs-btn payment-logs-btn-primary">
+                <i class="material-icons">clear_all</i>
+                <span>Clear Filters</span>
+            </button>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="{% static 'js/admin_logs.js' %}"></script>
+{% endblock %}
+{% endblock %}

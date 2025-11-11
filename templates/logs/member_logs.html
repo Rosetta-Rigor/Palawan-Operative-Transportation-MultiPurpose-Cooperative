@@ -1,0 +1,382 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_logs.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="log-container">
+    <!-- Header -->
+    <div class="log-header">
+        <h1 class="log-title">
+            <i class="fas fa-user-circle"></i> Member Transaction History
+        </h1>
+        <p class="log-subtitle">{{ member.full_name }} ({{ member.batch }} | #{{ member.batch_monitoring_number }})</p>
+    </div>
+    
+    <!-- Member Info Card -->
+    <div class="member-log-info-card">
+        <div class="member-log-avatar">
+            {% if member.user_account and member.user_account.profile_image %}
+            <img src="{{ member.user_account.profile_image.url }}" alt="{{ member.full_name }}">
+            {% else %}
+            <i class="fas fa-user"></i>
+            {% endif %}
+        </div>
+        <div class="member-log-details">
+            <h2>{{ member.full_name }}</h2>
+            <p><strong>Batch:</strong> {{ member.batch }}</p>
+            <p><strong>Member #:</strong> {{ member.batch_monitoring_number }}</p>
+            {% if member.user_account %}
+            <p><strong>Email:</strong> {{ member.user_account.email }}</p>
+            <p><strong>Phone:</strong> {{ member.user_account.phone_number|default:"N/A" }}</p>
+            {% endif %}
+        </div>
+        <div class="member-log-actions">
+            <button type="button" class="log-btn log-btn-primary" onclick="openEmailModal()">
+                <i class="fas fa-envelope"></i> Send Logs via Email
+            </button>
+            <a href="{% url 'member_list' %}" class="log-btn log-btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Members
+            </a>
+        </div>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="log-stats-grid">
+        <div class="log-stat-card">
+            <div class="log-stat-icon" style="background: rgba(33,150,243,0.1); color: #2196F3;">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="log-stat-content">
+                <div class="log-stat-value">{{ total_payments }}</div>
+                <div class="log-stat-label">Payment Logs</div>
+            </div>
+        </div>
+        <div class="log-stat-card">
+            <div class="log-stat-icon" style="background: rgba(34,139,34,0.1); color: #228B22;">
+                <i class="fas fa-peso-sign"></i>
+            </div>
+            <div class="log-stat-content">
+                <div class="log-stat-value">₱{{ total_payment_amount|floatformat:2 }}</div>
+                <div class="log-stat-label">Total Payments</div>
+            </div>
+        </div>
+        <div class="log-stat-card">
+            <div class="log-stat-icon" style="background: rgba(156,39,176,0.1); color: #9C27B0;">
+                <i class="fas fa-car-wash"></i>
+            </div>
+            <div class="log-stat-content">
+                <div class="log-stat-value">{{ total_carwash }}</div>
+                <div class="log-stat-label">Car Wash Services</div>
+            </div>
+        </div>
+        <div class="log-stat-card">
+            <div class="log-stat-icon" style="background: rgba(255,152,0,0.1); color: #FF9800;">
+                <i class="fas fa-envelope-open-text"></i>
+            </div>
+            <div class="log-stat-content">
+                <div class="log-stat-value">{{ email_history.count }}</div>
+                <div class="log-stat-label">Emails Sent</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="log-filters">
+        <div class="log-filters-header">
+            <h3 class="log-filters-title">
+                <i class="fas fa-filter"></i> Filters
+            </h3>
+        </div>
+        <form method="get" action="{% url 'member_logs' member.id %}">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-list"></i> Log Type
+                    </label>
+                    <select name="log_type" class="filter-select">
+                        <option value="all" {% if log_type == 'all' %}selected{% endif %}>All Logs</option>
+                        <option value="payment" {% if log_type == 'payment' %}selected{% endif %}>Payments Only</option>
+                        <option value="carwash" {% if log_type == 'carwash' %}selected{% endif %}>Car Wash Only</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-calendar-alt"></i> Date From
+                    </label>
+                    <input type="date" name="date_from" value="{{ date_from }}" class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-calendar-alt"></i> Date To
+                    </label>
+                    <input type="date" name="date_to" value="{{ date_to }}" class="filter-input">
+                </div>
+            </div>
+            
+            <!-- Filter Actions -->
+            <div class="filter-actions">
+                <button type="submit" class="filter-btn apply">
+                    <i class="fas fa-check"></i> Apply Filters
+                </button>
+                <a href="{% url 'member_logs' member.id %}" class="filter-btn reset">
+                    <i class="fas fa-redo"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Payment Logs Section -->
+    {% if log_type == 'all' or log_type == 'payment' %}
+    <div class="member-log-section">
+        <h2 class="member-log-section-title">
+            <i class="fas fa-money-bill-wave"></i> Payment Transactions
+        </h2>
+        {% if payment_logs %}
+        <div class="log-table-container">
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Date</th>
+                        <th>Payment Type</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                        <th>Logged By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in payment_logs %}
+                    <tr>
+                        <td><span class="log-transaction-id">{{ log.transaction_id }}</span></td>
+                        <td>{{ log.timestamp|date:"Y-m-d H:i" }}</td>
+                        <td>{{ log.payment_type_name }}</td>
+                        <td><strong>₱{{ log.amount|floatformat:2 }}</strong></td>
+                        <td>{{ log.get_payment_method_display }}</td>
+                        <td>
+                            {% if log.status == 'confirmed' %}
+                            <span class="log-badge log-badge-success"><i class="fas fa-check-circle"></i> Confirmed</span>
+                            {% elif log.status == 'pending' %}
+                            <span class="log-badge log-badge-warning"><i class="fas fa-clock"></i> Pending</span>
+                            {% else %}
+                            <span class="log-badge log-badge-danger"><i class="fas fa-times-circle"></i> Reversed</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.logged_by.username|default:"System" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="log-empty-state">
+            <i class="fas fa-inbox"></i>
+            <p class="log-empty-title">No Payment Logs</p>
+            <p class="log-empty-message">No payment transactions found for this member.</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Car Wash Logs Section -->
+    {% if log_type == 'all' or log_type == 'carwash' %}
+    <div class="member-log-section">
+        <h2 class="member-log-section-title">
+            <i class="fas fa-car-wash"></i> Car Wash Services
+        </h2>
+        {% if carwash_logs %}
+        <div class="log-table-container">
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Date</th>
+                        <th>Vehicle</th>
+                        <th>Service Type</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Logged By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in carwash_logs %}
+                    <tr>
+                        <td><span class="log-transaction-id">{{ log.transaction_id }}</span></td>
+                        <td>{{ log.timestamp|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            {% if log.vehicle %}
+                            <strong>{{ log.vehicle.plate_number }}</strong><br>
+                            <small class="log-text-muted">{{ log.vehicle.make_brand }}</small>
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </td>
+                        <td>{{ log.service_type_name }}</td>
+                        <td>
+                            {% if log.service_amount == 0 %}
+                            <span class="log-badge log-badge-success">Free</span>
+                            {% else %}
+                            <strong>₱{{ log.service_amount|floatformat:2 }}</strong>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.status == 'completed' %}
+                            <span class="log-badge log-badge-success"><i class="fas fa-check-circle"></i> Completed</span>
+                            {% else %}
+                            <span class="log-badge log-badge-danger"><i class="fas fa-times-circle"></i> Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.logged_by.username|default:"System" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="log-empty-state">
+            <i class="fas fa-inbox"></i>
+            <p class="log-empty-title">No Car Wash Logs</p>
+            <p class="log-empty-message">No car wash services found for this member.</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Email History Section -->
+    {% if email_history %}
+    <div class="member-log-section">
+        <h2 class="member-log-section-title">
+            <i class="fas fa-history"></i> Email History
+        </h2>
+        <div class="log-table-container">
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>Sent At</th>
+                        <th>Log Type</th>
+                        <th>Date Range</th>
+                        <th>Records</th>
+                        <th>PDF</th>
+                        <th>Sent By</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for email in email_history %}
+                    <tr>
+                        <td>{{ email.sent_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <span class="log-badge log-badge-info">{{ email.get_log_type_display }}</span>
+                        </td>
+                        <td>
+                            {% if email.date_range_start and email.date_range_end %}
+                            {{ email.date_range_start|date:"Y-m-d" }} to {{ email.date_range_end|date:"Y-m-d" }}
+                            {% else %}
+                            All time
+                            {% endif %}
+                        </td>
+                        <td>{{ email.total_records }}</td>
+                        <td>
+                            {% if email.pdf_generated %}
+                            <i class="fas fa-check-circle" style="color: #4CAF50;"></i> Yes
+                            {% else %}
+                            <i class="fas fa-times-circle" style="color: #999;"></i> No
+                            {% endif %}
+                        </td>
+                        <td>{{ email.sent_by.username }}</td>
+                        <td>
+                            {% if email.delivery_status == 'sent' %}
+                            <span class="log-badge log-badge-success"><i class="fas fa-check"></i> Sent</span>
+                            {% else %}
+                            <span class="log-badge log-badge-danger"><i class="fas fa-exclamation-triangle"></i> Failed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Email Modal -->
+<div id="emailModal" class="log-modal">
+    <div class="log-modal-content">
+        <div class="log-modal-header">
+            <h2><i class="fas fa-envelope"></i> Send Transaction Logs via Email</h2>
+            <button type="button" class="log-modal-close" onclick="closeEmailModal()">&times;</button>
+        </div>
+        <form method="post" action="{% url 'send_member_logs_email' member.id %}">
+            {% csrf_token %}
+            <div class="log-modal-body">
+                <div class="log-form-group">
+                    <label><i class="fas fa-envelope"></i> Recipient Email</label>
+                    <input type="text" value="{{ member.user_account.email }}" readonly class="log-form-control" style="background: #f0f0f0;">
+                </div>
+                
+                <div class="log-form-group">
+                    <label><i class="fas fa-list"></i> Log Type to Include</label>
+                    <select name="log_type" class="log-form-control">
+                        <option value="combined">All Logs (Payment + Car Wash)</option>
+                        <option value="payment">Payment Logs Only</option>
+                        <option value="carwash">Car Wash Logs Only</option>
+                    </select>
+                </div>
+                
+                <div class="log-form-row">
+                    <div class="log-form-group">
+                        <label><i class="fas fa-calendar-alt"></i> Date From (Optional)</label>
+                        <input type="date" name="date_from" class="log-form-control">
+                    </div>
+                    <div class="log-form-group">
+                        <label><i class="fas fa-calendar-alt"></i> Date To (Optional)</label>
+                        <input type="date" name="date_to" class="log-form-control">
+                    </div>
+                </div>
+                
+                <div class="log-form-group">
+                    <label>
+                        <input type="checkbox" name="include_pdf" checked>
+                        <i class="fas fa-file-pdf"></i> Include PDF Attachment
+                    </label>
+                </div>
+                
+                <div class="log-form-group">
+                    <label><i class="fas fa-comment"></i> Custom Message (Optional)</label>
+                    <textarea name="custom_message" rows="4" class="log-form-control" placeholder="Add a personal message to the member..."></textarea>
+                </div>
+            </div>
+            <div class="log-modal-footer">
+                <button type="button" class="log-btn log-btn-secondary" onclick="closeEmailModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="log-btn log-btn-primary">
+                    <i class="fas fa-paper-plane"></i> Send Email
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEmailModal() {
+    document.getElementById('emailModal').style.display = 'flex';
+}
+
+function closeEmailModal() {
+    document.getElementById('emailModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('emailModal');
+    if (event.target == modal) {
+        closeEmailModal();
+    }
+}
+</script>
+{% endblock %}

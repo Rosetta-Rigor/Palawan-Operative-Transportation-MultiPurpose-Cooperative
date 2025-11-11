@@ -493,6 +493,450 @@ class Notification(models.Model):
         return False
 
 
+# ============================================================================
+# LOGGING SYSTEM MODELS
+# ============================================================================
+
+class PaymentLog(models.Model):
+    """
+    Comprehensive logging for all payment transactions.
+    Tracks both member payments (dues, contributions) and other payments (rentals, services).
+    """
+    PAYMENT_CATEGORY_CHOICES = [
+        ('from_members', 'From Members'),
+        ('other', 'Other Payments'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('confirmed', 'Confirmed'),
+        ('pending', 'Pending'),
+        ('reversed', 'Reversed'),
+    ]
+    
+    PAYMENT_METHOD_CHOICES = [
+        ('cash', 'Cash'),
+        ('check', 'Check'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('online', 'Online Payment'),
+        ('other', 'Other'),
+    ]
+    
+    # Transaction Identification
+    transaction_id = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+        help_text="Unique transaction ID (e.g., PMT-2025-00123)"
+    )
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        help_text="When the transaction was logged"
+    )
+    
+    # Category & User
+    category = models.CharField(
+        max_length=20,
+        choices=PAYMENT_CATEGORY_CHOICES,
+        db_index=True,
+        help_text="Payment category"
+    )
+    logged_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='payment_logs_created',
+        help_text="Staff/admin who logged the payment"
+    )
+    
+    # Member Information (for from_members category)
+    member = models.ForeignKey(
+        Member,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payment_logs',
+        help_text="Member who made the payment (if applicable)"
+    )
+    
+    # Other Payment Information (for other category)
+    payee_name = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Name of person/entity making payment (for non-member payments)"
+    )
+    
+    # Payment Details
+    payment_type = models.ForeignKey(
+        PaymentType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payment_logs',
+        help_text="Type of payment (links to PaymentType)"
+    )
+    payment_type_name = models.CharField(
+        max_length=100,
+        help_text="Name of payment type (stored for historical record)"
+    )
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Payment amount in PHP"
+    )
+    payment_year = models.PositiveIntegerField(
+        db_index=True,
+        help_text="Year the payment is for"
+    )
+    payment_month = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        choices=[(i, i) for i in range(1, 13)],
+        help_text="Month the payment is for (if applicable)"
+    )
+    
+    # Payment Method & Receipt
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        help_text="Method of payment"
+    )
+    receipt_number = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Official receipt number"
+    )
+    reference_number = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Bank reference or transaction reference"
+    )
+    
+    # Status & Notes
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='confirmed',
+        db_index=True,
+        help_text="Transaction status"
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text="Additional comments or remarks"
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Detailed description (mainly for other payments)"
+    )
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = "Payment Log"
+        verbose_name_plural = "Payment Logs"
+        indexes = [
+            models.Index(fields=['-timestamp', 'category']),
+            models.Index(fields=['payment_year', 'payment_month']),
+        ]
+    
+    def __str__(self):
+        return f"{self.transaction_id} - {self.get_display_name()} - ₱{self.amount}"
+    
+    def get_display_name(self):
+        """Return member name or payee name"""
+        if self.member:
+            return self.member.full_name
+        return self.payee_name or "Unknown"
+    
+    @classmethod
+    def generate_transaction_id(cls, category):
+        """Generate unique transaction ID"""
+        from django.utils import timezone
+        year = timezone.now().year
+        prefix = 'PMT' if category == 'from_members' else 'OTH'
+        
+        # Get last transaction for this year and category
+        last_log = cls.objects.filter(
+            transaction_id__startswith=f"{prefix}-{year}-"
+        ).order_by('-transaction_id').first()
+        
+        if last_log:
+            # Extract number and increment
+            try:
+                last_num = int(last_log.transaction_id.split('-')[-1])
+                new_num = last_num + 1
+            except (ValueError, IndexError):
+                new_num = 1
+        else:
+            new_num = 1
+        
+        return f"{prefix}-{year}-{new_num:05d}"
+
+
+class CarWashLog(models.Model):
+    """
+    Comprehensive logging for all car wash transactions.
+    Tracks both member services (compliance) and public customer services.
+    """
+    CUSTOMER_TYPE_CHOICES = [
+        ('member', 'Member'),
+        ('public', 'Public Customer'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    # Transaction Identification
+    transaction_id = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+        help_text="Unique transaction ID (e.g., CW-2025-00234)"
+    )
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        help_text="When the service was logged"
+    )
+    
+    # Staff & Customer
+    logged_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='carwash_logs_created',
+        help_text="Staff/admin who logged the service"
+    )
+    customer_type = models.CharField(
+        max_length=10,
+        choices=CUSTOMER_TYPE_CHOICES,
+        db_index=True,
+        help_text="Type of customer"
+    )
+    
+    # Member Information (for member services)
+    member = models.ForeignKey(
+        Member,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='carwash_logs',
+        help_text="Member who received service (if applicable)"
+    )
+    vehicle = models.ForeignKey(
+        Vehicle,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='carwash_logs',
+        help_text="Vehicle that was serviced"
+    )
+    
+    # Public Customer Information
+    customer_name = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Name of public customer (if not a member)"
+    )
+    vehicle_plate = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text="Plate number for public customer vehicle"
+    )
+    
+    # Service Details
+    service_type = models.ForeignKey(
+        PaymentType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='carwash_logs',
+        help_text="Type of car wash service (links to PaymentType)"
+    )
+    service_type_name = models.CharField(
+        max_length=100,
+        help_text="Name of service type (stored for historical record)"
+    )
+    service_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text="Service fee (₱0 for member compliance services)"
+    )
+    carwash_year = models.PositiveIntegerField(
+        db_index=True,
+        help_text="Year the service is recorded for"
+    )
+    carwash_month = models.PositiveSmallIntegerField(
+        choices=[(i, i) for i in range(1, 13)],
+        db_index=True,
+        help_text="Month the service is recorded for"
+    )
+    
+    # Compliance (for members)
+    is_compliance = models.BooleanField(
+        default=False,
+        help_text="Whether this service counts toward member compliance"
+    )
+    compliance_status = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Compliance status text (e.g., 'Compliant (1/4 required)')"
+    )
+    
+    # Status & Notes
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='completed',
+        db_index=True,
+        help_text="Service status"
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text="Additional comments or remarks"
+    )
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = "Car Wash Log"
+        verbose_name_plural = "Car Wash Logs"
+        indexes = [
+            models.Index(fields=['-timestamp', 'customer_type']),
+            models.Index(fields=['carwash_year', 'carwash_month']),
+        ]
+    
+    def __str__(self):
+        return f"{self.transaction_id} - {self.get_display_name()} - {self.service_type_name}"
+    
+    def get_display_name(self):
+        """Return member name or customer name"""
+        if self.member:
+            return self.member.full_name
+        return self.customer_name or "Walk-in Customer"
+    
+    @classmethod
+    def generate_transaction_id(cls):
+        """Generate unique transaction ID"""
+        from django.utils import timezone
+        year = timezone.now().year
+        prefix = 'CW'
+        
+        # Get last transaction for this year
+        last_log = cls.objects.filter(
+            transaction_id__startswith=f"{prefix}-{year}-"
+        ).order_by('-transaction_id').first()
+        
+        if last_log:
+            # Extract number and increment
+            try:
+                last_num = int(last_log.transaction_id.split('-')[-1])
+                new_num = last_num + 1
+            except (ValueError, IndexError):
+                new_num = 1
+        else:
+            new_num = 1
+        
+        return f"{prefix}-{year}-{new_num:05d}"
+
+
+class LogEmailHistory(models.Model):
+    """
+    Audit trail for all log emails sent to members.
+    Tracks when staff sent transaction history to members via email.
+    """
+    LOG_TYPE_CHOICES = [
+        ('payment', 'Payment Logs'),
+        ('carwash', 'Car Wash Logs'),
+        ('combined', 'Combined Logs'),
+    ]
+    
+    # Email Details
+    sent_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        help_text="When the email was sent"
+    )
+    sent_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='log_emails_sent',
+        help_text="Staff member who sent the email"
+    )
+    recipient_member = models.ForeignKey(
+        Member,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='log_emails_received',
+        help_text="Member who received the email"
+    )
+    recipient_email = models.EmailField(
+        help_text="Email address where logs were sent"
+    )
+    
+    # Log Content
+    log_type = models.CharField(
+        max_length=20,
+        choices=LOG_TYPE_CHOICES,
+        help_text="Type of logs included in email"
+    )
+    date_range_start = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Start date of log range (if filtered)"
+    )
+    date_range_end = models.DateField(
+        null=True,
+        blank=True,
+        help_text="End date of log range (if filtered)"
+    )
+    total_records = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of log records included"
+    )
+    
+    # PDF Attachment
+    pdf_generated = models.BooleanField(
+        default=False,
+        help_text="Whether a PDF was attached"
+    )
+    
+    # Delivery Status
+    delivery_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('sent', 'Sent Successfully'),
+            ('failed', 'Failed'),
+        ],
+        default='sent',
+        help_text="Email delivery status"
+    )
+    error_message = models.TextField(
+        blank=True,
+        help_text="Error details if delivery failed"
+    )
+    
+    # Notes
+    notes = models.TextField(
+        blank=True,
+        help_text="Additional notes from staff"
+    )
+    
+    class Meta:
+        ordering = ['-sent_at']
+        verbose_name = "Log Email History"
+        verbose_name_plural = "Log Email History"
+        indexes = [
+            models.Index(fields=['-sent_at', 'log_type']),
+        ]
+    
+    def __str__(self):
+        member_name = self.recipient_member.full_name if self.recipient_member else "Unknown"
+        return f"{self.get_log_type_display()} sent to {member_name} on {self.sent_at.strftime('%Y-%m-%d %H:%M')}"
+
+
 # Signals or logic should be added in views/forms to:
 # - Sync Member info to User account
 # - Only show unassigned vehicles in member add/edit forms
