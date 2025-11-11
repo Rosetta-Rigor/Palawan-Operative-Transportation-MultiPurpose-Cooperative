@@ -54,24 +54,23 @@
       </div>
 
       <!-- Car Wash Records Section -->
-      <div class="carwash-section">
-        <div class="carwash-section-header" style="margin-bottom: 20px;">
-          <i class="las la-car-wash"></i>
-          <h2>Car Wash Compliance Tracking</h2>
-        </div>
+      <div style="margin-top: 50px;">
+        <h3 style="color: var(--brand-600); font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+          <i class="las la-car-wash"></i> Car Wash Compliance Tracking
+        </h3>
         <div class="row">
           {% for year in years %}
             <div class="col-md-4 col-lg-3 mb-4">
               <a href="{% url 'carwash_year_detail' year.id %}" style="text-decoration: none;">
-                <div class="carwash-year-card">
-                  <div style="padding: 40px 32px; text-align: center;">
-                    <div style="font-size: 3rem; margin-bottom: 12px; color: #17a2b8;">
+                <div class="payment-year-card">
+                  <div class="payment-year-header" style="padding: 40px 32px; text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 12px; opacity: 0.9;">
                       <i class="las la-spray-can"></i>
                     </div>
-                    <h3 style="font-size: 2.5rem; color: #17a2b8; font-weight: 700; margin: 0;">
+                    <h3 class="payment-year-title" style="font-size: 2.5rem; justify-content: center; margin: 0;">
                       {{ year.year }}
                     </h3>
-                    <p style="margin-top: 8px; color: var(--text-muted);">View car wash records</p>
+                    <p class="payment-year-subtitle" style="margin-top: 8px;">View car wash records</p>
                   </div>
                 </div>
               </a>

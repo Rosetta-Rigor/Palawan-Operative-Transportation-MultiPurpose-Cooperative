@@ -61,6 +61,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+function filterByYear(year) {
+    const url = new URL(window.location.href);
+    
+    if (year) {
+        url.searchParams.set('carwash_year', year);
+    } else {
+        url.searchParams.delete('carwash_year');
+    }
+    
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+
+function filterByPaymentYear(year) {
+    const url = new URL(window.location.href);
+    
+    if (year) {
+        url.searchParams.set('payment_year', year);
+    } else {
+        url.searchParams.delete('payment_year');
+    }
+    
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+
 function performSearch(query) {
     const url = new URL(window.location.href);
     

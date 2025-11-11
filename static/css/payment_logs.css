@@ -51,6 +51,46 @@
   align-items: center;
   gap: var(--plog-spacing-lg);
   flex-wrap: wrap;
+  position: relative;
+}
+
+/* Back button styling */
+.payment-logs-header .member-back-btn {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(31, 62, 39, 0.1);
+  color: var(--plog-primary);
+  font-size: 1.3rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  z-index: 10;
+  border: 2px solid rgba(31, 62, 39, 0.15);
+}
+
+.payment-logs-header .member-back-btn:hover {
+  background: var(--plog-primary);
+  color: #fff;
+  transform: translateY(-50%) scale(1.1);
+  border-color: var(--plog-primary);
+  box-shadow: 0 4px 16px rgba(31, 62, 39, 0.3);
+  text-decoration: none;
+}
+
+.payment-logs-header .member-back-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* Add left padding when header has a back button */
+.payment-logs-header:has(.member-back-btn) {
+  padding-left: 72px;
 }
 
 .payment-logs-header-content {
@@ -92,6 +132,35 @@
 .payment-logs-header-actions {
   display: flex;
   gap: var(--plog-spacing-xs);
+  align-items: center;
+}
+
+/* Year filter dropdown in header */
+.payment-logs-year-select {
+  padding: 8px 36px 8px 16px;
+  border: 2px solid var(--plog-primary);
+  border-radius: var(--plog-radius-full);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--plog-primary);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%231F3E27' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 20px;
+  min-width: 140px;
+}
+
+.payment-logs-year-select:hover {
+  background-color: rgba(31,62,39,0.08);
+}
+
+.payment-logs-year-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(31,62,39,0.1);
 }
 
 /* ===== BUTTONS ===== */
@@ -937,6 +1006,17 @@
   
   .payment-logs-header-content {
     flex-direction: column;
+  }
+  
+  .payment-logs-header-actions {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .payment-logs-year-select {
+    flex: 1;
+    min-width: 120px;
   }
   
   .payment-logs-stats {

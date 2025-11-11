@@ -101,6 +101,7 @@ urlpatterns = [
 
     # CAR WASH
     path('payments/<int:year_id>/carwash/', views.carwash_year_detail, name='carwash_year_detail'),
+    path('payments/<int:year_id>/carwash/public-records/', views.carwash_public_records, name='carwash_public_records'),
     path('payments/<int:year_id>/carwash/compliance/', views.manage_carwash_compliance, name='manage_carwash_compliance'),
     path('payments/<int:year_id>/carwash/add-type/', views.add_carwash_type, name='add_carwash_type'),
     path('payments/<int:year_id>/carwash/edit-type/<int:type_id>/', views.edit_carwash_type, name='edit_carwash_type'),

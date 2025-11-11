@@ -4,12 +4,16 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/payment_logs.css' %}">
 <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
 {% endblock %}
 
 {% block content %}
 <div class="payment-logs-container">
     <!-- Material Header -->
     <div class="payment-logs-header">
+        <a href="{% url 'payment_year_list' %}" class="member-back-btn" title="Back to Year List">
+            <i class="las la-arrow-left"></i>
+        </a>
         <div class="payment-logs-header-content">
             <div class="payment-logs-header-icon">
                 <i class="material-icons">receipt_long</i>
@@ -20,10 +24,18 @@
             </div>
         </div>
         <div class="payment-logs-header-actions">
+            <select id="yearFilter" class="payment-logs-year-select" onchange="filterByPaymentYear(this.value)">
+                <option value="">All Years</option>
+                {% for year in payment_years %}
+                <option value="{{ year }}" {% if payment_year == year|stringformat:"s" %}selected{% endif %}>
+                    {{ year }}
+                </option>
+                {% endfor %}
+            </select>
             <button onclick="openFilterModal()" class="payment-logs-btn payment-logs-btn-outlined">
                 <i class="material-icons">filter_list</i>
                 <span>Filters</span>
-                {% if date_from or date_to or category or payment_type_id or payment_year or logged_by_id or status or search %}
+                {% if date_from or date_to or category or payment_type_id or logged_by_id or status or search %}
                 <span class="payment-logs-filter-badge">●</span>
                 {% endif %}
             </button>
@@ -217,11 +229,11 @@
                         </div>
                     </div>
 
-                    <!-- Category & Year -->
+                    <!-- Category -->
                     <div class="payment-logs-filter-section">
                         <h3 class="payment-logs-filter-section-title">
                             <i class="material-icons">category</i>
-                            Category & Year
+                            Category
                         </h3>
                         <div class="payment-logs-filter-row">
                             <div class="payment-logs-input-group">
@@ -230,15 +242,6 @@
                                     <option value="">All Categories</option>
                                     <option value="from_members" {% if category == 'from_members' %}selected{% endif %}>From Members</option>
                                     <option value="other" {% if category == 'other' %}selected{% endif %}>Other Payments</option>
-                                </select>
-                            </div>
-                            <div class="payment-logs-input-group">
-                                <label class="payment-logs-label">Payment Year</label>
-                                <select name="payment_year" class="payment-logs-select">
-                                    <option value="">All Years</option>
-                                    {% for year in payment_years %}
-                                    <option value="{{ year }}" {% if payment_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
-                                    {% endfor %}
                                 </select>
                             </div>
                         </div>

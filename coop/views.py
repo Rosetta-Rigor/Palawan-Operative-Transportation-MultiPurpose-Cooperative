@@ -3692,10 +3692,17 @@ def manage_carwash_compliance(request, year_id):
     else:
         form = CarWashComplianceForm(instance=compliance)
     
+    # Get car wash service types for display
+    carwash_types = PaymentType.objects.filter(
+        year=year,
+        is_car_wash=True
+    ).order_by('name')
+    
     context = {
         'year': year,
         'form': form,
         'compliance': compliance,
+        'carwash_types': carwash_types,
         'page_title': f'Car Wash Compliance Settings - {year.year}'
     }
     return render(request, 'payments/manage_carwash_compliance.html', context)
@@ -3839,11 +3846,19 @@ def carwash_year_detail(request, year_id):
         carwash_year=year.year
     ).select_related('member', 'vehicle', 'logged_by').order_by('-timestamp')[:5]
     
+    # Pagination for member records (10 per page)
+    from django.core.paginator import Paginator
+    paginator = Paginator(members_carwash_data, 10)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
     context = {
         'year': year,
         'compliance': compliance,
         'carwash_types': carwash_types,
-        'members_carwash_data': members_carwash_data,
+        'members_carwash_data': members_carwash_data,  # Keep full list for breakdown
+        'page_obj': page_obj,  # Paginated data
+        'is_paginated': page_obj.has_other_pages(),
         'public_customer_data': public_customer_data,
         'public_total': public_total,
         'public_customer_records': public_customer_records,
@@ -3990,6 +4005,86 @@ def add_carwash_record(request, year_id):
         'year': year,
         'carwash_types': carwash_types
     })
+
+
+@staff_member_required
+def carwash_public_records(request, year_id):
+    """
+    Display all public customer car wash records for a specific year.
+    Includes search, filtering by service type and month, and pagination.
+    Separate view for better scalability and organization.
+    """
+    from django.db.models import Count, Sum, Q
+    from .models import CarWashLog
+    
+    year = get_object_or_404(PaymentYear, pk=year_id)
+    
+    # Get car wash service types
+    service_types = PaymentType.objects.filter(
+        year=year,
+        is_car_wash=True
+    ).order_by('name')
+    
+    # Get all public customer records via CarWashLog
+    records = CarWashLog.objects.filter(
+        carwash_year=year.year,
+        customer_type='public'
+    ).select_related('logged_by').order_by('-timestamp')
+    
+    # Apply filters
+    search = request.GET.get('search', '').strip()
+    service_type_filter = request.GET.get('service_type', '').strip()
+    month_filter = request.GET.get('month', '').strip()
+    
+    if search:
+        records = records.filter(
+            Q(customer_name__icontains=search) |
+            Q(vehicle_plate__icontains=search) |
+            Q(transaction_id__icontains=search)
+        )
+    
+    if service_type_filter:
+        records = records.filter(service_type_id=service_type_filter)
+    
+    if month_filter:
+        records = records.filter(carwash_month=int(month_filter))
+    
+    # Calculate statistics
+    total_records = records.count()
+    unique_customers = records.values('customer_name').distinct().count()
+    total_revenue = records.aggregate(total=Sum('service_amount'))['total'] or 0
+    average_amount = (total_revenue / total_records) if total_records > 0 else 0
+    
+    # Monthly breakdown
+    monthly_breakdown = records.values('carwash_month').annotate(
+        count=Count('id'),
+        revenue=Sum('service_amount')
+    ).order_by('carwash_month')
+    
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(records, 50)  # 50 records per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'year': year,
+        'records': page_obj,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'service_types': service_types,
+        'total_records': total_records,
+        'unique_customers': unique_customers,
+        'total_revenue': total_revenue,
+        'average_amount': average_amount,
+        'monthly_breakdown': monthly_breakdown,
+        # Preserve filter values
+        'search': search,
+        'service_type_filter': service_type_filter,
+        'month_filter': month_filter,
+    }
+    
+    return render(request, 'payments/carwash_public_records.html', context)
 
 
 # ============================================================================
@@ -4170,7 +4265,7 @@ def payment_logs_view(request):
     pending_count = logs.filter(status='pending').count()
     
     # Pagination
-    paginator = Paginator(logs, 50)  # 50 logs per page
+    paginator = Paginator(logs, 10)  # 10 logs per page
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     
@@ -4261,15 +4356,13 @@ def carwash_logs_view(request):
     if status:
         logs = logs.filter(status=status)
     
-    # Apply search
+    # Apply search - Limited to customer name and plate number only
     if search:
         logs = logs.filter(
-            Q(transaction_id__icontains=search) |
             Q(member__full_name__icontains=search) |
             Q(customer_name__icontains=search) |
             Q(vehicle__plate_number__icontains=search) |
-            Q(vehicle_plate__icontains=search) |
-            Q(service_type_name__icontains=search)
+            Q(vehicle_plate__icontains=search)
         )
     
     # Calculate statistics
@@ -4279,7 +4372,7 @@ def carwash_logs_view(request):
     total_revenue = logs.aggregate(total=Sum('service_amount'))['total'] or 0
     
     # Pagination
-    paginator = Paginator(logs, 50)  # 50 logs per page
+    paginator = Paginator(logs, 10)  # 10 logs per page
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     
@@ -4289,6 +4382,14 @@ def carwash_logs_view(request):
     
     # Get distinct years from logs for year filter dropdown
     carwash_years = CarWashLog.objects.values_list('carwash_year', flat=True).distinct().order_by('-carwash_year')
+    
+    # Get the PaymentYear object if carwash_year filter is set
+    selected_year = None
+    if carwash_year:
+        try:
+            selected_year = PaymentYear.objects.get(year=int(carwash_year))
+        except (PaymentYear.DoesNotExist, ValueError):
+            pass
     
     context = {
         'logs': page_obj,
@@ -4301,6 +4402,7 @@ def carwash_logs_view(request):
         'service_types': service_types,
         'staff_users': staff_users,
         'carwash_years': carwash_years,  # NEW: Available years
+        'selected_year': selected_year,  # NEW: Selected PaymentYear object for back button
         # Preserve filter values
         'date_from': date_from,
         'date_to': date_to,

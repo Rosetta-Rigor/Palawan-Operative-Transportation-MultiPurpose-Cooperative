@@ -1,280 +1,466 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load tz %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/admin_logs.css' %}">
+<link rel="stylesheet" href="{% static 'css/payment_logs.css' %}">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
 {% endblock %}
 
 {% block content %}
-<div class="log-container">
-    <!-- Header -->
-    <div class="log-header">
-        <h1 class="log-title">
-            <i class="fas fa-car"></i> Car Wash Transaction Logs
-        </h1>
-        <p class="log-subtitle">Complete audit trail of all car wash services</p>
-    </div>
-    
-    <!-- Statistics -->
-    <div class="log-stats-grid">
-        <div class="log-stat-card">
-            <div class="log-stat-icon" style="background: rgba(31,62,39,0.1); color: #1F3E27;">
-                <i class="fas fa-list"></i>
+<div class="payment-logs-container">
+    <!-- Material Header -->
+    <div class="payment-logs-header">
+        {% if selected_year %}
+        <a href="{% url 'carwash_year_detail' selected_year.id %}" class="member-back-btn" title="Back to {{ selected_year.year }} Car Wash Records">
+            <i class="las la-arrow-left"></i>
+        </a>
+        {% else %}
+        <a href="{% url 'payment_year_list' %}" class="member-back-btn" title="Back to Year List">
+            <i class="las la-arrow-left"></i>
+        </a>
+        {% endif %}
+        <div class="payment-logs-header-content">
+            <div class="payment-logs-header-icon">
+                <i class="material-icons">local_car_wash</i>
             </div>
-            <div class="log-stat-content">
-                <div class="log-stat-value">{{ total_logs }}</div>
-                <div class="log-stat-label">Total Services</div>
-            </div>
-        </div>
-        <div class="log-stat-card">
-            <div class="log-stat-icon" style="background: rgba(33,150,243,0.1); color: #2196F3;">
-                <i class="fas fa-users"></i>
-            </div>
-            <div class="log-stat-content">
-                <div class="log-stat-value">{{ member_services }}</div>
-                <div class="log-stat-label">Member Services</div>
+            <div class="payment-logs-header-text">
+                <h1 class="payment-logs-header-title">Car Wash Transaction Logs</h1>
+                <p class="payment-logs-header-subtitle">Complete audit trail of all car wash services</p>
             </div>
         </div>
-        <div class="log-stat-card">
-            <div class="log-stat-icon" style="background: rgba(156,39,176,0.1); color: #9C27B0;">
-                <i class="fas fa-globe"></i>
-            </div>
-            <div class="log-stat-content">
-                <div class="log-stat-value">{{ public_services }}</div>
-                <div class="log-stat-label">Public Customers</div>
-            </div>
-        </div>
-        <div class="log-stat-card">
-            <div class="log-stat-icon" style="background: rgba(34,139,34,0.1); color: #228B22;">
-                <i class="fas fa-peso-sign"></i>
-            </div>
-            <div class="log-stat-content">
-                <div class="log-stat-value">₱{{ total_revenue|floatformat:2 }}</div>
-                <div class="log-stat-label">Total Revenue</div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Filters -->
-    <div class="log-filters">
-        <div class="log-filters-header">
-            <h3 class="log-filters-title">
-                <i class="fas fa-filter"></i> Filters
-            </h3>
-        </div>
-        <form method="get" action="{% url 'carwash_logs' %}">
-            <div class="filter-grid">
-                <div class="filter-group">
-                    <label class="filter-label">
-                        <i class="fas fa-calendar-alt"></i> Date From
-                    </label>
-                    <input type="date" name="date_from" value="{{ date_from }}" class="filter-input">
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">
-                        <i class="fas fa-calendar-alt"></i> Date To
-                    </label>
-                    <input type="date" name="date_to" value="{{ date_to }}" class="filter-input">
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">
-                        <i class="fas fa-user-tag"></i> Customer Type
-                    </label>
-                    <select name="customer_type" class="filter-select">
-                        <option value="">All Customers</option>
-                        <option value="member" {% if customer_type == 'member' %}selected{% endif %}>Members</option>
-                        <option value="public" {% if customer_type == 'public' %}selected{% endif %}>Public</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">
-                        <i class="fas fa-spray-can"></i> Service Type
-                    </label>
-                    <select name="service_type" class="filter-select">
-                        <option value="">All Services</option>
-                        {% for st in service_types %}
-                        <option value="{{ st.id }}" {% if service_type_id == st.id|stringformat:"s" %}selected{% endif %}>
-                            {{ st.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">
-                        <i class="fas fa-user-tie"></i> Logged By
-                    </label>
-                    <select name="logged_by" class="filter-select">
-                        <option value="">All Staff</option>
-                        {% for staff in staff_users %}
-                        <option value="{{ staff.id }}" {% if logged_by_id == staff.id|stringformat:"s" %}selected{% endif %}>
-                            {{ staff.username }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label class="filter-label">
-                        <i class="fas fa-info-circle"></i> Status
-                    </label>
-                    <select name="status" class="filter-select">
-                        <option value="">All Status</option>
-                        <option value="completed" {% if status == 'completed' %}selected{% endif %}>Completed</option>
-                        <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Cancelled</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- Search -->
-            <div class="filter-search">
-                <div class="filter-group" style="flex: 1;">
-                    <label class="filter-label">
-                        <i class="fas fa-search"></i> Search
-                    </label>
-                    <input 
-                        type="text" 
-                        name="search" 
-                        value="{{ search }}" 
-                        placeholder="Transaction ID, member name, plate number..."
-                        class="filter-input"
-                    >
-                </div>
-            </div>
-            
-            <!-- Filter Actions -->
-            <div class="filter-actions">
-                <button type="submit" class="filter-btn apply">
-                    <i class="fas fa-check"></i> Apply Filters
-                </button>
-                <a href="{% url 'carwash_logs' %}" class="filter-btn reset">
-                    <i class="fas fa-redo"></i> Reset
-                </a>
-            </div>
-        </form>
-    </div>
-    
-    <!-- Results Table -->
-    <div class="log-table-container">
-        {% if logs %}
-        <table class="log-table">
-            <thead>
-                <tr>
-                    <th>Transaction ID</th>
-                    <th>Timestamp</th>
-                    <th>Customer Type</th>
-                    <th>Customer</th>
-                    <th>Vehicle</th>
-                    <th>Service</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Logged By</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for log in logs %}
-                <tr>
-                    <td>
-                        <span class="log-transaction-id">{{ log.transaction_id }}</span>
-                    </td>
-                    <td>{{ log.timestamp|date:"Y-m-d H:i" }}</td>
-                    <td>
-                        {% if log.customer_type == 'member' %}
-                        <span class="log-badge log-badge-primary">
-                            <i class="fas fa-user"></i> Member
-                        </span>
-                        {% else %}
-                        <span class="log-badge log-badge-info">
-                            <i class="fas fa-globe"></i> Public
-                        </span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <strong>{{ log.get_display_name }}</strong>
-                        {% if log.member %}
-                        <br><small class="log-text-muted">{{ log.member.batch }} | #{{ log.member.batch_monitoring_number }}</small>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if log.vehicle %}
-                        <strong>{{ log.vehicle.plate_number }}</strong>
-                        <br><small class="log-text-muted">{{ log.vehicle.make_brand }}</small>
-                        {% else %}
-                        <span class="log-text-muted">{{ log.vehicle_plate|default:"N/A" }}</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ log.service_type_name }}</td>
-                    <td>
-                        {% if log.service_amount == 0 %}
-                        <span class="log-badge log-badge-success">Free</span>
-                        {% else %}
-                        <strong>₱{{ log.service_amount|floatformat:2 }}</strong>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if log.status == 'completed' %}
-                        <span class="log-badge log-badge-success">
-                            <i class="fas fa-check-circle"></i> Completed
-                        </span>
-                        {% else %}
-                        <span class="log-badge log-badge-danger">
-                            <i class="fas fa-times-circle"></i> Cancelled
-                        </span>
-                        {% endif %}
-                    </td>
-                    <td>{{ log.logged_by.username|default:"System" }}</td>
-                </tr>
+        <div class="payment-logs-header-actions">
+            <select id="yearFilter" class="payment-logs-year-select" onchange="filterByYear(this.value)">
+                <option value="">All Years</option>
+                {% for year in carwash_years %}
+                <option value="{{ year }}" {% if carwash_year == year|stringformat:"s" %}selected{% endif %}>
+                    {{ year }}
+                </option>
                 {% endfor %}
-            </tbody>
-        </table>
-        
-        <!-- Pagination -->
-        {% if is_paginated %}
-        <div class="log-pagination">
-            <div class="log-pagination-info">
-                Showing {{ logs.start_index }} to {{ logs.end_index }} of {{ page_obj.paginator.count }} entries
+            </select>
+            <button onclick="openFilterModal()" class="payment-logs-btn payment-logs-btn-outlined">
+                <i class="material-icons">filter_list</i>
+                <span>Filters</span>
+                {% if date_from or date_to or customer_type or service_type_id or logged_by_id or status or search %}
+                <span class="payment-logs-filter-badge">●</span>
+                {% endif %}
+            </button>
+            <button class="payment-logs-btn payment-logs-btn-icon" title="Export">
+                <i class="material-icons">download</i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Material Statistics Cards -->
+    <div class="payment-logs-stats">
+        <div class="payment-logs-stat-card">
+            <div class="payment-logs-stat-icon blue">
+                <i class="material-icons">format_list_numbered</i>
             </div>
-            <div class="log-pagination-controls">
+            <div class="payment-logs-stat-content">
+                <div class="payment-logs-stat-label">Total Services</div>
+                <div class="payment-logs-stat-value">{{ total_logs|default:0 }}</div>
+            </div>
+        </div>
+        <div class="payment-logs-stat-card">
+            <div class="payment-logs-stat-icon" style="background: rgba(33,150,243,0.12); color: #2196F3;">
+                <i class="material-icons">people</i>
+            </div>
+            <div class="payment-logs-stat-content">
+                <div class="payment-logs-stat-label">Member Services</div>
+                <div class="payment-logs-stat-value">{{ member_services|default:0 }}</div>
+            </div>
+        </div>
+        <div class="payment-logs-stat-card">
+            <div class="payment-logs-stat-icon" style="background: rgba(156,39,176,0.12); color: #9C27B0;">
+                <i class="material-icons">public</i>
+            </div>
+            <div class="payment-logs-stat-content">
+                <div class="payment-logs-stat-label">Public Customers</div>
+                <div class="payment-logs-stat-value">{{ public_services|default:0 }}</div>
+            </div>
+        </div>
+        <div class="payment-logs-stat-card">
+            <div class="payment-logs-stat-icon success">
+                <i class="material-icons">payments</i>
+            </div>
+            <div class="payment-logs-stat-content">
+                <div class="payment-logs-stat-label">Total Revenue</div>
+                <div class="payment-logs-stat-value">₱{{ total_revenue|default:0|floatformat:2 }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search Bar -->
+    <div class="payment-logs-search-row">
+        <div class="payment-logs-search-box">
+            <i class="material-icons payment-logs-search-icon">search</i>
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Search by Customer Name or Plate Number..." 
+                class="payment-logs-search-input"
+                value="{{ search }}"
+            >
+            <button id="clearSearch" class="payment-logs-clear-btn" style="display: {% if search %}flex{% else %}none{% endif %};">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Active Filters (Compact Card) -->
+    {% if date_from or date_to or customer_type or service_type_id or logged_by_id or status or search or carwash_year %}
+    <div class="payment-logs-active-filters">
+        <div class="payment-logs-filters-label">
+            <i class="material-icons">filter_alt</i>
+            <span>Filters:</span>
+        </div>
+        <div class="payment-logs-filters-chips">
+            {% if carwash_year %}
+            <div class="payment-logs-chip">
+                <span>Year: {{ carwash_year }}</span>
+                <a href="?{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if customer_type %}customer_type={{ customer_type }}&{% endif %}{% if service_type_id %}service_type={{ service_type_id }}&{% endif %}{% if logged_by_id %}logged_by={{ logged_by_id }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if search %}search={{ search }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+            {% if date_from %}
+            <div class="payment-logs-chip">
+                <span>From: {{ date_from }}</span>
+                <a href="?{% if carwash_year %}carwash_year={{ carwash_year }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if customer_type %}customer_type={{ customer_type }}&{% endif %}{% if service_type_id %}service_type={{ service_type_id }}&{% endif %}{% if logged_by_id %}logged_by={{ logged_by_id }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if search %}search={{ search }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+            {% if date_to %}
+            <div class="payment-logs-chip">
+                <span>To: {{ date_to }}</span>
+                <a href="?{% if carwash_year %}carwash_year={{ carwash_year }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if customer_type %}customer_type={{ customer_type }}&{% endif %}{% if service_type_id %}service_type={{ service_type_id }}&{% endif %}{% if logged_by_id %}logged_by={{ logged_by_id }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if search %}search={{ search }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+            {% if customer_type %}
+            <div class="payment-logs-chip">
+                <span>{{ customer_type|title }}</span>
+                <a href="?{% if carwash_year %}carwash_year={{ carwash_year }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if service_type_id %}service_type={{ service_type_id }}&{% endif %}{% if logged_by_id %}logged_by={{ logged_by_id }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if search %}search={{ search }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+            {% if service_type_id %}
+            <div class="payment-logs-chip">
+                <span>Service Type</span>
+                <a href="?{% if carwash_year %}carwash_year={{ carwash_year }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if customer_type %}customer_type={{ customer_type }}&{% endif %}{% if logged_by_id %}logged_by={{ logged_by_id }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if search %}search={{ search }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+            {% if logged_by_id %}
+            <div class="payment-logs-chip">
+                <span>Staff</span>
+                <a href="?{% if carwash_year %}carwash_year={{ carwash_year }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if customer_type %}customer_type={{ customer_type }}&{% endif %}{% if service_type_id %}service_type={{ service_type_id }}&{% endif %}{% if status %}status={{ status }}&{% endif %}{% if search %}search={{ search }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+            {% if status %}
+            <div class="payment-logs-chip">
+                <span>{{ status|title }}</span>
+                <a href="?{% if carwash_year %}carwash_year={{ carwash_year }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if customer_type %}customer_type={{ customer_type }}&{% endif %}{% if service_type_id %}service_type={{ service_type_id }}&{% endif %}{% if logged_by_id %}logged_by={{ logged_by_id }}&{% endif %}{% if search %}search={{ search }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+            {% if search %}
+            <div class="payment-logs-chip">
+                <span>"{{ search }}"</span>
+                <a href="?{% if carwash_year %}carwash_year={{ carwash_year }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}{% if customer_type %}customer_type={{ customer_type }}&{% endif %}{% if service_type_id %}service_type={{ service_type_id }}&{% endif %}{% if logged_by_id %}logged_by={{ logged_by_id }}&{% endif %}{% if status %}status={{ status }}{% endif %}">
+                    <i class="material-icons">close</i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        <button onclick="window.location.href='{% url 'carwash_logs' %}'" class="payment-logs-clear-all-btn">
+            <i class="material-icons">clear_all</i>
+            <span>Clear All</span>
+        </button>
+    </div>
+    {% endif %}
+    
+    <!-- Filter Modal -->
+    <div id="filterModal" class="payment-logs-modal">
+        <div class="payment-logs-modal-overlay" onclick="closeFilterModal()"></div>
+        <div class="payment-logs-modal-content">
+            <div class="payment-logs-modal-header">
+                <h2 class="payment-logs-modal-title">
+                    <i class="material-icons">tune</i>
+                    Filter Options
+                </h2>
+                <button onclick="closeFilterModal()" class="payment-logs-modal-close">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+            <form method="get" action="{% url 'carwash_logs' %}" id="filterForm">
+                <div class="payment-logs-modal-body">
+                    <!-- Date Range -->
+                    <div class="payment-logs-filter-section">
+                        <h3 class="payment-logs-filter-section-title">
+                            <i class="material-icons">date_range</i>
+                            Date Range
+                        </h3>
+                        <div class="payment-logs-filter-row">
+                            <div class="payment-logs-input-group">
+                                <label class="payment-logs-label">From</label>
+                                <input type="date" name="date_from" value="{{ date_from }}" class="payment-logs-input">
+                            </div>
+                            <div class="payment-logs-input-group">
+                                <label class="payment-logs-label">To</label>
+                                <input type="date" name="date_to" value="{{ date_to }}" class="payment-logs-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer & Service Type -->
+                    <div class="payment-logs-filter-section">
+                        <h3 class="payment-logs-filter-section-title">
+                            <i class="material-icons">category</i>
+                            Service Details
+                        </h3>
+                        <div class="payment-logs-filter-row">
+                            <div class="payment-logs-input-group">
+                                <label class="payment-logs-label">Customer Type</label>
+                                <select name="customer_type" class="payment-logs-select">
+                                    <option value="">All Customers</option>
+                                    <option value="member" {% if customer_type == 'member' %}selected{% endif %}>Members</option>
+                                    <option value="public" {% if customer_type == 'public' %}selected{% endif %}>Public</option>
+                                </select>
+                            </div>
+                            <div class="payment-logs-input-group">
+                                <label class="payment-logs-label">Service Type</label>
+                                <select name="service_type" class="payment-logs-select">
+                                    <option value="">All Services</option>
+                                    {% for st in service_types %}
+                                    <option value="{{ st.id }}" {% if service_type_id == st.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ st.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Staff & Status -->
+                    <div class="payment-logs-filter-section">
+                        <h3 class="payment-logs-filter-section-title">
+                            <i class="material-icons">info</i>
+                            Additional Filters
+                        </h3>
+                        <div class="payment-logs-filter-row">
+                            <div class="payment-logs-input-group">
+                                <label class="payment-logs-label">Logged By</label>
+                                <select name="logged_by" class="payment-logs-select">
+                                    <option value="">All Staff</option>
+                                    {% for staff in staff_users %}
+                                    <option value="{{ staff.id }}" {% if logged_by_id == staff.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ staff.username }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="payment-logs-input-group">
+                                <label class="payment-logs-label">Status</label>
+                                <select name="status" class="payment-logs-select">
+                                    <option value="">All Status</option>
+                                    <option value="completed" {% if status == 'completed' %}selected{% endif %}>Completed</option>
+                                    <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="payment-logs-modal-footer">
+                    <button type="button" onclick="window.location.href='{% url 'carwash_logs' %}'" class="payment-logs-btn payment-logs-btn-outlined">
+                        <i class="material-icons">clear_all</i>
+                        <span>Clear Filters</span>
+                    </button>
+                    
+                    {% if is_paginated %}
+                    <span class="payment-logs-pagination-badge">{{ page_obj.paginator.count }} results</span>
+                    {% endif %}
+                    
+                    <div style="display: flex; gap: var(--plog-spacing-xs);">
+                        <button type="button" onclick="closeFilterModal()" class="payment-logs-btn payment-logs-btn-text">
+                            <span>Cancel</span>
+                        </button>
+                        <button type="submit" class="payment-logs-btn payment-logs-btn-primary">
+                            <i class="material-icons">check</i>
+                            <span>Apply</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Material Table -->
+    <div class="payment-logs-table-card">
+        {% if logs %}
+        <div class="payment-logs-table-wrapper">
+            <table class="payment-logs-table">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Transaction ID</th>
+                        <th style="width: 25%;">Customer</th>
+                        <th style="width: 20%;">Vehicle</th>
+                        <th style="width: 15%;">Service</th>
+                        <th style="width: 15%;">Timestamp</th>
+                        <th style="width: 10%;">Logged By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr class="payment-logs-table-row">
+                        <td>
+                            <span class="payment-logs-transaction-id">{{ log.transaction_id }}</span>
+                        </td>
+                        <td>
+                            <div class="payment-logs-details-cell">
+                                <div class="payment-logs-details-main">
+                                    <strong class="payment-logs-member-name">{{ log.get_display_name }}</strong>
+                                    {% if log.customer_type == 'member' %}
+                                    <span class="payment-logs-category-chip primary">
+                                        <i class="material-icons">person</i> Member
+                                    </span>
+                                    {% else %}
+                                    <span class="payment-logs-category-chip" style="background: rgba(156,39,176,0.12); color: #9C27B0;">
+                                        <i class="material-icons">public</i> Public
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                {% if log.member %}
+                                <small style="font-size: 0.75rem; color: var(--plog-on-surface-variant);">{{ log.member.batch }} | #{{ log.member.batch_monitoring_number }}</small>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if log.vehicle %}
+                            <div class="payment-logs-details-cell">
+                                <strong class="payment-logs-member-name">{{ log.vehicle.plate_number }}</strong>
+                                <small style="font-size: 0.75rem; color: var(--plog-on-surface-variant);">{{ log.vehicle.make_brand }}</small>
+                            </div>
+                            {% else %}
+                            <span style="color: var(--plog-on-surface-variant);">{{ log.vehicle_plate|default:"N/A" }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="payment-logs-details-cell">
+                                <div>{{ log.service_type_name }}</div>
+                                {% if log.service_amount == 0 %}
+                                <span class="payment-logs-status success" style="padding: 4px 8px; font-size: 0.7rem;">Free</span>
+                                {% else %}
+                                <strong class="payment-logs-amount" style="font-size: 0.95rem;">₱{{ log.service_amount|floatformat:2 }}</strong>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="payment-logs-date-cell">
+                                <div class="payment-logs-date-primary">{{ log.timestamp|timezone:"Asia/Manila"|date:"M d, Y" }}</div>
+                                <div class="payment-logs-date-secondary">{{ log.timestamp|timezone:"Asia/Manila"|date:"h:i A" }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="payment-logs-logged-by">
+                                <i class="material-icons">person</i>
+                                <span>{{ log.logged_by.username|default:"System" }}</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Material Pagination -->
+        {% if is_paginated %}
+        <div class="payment-logs-pagination">
+            <div class="payment-logs-pagination-info">
+                <span class="payment-logs-pagination-text">{{ logs.start_index }}-{{ logs.end_index }}</span>
+                <span>of</span>
+                <span class="payment-logs-pagination-total">{{ page_obj.paginator.count }}</span>
+            </div>
+            <div class="payment-logs-pagination-controls">
                 {% if logs.has_previous %}
-                <a href="?page=1{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if customer_type %}&customer_type={{ customer_type }}{% endif %}{% if service_type_id %}&service_type={{ service_type_id }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
-                   class="log-pagination-btn">
-                    <i class="fas fa-angle-double-left"></i>
+                <a href="?page=1{% if carwash_year %}&carwash_year={{ carwash_year }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if customer_type %}&customer_type={{ customer_type }}{% endif %}{% if service_type_id %}&service_type={{ service_type_id }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
+                   class="payment-logs-pagination-btn" title="First page">
+                    <i class="material-icons">first_page</i>
                 </a>
-                <a href="?page={{ logs.previous_page_number }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if customer_type %}&customer_type={{ customer_type }}{% endif %}{% if service_type_id %}&service_type={{ service_type_id }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
-                   class="log-pagination-btn">
-                    <i class="fas fa-angle-left"></i> Previous
+                <a href="?page={{ logs.previous_page_number }}{% if carwash_year %}&carwash_year={{ carwash_year }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if customer_type %}&customer_type={{ customer_type }}{% endif %}{% if service_type_id %}&service_type={{ service_type_id }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
+                   class="payment-logs-pagination-btn" title="Previous page">
+                    <i class="material-icons">chevron_left</i>
                 </a>
+                {% else %}
+                <button class="payment-logs-pagination-btn" disabled>
+                    <i class="material-icons">first_page</i>
+                </button>
+                <button class="payment-logs-pagination-btn" disabled>
+                    <i class="material-icons">chevron_left</i>
+                </button>
                 {% endif %}
                 
-                <span class="log-pagination-current">
-                    Page {{ logs.number }} of {{ logs.paginator.num_pages }}
+                <span class="payment-logs-pagination-current">
+                    <span class="payment-logs-current-page">{{ logs.number }}</span>
+                    <span>/</span>
+                    <span class="payment-logs-total-pages">{{ logs.paginator.num_pages }}</span>
                 </span>
                 
                 {% if logs.has_next %}
-                <a href="?page={{ logs.next_page_number }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if customer_type %}&customer_type={{ customer_type }}{% endif %}{% if service_type_id %}&service_type={{ service_type_id }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
-                   class="log-pagination-btn">
-                    Next <i class="fas fa-angle-right"></i>
+                <a href="?page={{ logs.next_page_number }}{% if carwash_year %}&carwash_year={{ carwash_year }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if customer_type %}&customer_type={{ customer_type }}{% endif %}{% if service_type_id %}&service_type={{ service_type_id }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
+                   class="payment-logs-pagination-btn" title="Next page">
+                    <i class="material-icons">chevron_right</i>
                 </a>
-                <a href="?page={{ logs.paginator.num_pages }}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if customer_type %}&customer_type={{ customer_type }}{% endif %}{% if service_type_id %}&service_type={{ service_type_id }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
-                   class="log-pagination-btn">
-                    <i class="fas fa-angle-double-right"></i>
+                <a href="?page={{ logs.paginator.num_pages }}{% if carwash_year %}&carwash_year={{ carwash_year }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if customer_type %}&customer_type={{ customer_type }}{% endif %}{% if service_type_id %}&service_type={{ service_type_id }}{% endif %}{% if logged_by_id %}&logged_by={{ logged_by_id }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}" 
+                   class="payment-logs-pagination-btn" title="Last page">
+                    <i class="material-icons">last_page</i>
                 </a>
+                {% else %}
+                <button class="payment-logs-pagination-btn" disabled>
+                    <i class="material-icons">chevron_right</i>
+                </button>
+                <button class="payment-logs-pagination-btn" disabled>
+                    <i class="material-icons">last_page</i>
+                </button>
                 {% endif %}
             </div>
         </div>
         {% endif %}
         
         {% else %}
-        <div class="log-empty-state">
-            <i class="fas fa-inbox"></i>
-            <p class="log-empty-title">No Car Wash Logs Found</p>
-            <p class="log-empty-message">
+        <div class="payment-logs-empty">
+            <div class="payment-logs-empty-icon">
+                <i class="material-icons">inbox</i>
+            </div>
+            <h3 class="payment-logs-empty-title">No Car Wash Logs Found</h3>
+            <p class="payment-logs-empty-message">
                 {% if search or date_from or date_to or customer_type or service_type_id or logged_by_id or status %}
                 Try adjusting your filters to see more results.
                 {% else %}
                 Car wash logs will appear here once services are recorded.
                 {% endif %}
             </p>
+            {% if search or date_from or date_to or customer_type or service_type_id or logged_by_id or status %}
+            <button onclick="window.location.href='{% url 'carwash_logs' %}'" class="payment-logs-btn payment-logs-btn-primary">
+                <i class="material-icons">clear_all</i>
+                <span>Clear Filters</span>
+            </button>
+            {% endif %}
         </div>
         {% endif %}
     </div>
 </div>
+
+{% block extra_js %}
+<script src="{% static 'js/admin_logs.js' %}"></script>
+{% endblock %}
 {% endblock %}

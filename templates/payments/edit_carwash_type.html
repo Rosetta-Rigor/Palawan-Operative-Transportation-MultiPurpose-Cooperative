@@ -14,15 +14,15 @@
   <div class="payments-container">
     <div class="row justify-content-center">
       <div class="col-lg-8 col-md-10">
-        <div class="payment-form-card carwash-card">
-          <div class="payment-form-header" style="position: relative; background: linear-gradient(135deg, #17a2b8, #20c997);">
+        <div class="payment-form-card">
+          <div class="payment-form-header" style="position: relative;">
             <a href="{% url 'carwash_year_detail' year.id %}" class="member-back-btn" title="Back to Car Wash Records">
               <i class="las la-arrow-left"></i>
             </a>
-            <h4 class="payment-form-title" style="color: white;">
+            <h4 class="payment-form-title">
               <i class="las la-edit"></i> Edit Car Wash Service Type
             </h4>
-            <p class="payment-form-subtitle" style="color: rgba(255,255,255,0.9);">Update service type name for {{ year.year }}</p>
+            <p class="payment-form-subtitle">Update service type name for {{ year.year }}</p>
           </div>
           
           <div class="payment-form-content">

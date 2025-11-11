@@ -15,15 +15,15 @@
   <div class="payments-container">
     <div class="row justify-content-center">
       <div class="col-lg-8 col-md-10">
-        <div class="payment-form-card carwash-card">
-          <div class="payment-form-header" style="position: relative; background: linear-gradient(135deg, #17a2b8, #20c997);">
+        <div class="payment-form-card">
+          <div class="payment-form-header" style="position: relative;">
             <a href="{% url 'carwash_year_detail' year.id %}" class="member-back-btn" title="Back to Car Wash Records">
               <i class="las la-arrow-left"></i>
             </a>
-            <h4 class="payment-form-title" style="color: white;">
+            <h4 class="payment-form-title">
               <i class="las la-spray-can"></i> Log Car Wash Record
             </h4>
-            <p class="payment-form-subtitle" style="color: rgba(255,255,255,0.9);">Record a car wash service for {{ year.year }}</p>
+            <p class="payment-form-subtitle">Record a car wash service for {{ year.year }}</p>
           </div>
           
           <div class="payment-form-content">   
@@ -45,13 +45,26 @@
 
               <div class="form-group">
                 <label>Customer Type <span class="text-danger">*</span></label>
-                <div class="customer-type-selector">
-                  {{ form.customer_type }}
+                <div class="customer-type-toggle">
+                  <div class="customer-type-option">
+                    <input type="radio" name="customer_type" value="member" id="customer_type_member" {% if form.customer_type.value == 'member' or not form.customer_type.value %}checked{% endif %}>
+                    <label for="customer_type_member" class="customer-type-label">
+                      <i class="las la-user-tie"></i>
+                      <span>Cooperative Member</span>
+                    </label>
+                  </div>
+                  <div class="customer-type-option">
+                    <input type="radio" name="customer_type" value="public" id="customer_type_public" {% if form.customer_type.value == 'public' %}checked{% endif %}>
+                    <label for="customer_type_public" class="customer-type-label">
+                      <i class="las la-user-friends"></i>
+                      <span>Public Customer</span>
+                    </label>
+                  </div>
                 </div>
                 {% if form.customer_type.errors %}
                   <div class="text-danger small mt-2">{{ form.customer_type.errors }}</div>
                 {% endif %}
-                <small class="form-text text-muted">{{ form.customer_type.help_text }}</small>
+                <small class="form-text text-muted">Select whether this is a cooperative member or a public customer</small>
               </div>
               
               <div id="memberFields">

@@ -7,22 +7,24 @@
 <link rel="stylesheet" href="{% static 'css/admin_forms.css' %}">
 {% endblock %}
 
-{% block title %}Car Wash Compliance Settings{% endblock %}
+{% block title %}Car Wash Settings - {{ year.year }}{% endblock %}
 
 {% block content %}
 <div class="content admin-dashboard">
   <div class="payments-container">
     <div class="row justify-content-center">
-      <div class="col-lg-8 col-md-10">
-        <div class="payment-form-card carwash-card">
-          <div class="payment-form-header" style="position: relative; background: linear-gradient(135deg, #17a2b8, #20c997);">
+      <div class="col-lg-10 col-md-12">
+        
+        <!-- Compliance Settings Card -->
+        <div class="payment-form-card">
+          <div class="payment-form-header" style="position: relative;">
             <a href="{% url 'carwash_year_detail' year.id %}" class="member-back-btn" title="Back to Car Wash Records">
               <i class="las la-arrow-left"></i>
             </a>
-            <h4 class="payment-form-title" style="color: white;">
-              <i class="las la-cog"></i> Car Wash Compliance Settings
+            <h4 class="payment-form-title">
+              <i class="las la-cog"></i> Car Wash Settings - {{ year.year }}
             </h4>
-            <p class="payment-form-subtitle" style="color: rgba(255,255,255,0.9);">Global compliance configuration for {{ year.year }}</p>
+            <p class="payment-form-subtitle">Manage compliance requirements and service types</p>
           </div>
           
           <div class="payment-form-content">
@@ -36,6 +38,10 @@
               {% endif %}
             </div>
             {% endif %}
+            
+            <h5 style="margin: 0 0 20px 0; color: var(--brand-600); font-size: 1.1rem; font-weight: 600; padding-bottom: 12px; border-bottom: 2px solid rgba(31,62,39,0.1);">
+              <i class="las la-check-circle"></i> Compliance Requirements
+            </h5>
             
             <form method="post">
               {% csrf_token %}
@@ -76,17 +82,71 @@
                 </div>
               </div>
               
-              <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(31,62,39,0.1);">
+              <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(31,62,39,0.1);">
                 <a href="{% url 'carwash_year_detail' year.id %}" class="btn btn-secondary">
                   <i class="las la-times"></i> Cancel
                 </a>
                 <button type="submit" class="btn btn-success">
-                  <i class="las la-save"></i> Save Settings
+                  <i class="las la-save"></i> Save Compliance Settings
                 </button>
               </div>
             </form>
           </div>
         </div>
+
+        <!-- Service Types Card -->
+        <div class="payment-form-card" style="margin-top: 24px;">
+          <div class="payment-form-header">
+            <h4 class="payment-form-title">
+              <i class="las la-spray-can"></i> Available Service Types
+            </h4>
+            <p class="payment-form-subtitle">Manage car wash service types and pricing</p>
+          </div>
+          
+          <div class="payment-form-content">
+            {% if carwash_types %}
+            <div class="table-responsive">
+              <table class="payment-table" style="margin-bottom: 0; min-width: auto; width: 100%;">
+                <thead>
+                  <tr>
+                    <th style="width: 50%;">Service Name</th>
+                    <th style="text-align: center; width: 25%;">Amount</th>
+                    <th style="text-align: right; width: 25%;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for service_type in carwash_types %}
+                  <tr>
+                    <td><strong>{{ service_type.name }}</strong></td>
+                    <td style="text-align: center;">
+                      <span class="amount-cell">₱{{ service_type.car_wash_amount|default:"0.00" }}</span>
+                    </td>
+                    <td style="text-align: right;">
+                      <a href="{% url 'edit_carwash_type' year.id service_type.id %}" class="payment-action-btn btn-filter small">
+                        <i class="las la-edit"></i> Edit
+                      </a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="payment-empty-state" style="padding: 40px 20px;">
+              <i class="las la-spray-can"></i>
+              <h3>No Service Types Configured</h3>
+              <p>No service types configured yet.</p>
+            </div>
+            {% endif %}
+            
+            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(31,62,39,0.1); text-align: center;">
+              <a href="{% url 'add_carwash_type' year.id %}" class="payment-action-btn btn-add">
+                <i class="las la-plus"></i> Add Service Type
+              </a>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

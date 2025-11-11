@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load tz %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_payments.css' %}">
+{% endblock %}
+
+{% block title %}Public Customer Car Wash Records - {{ year.year }}{% endblock %}
+
+{% block content %}
+<div class="content admin-dashboard">
+  <div class="payments-container">
+    
+    <!-- Page Header -->
+    <div class="payment-year-card">
+      <div class="payment-year-header">
+        <h2 class="payment-year-title">
+          <i class="las la-user-friends"></i> Public Customer Records - {{ year.year }}
+        </h2>
+        <p class="payment-year-subtitle">Car wash records for non-member customers</p>
+      </div>
+    </div>
+
+    <div class="payment-actions-bar">
+      <div class="payment-actions-left">
+        <a href="{% url 'carwash_year_detail' year.id %}" class="payment-action-btn btn-filter">
+          <i class="las la-arrow-left"></i> Back to Overview
+        </a>
+      </div>
+      <div class="payment-actions-right">
+        <a href="{% url 'add_carwash_record' year.id %}" class="payment-action-btn btn-add">
+          <i class="las la-plus"></i> Log Car Wash
+        </a>
+      </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px;">
+      <div class="payment-stat-box" style="background: var(--payment-card-bg); border: 1px solid var(--payment-card-border);">
+        <div class="payment-stat-label" style="color: var(--brand-600);">
+          <i class="las la-list"></i> Total Records
+        </div>
+        <div class="payment-stat-value" style="color: var(--brand-600);">
+          {{ total_records }}
+        </div>
+      </div>
+      
+      <div class="payment-stat-box" style="background: var(--payment-card-bg); border: 1px solid var(--payment-card-border);">
+        <div class="payment-stat-label" style="color: var(--brand-600);">
+          <i class="las la-users"></i> Unique Customers
+        </div>
+        <div class="payment-stat-value" style="color: var(--brand-600);">
+          {{ unique_customers }}
+        </div>
+      </div>
+      
+      <div class="payment-stat-box" style="background: var(--payment-card-bg); border: 1px solid var(--payment-card-border);">
+        <div class="payment-stat-label" style="color: var(--brand-600);">
+          <i class="las la-dollar-sign"></i> Total Revenue
+        </div>
+        <div class="payment-stat-value money">
+          ₱{{ total_revenue|floatformat:2 }}
+        </div>
+      </div>
+      
+      <div class="payment-stat-box" style="background: var(--payment-card-bg); border: 1px solid var(--payment-card-border);">
+        <div class="payment-stat-label" style="color: var(--brand-600);">
+          <i class="las la-chart-line"></i> Avg. Per Wash
+        </div>
+        <div class="payment-stat-value money">
+          ₱{{ average_amount|floatformat:2 }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="payment-type-card">
+      <form method="get" action="{% url 'carwash_public_records' year.id %}">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: end;">
+          
+          <!-- Search by Customer Name -->
+          <div>
+            <label style="display: block; font-weight: 600; color: var(--brand-600); margin-bottom: 8px; font-size: 0.9rem;">
+              <i class="las la-search"></i> Search Customer
+            </label>
+            <input 
+              type="text" 
+              name="search" 
+              class="form-control" 
+              placeholder="Customer name or plate number..."
+              value="{{ search }}"
+              style="padding: 10px 14px; border: 2px solid rgba(31,62,39,0.15); border-radius: 6px; font-size: 0.95rem;"
+            >
+          </div>
+
+          <!-- Filter by Service Type -->
+          <div>
+            <label style="display: block; font-weight: 600; color: var(--brand-600); margin-bottom: 8px; font-size: 0.9rem;">
+              <i class="las la-spray-can"></i> Service Type
+            </label>
+            <select 
+              name="service_type" 
+              class="form-control"
+              style="padding: 10px 14px; border: 2px solid rgba(31,62,39,0.15); border-radius: 6px; font-size: 0.95rem;"
+            >
+              <option value="">All Services</option>
+              {% for service in service_types %}
+              <option value="{{ service.id }}" {% if service_type_filter == service.id|stringformat:"s" %}selected{% endif %}>
+                {{ service.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Filter by Month -->
+          <div>
+            <label style="display: block; font-weight: 600; color: var(--brand-600); margin-bottom: 8px; font-size: 0.9rem;">
+              <i class="las la-calendar"></i> Month
+            </label>
+            <select 
+              name="month" 
+              class="form-control"
+              style="padding: 10px 14px; border: 2px solid rgba(31,62,39,0.15); border-radius: 6px; font-size: 0.95rem;"
+            >
+              <option value="">All Months</option>
+              <option value="1" {% if month_filter == "1" %}selected{% endif %}>January</option>
+              <option value="2" {% if month_filter == "2" %}selected{% endif %}>February</option>
+              <option value="3" {% if month_filter == "3" %}selected{% endif %}>March</option>
+              <option value="4" {% if month_filter == "4" %}selected{% endif %}>April</option>
+              <option value="5" {% if month_filter == "5" %}selected{% endif %}>May</option>
+              <option value="6" {% if month_filter == "6" %}selected{% endif %}>June</option>
+              <option value="7" {% if month_filter == "7" %}selected{% endif %}>July</option>
+              <option value="8" {% if month_filter == "8" %}selected{% endif %}>August</option>
+              <option value="9" {% if month_filter == "9" %}selected{% endif %}>September</option>
+              <option value="10" {% if month_filter == "10" %}selected{% endif %}>October</option>
+              <option value="11" {% if month_filter == "11" %}selected{% endif %}>November</option>
+              <option value="12" {% if month_filter == "12" %}selected{% endif %}>December</option>
+            </select>
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display: flex; gap: 8px;">
+            <button type="submit" class="payment-action-btn btn-filter" style="white-space: nowrap;">
+              <i class="las la-filter"></i> Apply
+            </button>
+            <a href="{% url 'carwash_public_records' year.id %}" class="payment-action-btn btn-filter" style="white-space: nowrap; text-decoration: none;">
+              <i class="las la-times"></i> Clear
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    {% if records %}
+      <!-- Public Customer Records Table -->
+      <div class="payment-table-container">
+        <div class="payment-table-header">
+          <h4 class="payment-table-title">
+            <i class="las la-list"></i> Public Customer Records
+            <span style="font-size: 0.9rem; font-weight: 400; opacity: 0.9; margin-left: 12px;">
+              ({{ page_obj.paginator.count }} total records)
+            </span>
+          </h4>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="payment-table">
+            <thead>
+              <tr>
+                <th>Transaction ID</th>
+                <th>Customer</th>
+                <th>Vehicle Plate</th>
+                <th>Service</th>
+                <th>Timestamp</th>
+                <th>Logged By</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for record in records %}
+              <tr>
+                <td>
+                  <span style="font-family: 'Courier New', monospace; font-weight: 600; color: var(--brand-600); font-size: 0.9rem;">
+                    {{ record.transaction_id }}
+                  </span>
+                </td>
+                <td>
+                  <strong>
+                    {{ record.customer_name }}
+                  </strong>
+                  <span class="public-badge" style="margin-left: 8px;">Public</span>
+                </td>
+                <td>
+                  {% if record.vehicle_plate %}
+                  <span class="vehicle-badge">
+                    <i class="las la-car"></i> {{ record.vehicle_plate }}
+                  </span>
+                  {% else %}
+                  <span style="color: var(--text-muted); font-style: italic;">N/A</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {{ record.service_type_name }}
+                  {% if record.service_amount == 0 %}
+                    <br><span class="carwash-info-badge" style="background: #4CAF50; font-size: 0.75rem;">Free</span>
+                  {% else %}
+                    <br><strong style="font-family: 'Courier New', monospace; color: var(--success); font-size: 0.95rem;">₱{{ record.service_amount|floatformat:2 }}</strong>
+                  {% endif %}
+                </td>
+                <td style="font-size: 0.9rem;">
+                  {{ record.timestamp|timezone:"Asia/Manila"|date:"M d, Y" }}<br>
+                  <small style="color: var(--text-muted);">{{ record.timestamp|timezone:"Asia/Manila"|date:"h:i A" }}</small>
+                </td>
+                <td style="color: var(--text-muted); font-size: 0.9rem;">
+                  {{ record.logged_by.username|default:"System" }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div style="padding: 20px; background: #f9f9f9; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+          <div style="color: var(--muted-2); font-size: 0.95rem;">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+          </div>
+          
+          <nav>
+            <ul class="pagination" style="display: flex; gap: 8px; margin: 0; padding: 0; list-style: none;">
+              {% if page_obj.has_previous %}
+              <li>
+                <a href="?page=1{% if search %}&search={{ search }}{% endif %}{% if service_type_filter %}&service_type={{ service_type_filter }}{% endif %}{% if month_filter %}&month={{ month_filter }}{% endif %}" 
+                   class="payment-action-btn btn-filter small" 
+                   style="text-decoration: none;">
+                  <i class="las la-angle-double-left"></i>
+                </a>
+              </li>
+              <li>
+                <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if service_type_filter %}&service_type={{ service_type_filter }}{% endif %}{% if month_filter %}&month={{ month_filter }}{% endif %}" 
+                   class="payment-action-btn btn-filter small" 
+                   style="text-decoration: none;">
+                  <i class="las la-angle-left"></i> Previous
+                </a>
+              </li>
+              {% endif %}
+              
+              <li>
+                <span class="payment-action-btn small" style="background: var(--brand-600); color: white; cursor: default;">
+                  Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+              </li>
+              
+              {% if page_obj.has_next %}
+              <li>
+                <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if service_type_filter %}&service_type={{ service_type_filter }}{% endif %}{% if month_filter %}&month={{ month_filter }}{% endif %}" 
+                   class="payment-action-btn btn-filter small" 
+                   style="text-decoration: none;">
+                  Next <i class="las la-angle-right"></i>
+                </a>
+              </li>
+              <li>
+                <a href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if service_type_filter %}&service_type={{ service_type_filter }}{% endif %}{% if month_filter %}&month={{ month_filter }}{% endif %}" 
+                   class="payment-action-btn btn-filter small" 
+                   style="text-decoration: none;">
+                  <i class="las la-angle-double-right"></i>
+                </a>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Monthly Breakdown -->
+      {% if monthly_breakdown %}
+      <div class="payment-type-card" style="margin-top: 30px;">
+        <h4 style="margin: 0 0 20px 0; color: var(--brand-600); font-size: 1.2rem;">
+          <i class="las la-chart-bar"></i> Monthly Breakdown
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+          {% for month_data in monthly_breakdown %}
+          <div style="background: var(--payment-card-bg); border: 1px solid var(--payment-card-border); border-radius: 8px; padding: 16px; text-align: center;">
+            <div style="font-size: 0.85rem; color: var(--muted-2); margin-bottom: 8px; font-weight: 600;">
+              {% if month_data.month == 1 %}January{% elif month_data.month == 2 %}February{% elif month_data.month == 3 %}March{% elif month_data.month == 4 %}April{% elif month_data.month == 5 %}May{% elif month_data.month == 6 %}June{% elif month_data.month == 7 %}July{% elif month_data.month == 8 %}August{% elif month_data.month == 9 %}September{% elif month_data.month == 10 %}October{% elif month_data.month == 11 %}November{% elif month_data.month == 12 %}December{% endif %}
+            </div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: var(--brand-600); margin-bottom: 4px;">
+              {{ month_data.count }}
+            </div>
+            <div style="font-size: 0.9rem; font-weight: 700; color: var(--success); font-family: 'Courier New', monospace;">
+              ₱{{ month_data.revenue|floatformat:2 }}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    {% else %}
+      <!-- Empty State -->
+      <div class="payment-empty-state">
+        <i class="las la-inbox"></i>
+        <h3>No Public Customer Records Found</h3>
+        {% if search or service_type_filter or month_filter %}
+        <p>Try adjusting your filters to see more results.</p>
+        <a href="{% url 'carwash_public_records' year.id %}" class="payment-action-btn btn-filter" style="margin-top: 20px;">
+          <i class="las la-times"></i> Clear All Filters
+        </a>
+        {% else %}
+        <p>No public customers have used the car wash service yet for {{ year.year }}.</p>
+        <p style="margin-top: 10px; color: var(--muted-2);">
+          <i class="las la-info-circle"></i> Public customer records will appear here once logged.
+        </p>
+        <a href="{% url 'add_carwash_record' year.id %}" class="payment-action-btn btn-add" style="margin-top: 20px;">
+          <i class="las la-plus"></i> Log Car Wash Service
+        </a>
+        {% endif %}
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
