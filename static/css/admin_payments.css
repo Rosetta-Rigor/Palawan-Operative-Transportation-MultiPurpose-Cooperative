@@ -552,11 +552,49 @@
   padding: 32px;
 }
 
+/* Form Group Styling */
+.payment-form-card .form-group {
+  margin-bottom: 24px;
+}
+
+.payment-form-card .form-group label {
+  font-weight: 600;
+  color: var(--brand-600);
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  display: block;
+}
+
+.payment-form-card .form-control {
+  border: 1px solid rgba(31,62,39,0.15);
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  background: #fff;
+  width: 100%;
+}
+
+.payment-form-card .form-control:focus {
+  border-color: var(--accent-500);
+  box-shadow: 0 0 0 3px rgba(201,158,53,0.1);
+  outline: none;
+  background: #fff;
+}
+
+.payment-form-card .text-danger.small {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: block;
+}
+
 /* Amount Input Styling */
 .amount-input-wrapper {
   position: relative;
-  display: flex;
+  display: flex !important;
   align-items: center;
+  width: 100%;
 }
 
 .amount-input-wrapper .currency-prefix {
@@ -570,6 +608,11 @@
 }
 
 .amount-input-wrapper .form-control {
+  flex: 1 !important;
+  width: 100% !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
   padding-left: 45px;
   font-family: 'Courier New', monospace;
   font-size: 1.2rem;

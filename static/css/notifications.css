@@ -54,7 +54,7 @@
     50% { transform: scale(1.1); }
 }
 
-/* Notification Dropdown */
+/* Notification Dropdown - Updated positioning for new structure */
 .notification-bell-container .notification-dropdown {
     position: absolute !important;
     top: calc(100% + 10px) !important;

@@ -47,12 +47,12 @@
                 <label for="{{ form.car_wash_amount.id_for_label }}">Service Price <span class="text-danger">*</span></label>
                 <div class="amount-input-wrapper">
                   <span class="currency-prefix">₱</span>
-                  {{ form.car_wash_amount|add_class:"form-control" }}
+                  {{ form.car_wash_amount|add_class:"form-control"|attr:"placeholder:0.00"|attr:"step:0.01"|attr:"type:number" }}
                 </div>
                 {% if form.car_wash_amount.errors %}
                   <div class="text-danger small mt-2">{{ form.car_wash_amount.errors }}</div>
                 {% endif %}
-                <small class="form-text text-muted">{{ form.car_wash_amount.help_text }}</small>
+                <small class="form-text text-muted">Enter the service price (e.g., 150.00)</small>
               </div>
               
               <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(31,62,39,0.1);">

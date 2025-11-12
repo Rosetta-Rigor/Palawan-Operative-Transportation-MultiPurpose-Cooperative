@@ -185,6 +185,17 @@
     width: 36px !important;
     height: 36px !important;
   }
+  
+  /* Keep notification bell and user dropdown together */
+  .nav-item.notification-bell-container {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+  
+  .notification-bell-btn {
+    font-size: 1.3rem !important;
+  }
 }
 
 /* Mobile - 640px and below */
@@ -202,6 +213,20 @@
 
   .main-header .logo-header .logo-text {
     font-size: 12px;
+  }
+  
+  /* Ensure notification bell and dropdown stay visible */
+  .nav-item.notification-bell-container {
+    gap: 8px !important;
+  }
+  
+  .notification-bell-btn {
+    padding: 6px 10px !important;
+  }
+  
+  .navbar-header .profile-pic .avatar-wrapper {
+    width: 34px !important;
+    height: 34px !important;
   }
 }
 

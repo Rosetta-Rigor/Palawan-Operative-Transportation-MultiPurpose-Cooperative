@@ -26,6 +26,7 @@
           </div>
           
           <div class="payment-form-content">
+            
             <form method="post">
               {% csrf_token %}
               
@@ -41,30 +42,14 @@
                 {% endif %}
                 <small class="form-text text-muted">Enter a descriptive name (e.g., "Monthly Dues", "Membership Fee")</small>
               </div>
-              
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="form-group">
-                    <label for="{{ form.amount.id_for_label }}">Amount <span class="text-danger">*</span></label>
-                    <div class="amount-input-wrapper">
-                      <span class="currency-prefix">₱</span>
-                      {{ form.amount|add_class:"form-control" }}
-                    </div>
-                    {% if form.amount.errors %}
-                      <div class="text-danger small mt-2">{{ form.amount.errors }}</div>
-                    {% endif %}
-                  </div>
-                </div>
-                
-                <div class="col-md-6">
-                  <div class="form-group">
-                    <label for="{{ form.payment_type.id_for_label }}">Payment Category <span class="text-danger">*</span></label>
-                    {{ form.payment_type|add_class:"form-control" }}
-                    {% if form.payment_type.errors %}
-                      <div class="text-danger small mt-2">{{ form.payment_type.errors }}</div>
-                    {% endif %}
-                  </div>
-                </div>
+
+              <div class="form-group">
+                <label for="{{ form.payment_type.id_for_label }}">Payment Category <span class="text-danger">*</span></label>
+                {{ form.payment_type|add_class:"form-control" }}
+                {% if form.payment_type.errors %}
+                  <div class="text-danger small mt-2">{{ form.payment_type.errors }}</div>
+                {% endif %}
+                <small class="form-text text-muted">Select if this payment is "From Members" or "Other Payments"</small>
               </div>
               
               <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(31,62,39,0.1);">

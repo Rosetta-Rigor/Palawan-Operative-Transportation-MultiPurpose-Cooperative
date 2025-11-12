@@ -305,7 +305,16 @@ def user_home(request):
         from django.contrib import messages
         messages.error(request, "You do not have access to the user portal.")
         return redirect('login')
-    return render(request, "user_home.html")
+    
+    # Get user's vehicles count
+    vehicles_count = 0
+    if hasattr(request.user, 'member_profile') and request.user.member_profile:
+        vehicles_count = Vehicle.objects.filter(member=request.user.member_profile).count()
+    
+    context = {
+        'vehicles_count': vehicles_count,
+    }
+    return render(request, "user_home.html", context)
 
 # ==== User-Side Views ====
 

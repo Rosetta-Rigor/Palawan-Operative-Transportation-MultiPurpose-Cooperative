@@ -1,89 +1,160 @@
 {% extends 'user_base.html' %}
 {% load static %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/user_home_cards.css' %}">
+<link rel="stylesheet" href="{% static 'css/user_custom.css' %}">
 {% endblock %}
-{% block title %}User Home - POTMPC{% endblock %}
+
+{% block title %}Home - POTMPC{% endblock %}
+
 {% block content %}
-<div class="container py-5">
-  <div class="row mb-4 align-items-center">
-    <div class="col-md-12">
-      <h1 class="h3 mb-1">Welcome,
-        {% if request.user.member_profile %}{{ request.user.username }}
-        {% else %}{{ request.user.username }}{% endif %}
-      </h1>
-      <p class="text-muted">Quick access to your documents, announcements and profile.</p>
+<div class="user-home-wrapper">
+    <div class="container">
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+            <h1>Welcome back, {{ request.user.username }}! 👋</h1>
+            <p>Your cooperative dashboard - manage your documents, payments, and stay updated with announcements.</p>
+        </div>
+
+        <!-- Feature Cards Section -->
+        <div class="feature-cards-section">
+            <h2 class="section-title">
+                <i class="la la-th-large"></i>
+                Quick Access
+            </h2>
+            
+            <div class="user-card-grid">
+                <a class="user-card" href="{% url 'user_documents' %}">
+                    <div class="uc-left">
+                        <div class="uc-icon uc-icon-docs"><i class="la la-file-alt"></i></div>
+                    </div>
+                    <div class="uc-body">
+                        <div class="uc-title">My Documents</div>
+                        <div class="uc-sub" id="user-doc-count">Loading document count...</div>
+                    </div>
+                    <div class="uc-right">
+                        <span class="uc-action">View <i class="la la-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a class="user-card" href="{% url 'user_payments' %}">
+                    <div class="uc-left">
+                        <div class="uc-icon uc-icon-wallet"><i class="la la-wallet"></i></div>
+                    </div>
+                    <div class="uc-body">
+                        <div class="uc-title">My Payments</div>
+                        <div class="uc-sub">Track and manage your payment history</div>
+                    </div>
+                    <div class="uc-right">
+                        <span class="uc-action">Open <i class="la la-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a class="user-card" href="{% url 'user_vehicles' %}">
+                    <div class="uc-left">
+                        <div class="uc-icon uc-icon-car"><i class="la la-car"></i></div>
+                    </div>
+                    <div class="uc-body">
+                        <div class="uc-title">My Vehicles</div>
+                        <div class="uc-sub">
+                            {% if vehicles_count > 0 %}
+                                {{ vehicles_count }} vehicle{{ vehicles_count|pluralize }} registered
+                            {% else %}
+                                No vehicles registered yet
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="uc-right">
+                        <span class="uc-action">Manage <i class="la la-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a class="user-card" href="{% url 'user_announcements' %}">
+                    <div class="uc-left">
+                        <div class="uc-icon uc-icon-bell"><i class="la la-bullhorn"></i></div>
+                    </div>
+                    <div class="uc-body">
+                        <div class="uc-title">Announcements</div>
+                        <div class="uc-sub">Stay updated with latest news</div>
+                    </div>
+                    <div class="uc-right">
+                        <span class="uc-action">Read <i class="la la-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a class="user-card" href="{% url 'user_profile' %}">
+                    <div class="uc-left">
+                        <div class="uc-icon uc-icon-user"><i class="la la-user-circle"></i></div>
+                    </div>
+                    <div class="uc-body">
+                        <div class="uc-title">My Profile</div>
+                        <div class="uc-sub">Update personal information & settings</div>
+                    </div>
+                    <div class="uc-right">
+                        <span class="uc-action">Edit <i class="la la-arrow-right"></i></span>
+                    </div>
+                </a>
+
+                <a class="user-card" href="{% url 'user_upload_document' %}">
+                    <div class="uc-left">
+                        <div class="uc-icon uc-icon-upload"><i class="la la-cloud-upload-alt"></i></div>
+                    </div>
+                    <div class="uc-body">
+                        <div class="uc-title">Upload Document</div>
+                        <div class="uc-sub">Submit new documents to cooperative</div>
+                    </div>
+                    <div class="uc-right">
+                        <span class="uc-action">Upload <i class="la la-arrow-right"></i></span>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="recent-activity">
+            <h2 class="section-title">
+                <i class="la la-clock"></i>
+                Recent Activity
+            </h2>
+            <div id="recentActivityList">
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="la la-info-circle"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">Welcome to POTMPC Portal</div>
+                        <div class="activity-time">Get started by exploring your dashboard features</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <div class="user-card-grid">
-    <a class="user-card" href="{% url 'user_documents' %}">
-      <div class="uc-left">
-        <div class="uc-icon uc-icon-docs"><i class="la la-file"></i></div>
-      </div>
-      <div class="uc-body">
-        <div class="uc-title">My Documents</div>
-        <div class="uc-sub" id="user-doc-count">Loading...</div>
-      </div>
-      <div class="uc-right">
-        <span class="uc-action">Open</span>
-      </div>
-    </a>
-
-    <a class="user-card" href="{% url 'user_announcements' %}">
-      <div class="uc-left">
-        <div class="uc-icon uc-icon-bell"><i class="la la-bell"></i></div>
-      </div>
-      <div class="uc-body">
-        <div class="uc-title">Announcements</div>
-        <div class="uc-sub">View messages from managers</div>
-      </div>
-      <div class="uc-right">
-        <span class="uc-action">View</span>
-      </div>
-    </a>
-
-    <a class="user-card" href="{% url 'user_profile' %}">
-      <div class="uc-left">
-        <div class="uc-icon uc-icon-user"><i class="la la-user"></i></div>
-      </div>
-      <div class="uc-body">
-        <div class="uc-title">My Profile</div>
-        <div class="uc-sub">Edit contact & profile picture</div>
-      </div>
-      <div class="uc-right">
-        <span class="uc-action">Edit</span>
-      </div>
-    </a>
-
-    <a class="user-card" href="{% url 'user_vehicles' %}">
-      <div class="uc-left">
-        <div class="uc-icon uc-icon-car"><i class="la la-car"></i></div>
-      </div>
-      <div class="uc-body">
-        <div class="uc-title">My Vehicles</div>
-        <div class="uc-sub">{{ vehicles_count|default:0 }} total</div>
-      </div>
-      <div class="uc-right">
-        <span class="uc-action">Browse</span>
-      </div>
-    </a>
-  </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  fetch("{% url 'user_document_entry_count_api' %}")
-    .then(response => response.json())
-    .then(data => {
-      const count = data.count || 0;
-      const plural = count === 1 ? "" : "s";
-      document.getElementById("user-doc-count").textContent = `${count} document${plural}`;
-    })
-    .catch(() => {
-      document.getElementById("user-doc-count").textContent = "0 documents";
+    // Fetch document count
+    fetch("{% url 'user_document_entry_count_api' %}")
+        .then(response => response.json())
+        .then(data => {
+            const count = data.count || 0;
+            const plural = count === 1 ? "" : "s";
+            document.getElementById("user-doc-count").textContent = `${count} document${plural} available`;
+        })
+        .catch(() => {
+            document.getElementById("user-doc-count").textContent = "0 documents available";
+        });
+    
+    // Add hover effect animations
+    const cards = document.querySelectorAll('.user-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
     });
 });
 </script>
