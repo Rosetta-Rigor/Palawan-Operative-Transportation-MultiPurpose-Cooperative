@@ -27,14 +27,14 @@ class BatchAdmin(admin.ModelAdmin):
 
 @admin.register(Document)
 class DocumentAdmin(admin.ModelAdmin):
-    list_display = ('tin', 'vehicle')
-    search_fields = ('tin',)
+    list_display = ('mv_file_no', 'vehicle')
+    search_fields = ('mv_file_no',)
     list_filter = ('vehicle',)
 
 @admin.register(DocumentEntry)
 class DocumentEntryAdmin(admin.ModelAdmin):
     list_display = ('document', 'renewal_date')
-    search_fields = ('document__tin',)
+    search_fields = ('document__mv_file_no',)
     list_filter = ('renewal_date',)
 
 

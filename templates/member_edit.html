@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/admin_forms.css' %}">
+{% load widget_tweaks %}
+{% block content %}
+<div class="content admin-dashboard">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="multi-form-card">
+                    <!-- Form Container -->
+                    <div class="form-carousel-container">
+                        <!-- Form Wrapper -->
+                        <div class="form-carousel-wrapper">
+                            <form method="POST" enctype="multipart/form-data" id="editMemberForm">
+                                {% csrf_token %}
+                                
+                                <!-- Single Step: Member Information -->
+                                <div class="form-step active">
+                                    <div class="form-step-header">
+                                        <h5 class="form-step-title">Edit Member Information</h5>
+                                        <p class="form-step-desc">Update the member's details</p>
+                                    </div>
+                                    
+                                    {% if form.non_field_errors %}
+                                        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                                    {% endif %}
+
+                                    <div class="form-group">
+                                        <label for="{{ form.full_name.id_for_label }}">Full Name <span class="text-danger">*</span></label>
+                                        {{ form.full_name|add_class:"form-control" }}
+                                        {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors }}</div>{% endif %}
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="{{ form.batch.id_for_label }}">Batch <span class="text-danger">*</span></label>
+                                            {{ form.batch|add_class:"form-control" }}
+                                            {% if form.batch.errors %}<div class="text-danger small">{{ form.batch.errors }}</div>{% endif %}
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label for="{{ form.batch_monitoring_number.id_for_label }}">Batch Monitoring Number <span class="text-danger">*</span></label>
+                                            {{ form.batch_monitoring_number|add_class:"form-control" }}
+                                            {% if form.batch_monitoring_number.errors %}<div class="text-danger small">{{ form.batch_monitoring_number.errors }}</div>{% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label for="{{ form.age.id_for_label }}">Age</label>
+                                            {{ form.age|add_class:"form-control" }}
+                                            {% if form.age.errors %}<div class="text-danger small">{{ form.age.errors }}</div>{% endif %}
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="{{ form.sex.id_for_label }}">Sex</label>
+                                            {{ form.sex|add_class:"form-control" }}
+                                            {% if form.sex.errors %}<div class="text-danger small">{{ form.sex.errors }}</div>{% endif %}
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="{{ form.phone_number.id_for_label }}">Phone Number</label>
+                                            {{ form.phone_number|add_class:"form-control"|attr:"placeholder:+63 912 345 6789" }}
+                                            {% if form.phone_number.errors %}<div class="text-danger small">{{ form.phone_number.errors }}</div>{% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="{{ form.email.id_for_label }}">Email Address</label>
+                                        {{ form.email|add_class:"form-control"|attr:"placeholder:member@example.com" }}
+                                        {% if form.email.help_text %}<small class="form-text text-muted">{{ form.email.help_text }}</small>{% endif %}
+                                        {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            {% if form.user_account %}
+                                            <label for="userAccountSelect">User Account <span class="optional-badge">Optional</span></label>
+                                            <select id="userAccountSelect" name="user_account" class="form-control" style="width:100%">
+                                                {% if form.instance and form.instance.user_account %}
+                                                    <option value="{{ form.instance.user_account.id }}" selected>{{ form.instance.user_account.full_name|default:form.instance.user_account.username }}</option>
+                                                {% endif %}
+                                            </select>
+                                            <small class="form-text text-muted">If linked, user account's phone and email will override the above fields</small>
+                                            {% if form.user_account.errors %}<div class="text-danger small">{{ form.user_account.errors }}</div>{% endif %}
+                                            {% endif %}
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label for="{{ form.is_dormant.id_for_label }}">Dormant Status</label>
+                                            <div class="custom-control custom-checkbox mt-2">
+                                                {{ form.is_dormant|add_class:"custom-control-input" }}
+                                                <label class="custom-control-label" for="{{ form.is_dormant.id_for_label }}">
+                                                    Mark as Dormant
+                                                </label>
+                                            </div>
+                                            {% if form.is_dormant.errors %}<div class="text-danger small">{{ form.is_dormant.errors }}</div>{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Form Actions -->
+                                <div class="form-actions">
+                                    <a href="{% url 'member_list' %}" class="btn btn-secondary">
+                                        <i class="la la-times"></i> Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="la la-save"></i> Update Member
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Select2 for User Account
+    const $select = $('#userAccountSelect');
+    if ($select.length && $.fn && $.fn.select2) {
+        $select.select2({
+            theme: 'bootstrap-5',
+            placeholder: "-- Select User Account (Optional) --",
+            allowClear: true,
+            ajax: {
+                url: "{% url 'user_search_api' %}",
+                dataType: 'json',
+                delay: 250,
+                data: function(params) { return { q: params.term }; },
+                processResults: function(data) { return { results: data.results }; },
+                cache: true
+            },
+            minimumInputLength: 1,
+            width: 'resolve'
+        });
+    }
+});
+</script>
+{% endblock %}

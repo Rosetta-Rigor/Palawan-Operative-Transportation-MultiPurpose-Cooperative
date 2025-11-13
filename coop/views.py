@@ -206,13 +206,13 @@ def member_add(request):
                     selected_vehicle.save()
                 
                 # Handle optional document submission (Step 3)
-                tin = request.POST.get('tin', '').strip()
+                mv_file_no = request.POST.get('mv_file_no', '').strip()
                 renewal_date_str = request.POST.get('renewal_date', '').strip()
                 official_receipt = request.FILES.get('official_receipt')
                 certificate_of_registration = request.FILES.get('certificate_of_registration')
                 
-                # Only create document if TIN is provided
-                if tin:
+                # Only create document if MV File No. is provided
+                if mv_file_no:
                     # Get the first vehicle (either from formset or selected_vehicle)
                     target_vehicle = None
                     if saved_vehicles:
@@ -223,7 +223,7 @@ def member_add(request):
                     if target_vehicle:
                         # Create Document
                         document = Document.objects.create(
-                            tin=tin,
+                            mv_file_no=mv_file_no,
                             vehicle=target_vehicle
                         )
                         
@@ -257,6 +257,27 @@ def member_add(request):
         member_form = MemberForm()
         formset = VehicleFormSet()
     return render(request, "member_add.html", {"form": member_form, "formset": formset})
+
+@login_required
+def member_edit(request, pk):
+    """
+    Handles editing an existing Member.
+    - Displays simplified form with only member information (no vehicles/documents).
+    - Updates member details on POST.
+    - Redirects to member list on success.
+    """
+    member = get_object_or_404(Member, pk=pk)
+    
+    if request.method == 'POST':
+        form = MemberForm(request.POST, instance=member)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Member "{member.full_name}" updated successfully!')
+            return redirect('member_list')
+    else:
+        form = MemberForm(instance=member)
+    
+    return render(request, 'member_edit.html', {'form': form, 'member': member})
     
 @login_required
 def member_list(request):
@@ -484,70 +505,6 @@ def user_payment_year_detail(request, year_id):
 
 
 @login_required
-def member_edit(request, pk):
-    """
-    Handles editing of an existing Member.
-    - Accepts POST data for MemberForm and VehicleFormSet.
-    - Updates assigned vehicle if changed.
-    - Updates related vehicles via formset.
-    - Redirects to member list on success.
-    """
-    member = get_object_or_404(Member, pk=pk)
-    if request.method == "POST":
-        member_form = MemberForm(request.POST, instance=member)
-        formset = VehicleFormSet(request.POST, instance=member)
-        if member_form.is_valid() and formset.is_valid():
-            member = member_form.save()
-            selected_vehicle = member_form.cleaned_data.get('vehicle')
-
-            # Validate duplicates between selected_vehicle, existing member vehicles and formset entries
-            member_existing_plates = set(v.plate_number for v in member.vehicles.all())
-            plate_set = set(member_existing_plates)
-            if selected_vehicle:
-                plate_set.add(selected_vehicle.plate_number)
-
-            duplicate_found = False
-            for f in formset.forms:
-                if not hasattr(f, 'cleaned_data'):
-                    continue
-                cd = f.cleaned_data
-                if not cd or cd.get('DELETE', False):
-                    continue
-                plate = cd.get('plate_number')
-                inst = getattr(f, 'instance', None)
-                # If editing an existing vehicle and plate unchanged, allow it
-                if inst and getattr(inst, 'pk', None):
-                    existing_plate = getattr(inst, 'plate_number', None)
-                    if existing_plate and plate == existing_plate:
-                        plate_set.add(plate)
-                        continue
-                if plate:
-                    if plate in plate_set:
-                        f.add_error('plate_number', 'Vehicle with this Plate number already exists.')
-                        duplicate_found = True
-                    else:
-                        plate_set.add(plate)
-            if duplicate_found:
-                return render(request, "member_add.html", {"form": member_form, "formset": formset})
-
-            formset.save()
-
-            if selected_vehicle:
-                # Attach selected existing vehicle to this member
-                if selected_vehicle.member and selected_vehicle.member != member:
-                    # reassign ownership
-                    selected_vehicle.member = member
-                else:
-                    selected_vehicle.member = member
-                selected_vehicle.save()
-
-            return redirect("member_list")
-    else:
-        member_form = MemberForm(instance=member)
-        formset = VehicleFormSet(instance=member)
-    return render(request, "member_add.html", {"form": member_form, "formset": formset})
-
-@login_required
 def member_renewal_update(request, pk):
     """
     Updates the member's renewal date by +1 year and redirects to add a new document for their vehicle.
@@ -762,7 +719,7 @@ class MemberListView(ListView):
     """
     Displays a paginated list of members.
     Supports searching across Member fields, related Vehicle fields,
-    related Documents (by TIN) and linked User account fields.
+    related Documents (by MV File No.) and linked User account fields.
     """
     model = Member
     template_name = "memberlist.html"
@@ -775,8 +732,8 @@ class MemberListView(ListView):
         q = (self.request.GET.get("q") or "").strip()
         if not q:
             return qs
-        # Subquery: any Document whose vehicle is owned by the member and tin matches q
-        doc_qs = Document.objects.filter(vehicle__member=OuterRef('pk'), tin__icontains=q)
+        # Subquery: any Document whose vehicle is owned by the member and mv_file_no matches q
+        doc_qs = Document.objects.filter(vehicle__member=OuterRef('pk'), mv_file_no__icontains=q)
 
         
         queryset = qs.annotate(has_doc=Exists(doc_qs)).filter(
@@ -950,7 +907,7 @@ class DocumentListView(ListView):
         q = (self.request.GET.get('q') or '').strip()
         if q:
             qs = qs.filter(
-                Q(tin__icontains=q) |
+                Q(mv_file_no__icontains=q) |
                 Q(vehicle__plate_number__icontains=q) |
                 Q(vehicle__member__full_name__icontains=q)
             ).distinct()
@@ -1227,6 +1184,27 @@ class DocumentDeleteView(DeleteView):
     model = Document
     template_name = "document_confirm_delete.html"
     success_url = reverse_lazy("document_list")
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Check if document has any approved entries
+        document = self.get_object()
+        has_approved_entries = document.entries.filter(status='approved').exists()
+        context['can_delete'] = not has_approved_entries
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        """Only allow deletion of documents with pending entries only"""
+        document = self.get_object()
+        has_approved_entries = document.entries.filter(status='approved').exists()
+        
+        if has_approved_entries:
+            messages.error(request, 'Cannot delete document with approved entries. Only pending documents can be deleted.')
+            return redirect('document_list')
+        
+        messages.success(request, f'Document "{document.mv_file_no or document.pk}" deleted successfully.')
+        return super().post(request, *args, **kwargs)
+
 from .models import User
 
 def accounts_list(request):
@@ -1500,34 +1478,20 @@ from django.db.models import Count
 @login_required
 def member_search_api(request):
     """
-    Search API for Member objects used by Select2 AJAX widgets.
-    Excludes members who already have 2 or more vehicles (cooperative rule).
-    When editing a vehicle, pass 'current_member_id' to include that member even if they have 2 vehicles.
+    General search API for Member objects used by Select2 AJAX widgets.
+    No vehicle restrictions - used for user account linking and general member searches.
+    For vehicle assignment with 2-vehicle limit, use member_for_vehicle_search_api instead.
     Returns JSON in Select2 { results: [{id, text}, ...] } format.
     """
     q = request.GET.get('q', '').strip()
-    current_member_id = request.GET.get('current_member_id', '').strip()
     
     if not q:
         members = []
     else:
-        # Annotate with vehicle count
-        members_query = Member.objects.annotate(
-            vehicle_count=Count('vehicles')
-        ).filter(full_name__icontains=q)
-        
-        # If editing and current member has 2 vehicles, include them
-        if current_member_id:
-            try:
-                current_id = int(current_member_id)
-                members = members_query.filter(
-                    Q(vehicle_count__lt=2) | Q(id=current_id)
-                )[:10]
-            except (ValueError, TypeError):
-                members = members_query.filter(vehicle_count__lt=2)[:10]
-        else:
-            # When adding new vehicle, exclude members with 2+ vehicles
-            members = members_query.filter(vehicle_count__lt=2)[:10]
+        # Simple search by name or batch number - no vehicle restrictions
+        members = Member.objects.filter(
+            Q(full_name__icontains=q) | Q(batch__number__icontains=q)
+        ).select_related('batch')[:20]
     
     results = [{'id': m.id, 'text': m.full_name} for m in members]
     return JsonResponse({'results': results})
@@ -1561,6 +1525,50 @@ def user_search_api(request):
     for u in users:
         label = getattr(u, 'full_name', None) or u.username
         results.append({'id': u.id, 'text': label})
+    return JsonResponse({'results': results})
+
+
+@require_GET
+@login_required
+def member_for_vehicle_search_api(request):
+    """
+    Isolated member search API for vehicle assignment only.
+    Restricts results to members with < 2 vehicles to enforce the 2-vehicle limit.
+    Used in vehicle_add.html and member_add.html Step 2 (vehicle formset).
+    """
+    q = request.GET.get('q', '').strip()
+    current_member_id = request.GET.get('current_member_id')
+    
+    # Annotate with vehicle count
+    members = Member.objects.annotate(
+        vehicle_count=Count('vehicles')
+    ).filter(
+        Q(full_name__icontains=q) | Q(batch__number__icontains=q)
+    ).select_related('batch')
+    
+    # Filter: members with < 2 vehicles OR the current member being edited
+    if current_member_id:
+        try:
+            current_id = int(current_member_id)
+            members = members.filter(
+                Q(vehicle_count__lt=2) | Q(id=current_id)
+            )
+        except (ValueError, TypeError):
+            members = members.filter(vehicle_count__lt=2)
+    else:
+        members = members.filter(vehicle_count__lt=2)
+    
+    members = members[:20]
+    
+    results = []
+    for m in members:
+        batch_text = m.batch.number if m.batch else 'N/A'
+        vehicle_count = m.vehicles.count()
+        results.append({
+            'id': m.id,
+            'text': f"{m.full_name} (Batch {batch_text}) - {vehicle_count} vehicle(s)"
+        })
+    
     return JsonResponse({'results': results})
 
 
@@ -2830,7 +2838,7 @@ def renewals_hub(request):
         members_query = members_query.filter(
             Q(full_name__icontains=search_query) |
             Q(vehicles__plate_number__icontains=search_query) |
-            Q(vehicles__document__tin__icontains=search_query)
+            Q(vehicles__document__mv_file_no__icontains=search_query)
         ).distinct()
     
     # Collect all renewals
@@ -2898,7 +2906,7 @@ def renewals_hub(request):
                     'member': member,
                     'vehicle': vehicle,
                     'plate': vehicle.plate_number,
-                    'tin': getattr(vehicle.document, 'tin', 'N/A') if hasattr(vehicle, 'document') else 'N/A',
+                    'mv_file_no': getattr(vehicle.document, 'mv_file_no', 'N/A') if hasattr(vehicle, 'document') else 'N/A',
                     'expiry_date': candidate,
                     'days_left': days_left,
                     'days_until_overdue': abs(days_left) if days_left < 0 else 0,

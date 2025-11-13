@@ -22,7 +22,7 @@
     <div class="col-md-6">
       <form action="{% url 'document_list' %}">
         <div class="search-card p-3 d-flex align-items-center">
-          <input type="text" id="document-search" name="q" class="form-control form-control-lg search-input" placeholder="Search TIN, plate or owner..." autocomplete="off" value="{{ q|default:'' }}">
+          <input type="text" id="document-search" name="q" class="form-control form-control-lg search-input" placeholder="Search MV File No., plate or owner..." autocomplete="off" value="{{ q|default:'' }}">
           <button type="button" class="btn btn-light ml-2" id="document-search-clear" title="Clear"><i class="la la-times"></i></button>
           <button type="submit" class="btn btn-primary ml-2"><i class="la la-search"></i></button>
         </div>
@@ -36,7 +36,7 @@
         <table class="table table-striped table-hover mb-0">
           <thead class="table-head">
             <tr>
-              <th>TIN</th>
+              <th>MV File No.</th>
               <th>Vehicle Plate</th>
               <th>Member Name</th>
               <th>Latest Renewal</th>

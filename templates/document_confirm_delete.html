@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/admin_forms.css' %}">
+{% block content %}
+<div class="content admin-dashboard">
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div class="admin-form-card">
+                    <div class="form-header-gradient" style="background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);">
+                        <h4 class="form-header-title">
+                            <i class="fas fa-exclamation-triangle"></i> Confirm Document Deletion
+                        </h4>
+                        <p class="form-header-sub">This action cannot be undone</p>
+                    </div>
+                    <div class="form-content">
+                        {% if not can_delete %}
+                            <div class="alert alert-danger">
+                                <i class="fas fa-ban"></i> <strong>Cannot Delete This Document</strong>
+                                <p class="mb-0 mt-2">Only documents with <strong>pending</strong> status can be deleted. This document has been approved and cannot be removed.</p>
+                            </div>
+                            <div class="form-actions">
+                                <a href="{% url 'document_list' %}" class="btn btn-secondary">
+                                    <i class="la la-arrow-left"></i> Back to Documents
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-circle"></i> <strong>Warning!</strong> You are about to delete the following document:
+                            </div>
+                            
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title">Document Details</h5>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4">MV File No.:</dt>
+                                        <dd class="col-sm-8"><strong>{{ object.mv_file_no|default:"N/A" }}</strong></dd>
+                                        
+                                        <dt class="col-sm-4">Vehicle:</dt>
+                                        <dd class="col-sm-8">
+                                            {% if object.vehicle %}
+                                                {{ object.vehicle.plate_number }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Owner:</dt>
+                                        <dd class="col-sm-8">
+                                            {% if object.vehicle and object.vehicle.member %}
+                                                {{ object.vehicle.member.full_name }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Status:</dt>
+                                        <dd class="col-sm-8">
+                                            <span class="badge badge-warning">Pending</span>
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Entries:</dt>
+                                        <dd class="col-sm-8">
+                                            {{ object.entries.count }} renewal record(s) will also be deleted
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                            
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="form-actions">
+                                    <a href="{% url 'document_list' %}" class="btn btn-secondary">
+                                        <i class="la la-times"></i> Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="la la-trash"></i> Yes, Delete Document
+                                    </button>
+                                </div>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

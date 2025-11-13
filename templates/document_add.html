@@ -10,9 +10,9 @@
                 <div class="admin-form-card">
                     <div class="form-header-gradient">
                         <h4 class="form-header-title">
-                            <i class="fas fa-file-alt"></i> Add Document (TIN)
+                            <i class="fas fa-file-alt"></i> Add Document (MV File)
                         </h4>
-                        <p class="form-header-sub">Register a new TIN document for a vehicle</p>
+                        <p class="form-header-sub">Register a new MV File document for a vehicle</p>
                     </div>
                     <div class="form-content">
                         <form method="post" enctype="multipart/form-data">
@@ -22,9 +22,10 @@
                             {% endif %}
                             
                             <div class="form-group">
-                                <label for="id_tin">TIN Number</label>
-                                {{ form.tin|add_class:"form-control" }}
-                                {% if form.tin.errors %}<div class="text-danger small">{{ form.tin.errors }}</div>{% endif %}
+                                <label for="id_mv_file_no">MV File No.</label>
+                                {{ form.mv_file_no|add_class:"form-control"|attr:"maxlength:70"|attr:"placeholder:e.g., MV2024-ABC123" }}
+                                {% if form.mv_file_no.help_text %}<small class="form-text text-muted">{{ form.mv_file_no.help_text }}</small>{% endif %}
+                                {% if form.mv_file_no.errors %}<div class="text-danger small">{{ form.mv_file_no.errors }}</div>{% endif %}
                             </div>
                             
                             <div class="form-group">
@@ -40,8 +41,9 @@
                             </div>
                             
                             <div class="form-group">
-                                <label for="id_renewal_date">Renewal Date</label>
-                                {{ entry_form.renewal_date|add_class:"form-control" }}
+                                <label for="id_renewal_date">Renewal Date (D/M/Y)</label>
+                                {{ entry_form.renewal_date|add_class:"form-control"|attr:"placeholder:DD/MM/YYYY" }}
+                                {% if entry_form.renewal_date.help_text %}<small class="form-text text-muted">{{ entry_form.renewal_date.help_text }}</small>{% endif %}
                                 {% if entry_form.renewal_date.errors %}<div class="text-danger small">{{ entry_form.renewal_date.errors }}</div>{% endif %}
                             </div>
                             

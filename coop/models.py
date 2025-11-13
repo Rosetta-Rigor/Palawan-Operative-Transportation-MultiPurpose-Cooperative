@@ -8,11 +8,11 @@ from datetime import timedelta
 
 def document_upload_path(instance, filename, doc_type):
     """
-    Store files in: media/<TIN>/<renewal_date>/<doc_type>/<filename>
+    Store files in: media/<MV_FILE_NO>/<renewal_date>/<doc_type>/<filename>
     """
-    tin = instance.document.tin if hasattr(instance, 'document') and instance.document else "unknown_tin"
+    mv_file_no = instance.document.mv_file_no if hasattr(instance, 'document') and instance.document else "unknown_mv_file"
     renewal_date = instance.renewal_date.strftime("%Y-%m-%d") if instance.renewal_date else "unknown_date"
-    return f"{tin}/{renewal_date}/{doc_type}/{filename}"
+    return f"{mv_file_no}/{renewal_date}/{doc_type}/{filename}"
 
 def or_upload_path(instance, filename):
     return document_upload_path(instance, filename, "or")
@@ -75,7 +75,8 @@ class Member(models.Model):
     is_dormant = models.BooleanField(default=False)
     age = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Member's age")
     sex = models.CharField(max_length=1, choices=SEX_CHOICES, null=True, blank=True, help_text="Member's sex")
-    # phone_number and email removed, user_account now on User
+    phone_number = models.CharField(max_length=20, null=True, blank=True, help_text="Member's phone number (overridden by user account if linked)")
+    email = models.EmailField(null=True, blank=True, help_text="Member's email (overridden by user account if linked)")
     user_account = models.OneToOneField(
         'User',
         on_delete=models.SET_NULL,
@@ -88,8 +89,8 @@ class Member(models.Model):
 
 class Vehicle(models.Model):
     plate_number = models.CharField(max_length=20, unique=True)
-    engine_number = models.CharField(max_length=50, blank=True, null=True)
-    chassis_number = models.CharField(max_length=50, blank=True, null=True)
+    engine_number = models.CharField(max_length=70, blank=True, null=True, help_text="Engine number (alphanumeric, e.g., ABC2393249RDUI)")
+    chassis_number = models.CharField(max_length=70, blank=True, null=True, help_text="Chassis number (alphanumeric, e.g., ABC2393249RDUI)")
     make_brand = models.CharField(max_length=100, blank=True, null=True)
     body_type = models.CharField(max_length=50, default="van", editable=False)
     year_model = models.PositiveIntegerField(blank=True, null=True)
@@ -100,10 +101,10 @@ class Vehicle(models.Model):
         return self.plate_number
 
 class Document(models.Model):
-    tin = models.CharField(max_length=12, unique=True)
+    mv_file_no = models.CharField(max_length=70, unique=True, null=True, blank=True, help_text="MV File Number (alphanumeric, varies per vehicle)")
     vehicle = models.OneToOneField(Vehicle, on_delete=models.SET_NULL, null=True, blank=True, related_name="document")
     def __str__(self):
-        return f"TIN {self.tin}"
+        return f"MV File #{self.mv_file_no}" if self.mv_file_no else f"Document #{self.pk}"
 
 class DocumentEntry(models.Model):
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="entries")
@@ -125,7 +126,7 @@ class DocumentEntry(models.Model):
     approved_at = models.DateTimeField(null=True, blank=True)
     manager_notes = models.TextField(null=True, blank=True)
     def __str__(self):
-        return f"{self.document.tin} - {self.renewal_date}"
+        return f"{self.document.mv_file_no} - {self.renewal_date}"
     
 class Announcement(models.Model):
     """

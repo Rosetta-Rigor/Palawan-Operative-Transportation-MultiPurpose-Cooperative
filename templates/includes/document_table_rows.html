@@ -1,6 +1,6 @@
 {% for doc in object_list %}
 <tr>
-  <td>{{ doc.tin }}</td>
+  <td>{{ doc.mv_file_no|default:"N/A" }}</td>
   <td>{% if doc.vehicle %}{{ doc.vehicle.plate_number }}{% else %}N/A{% endif %}</td>
   <td>{% if doc.vehicle and doc.vehicle.member %}{{ doc.vehicle.member.full_name }}{% else %}N/A{% endif %}</td>
   <td>

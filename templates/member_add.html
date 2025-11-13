@@ -59,26 +59,53 @@ label[for$="-DELETE"], input[name$="-DELETE"] {
                                         {% if form.full_name.errors %}<div class="text-danger small">{{ form.full_name.errors }}</div>{% endif %}
                                     </div>
 
-                                    <div class="form-group">
-                                        <label for="{{ form.batch.id_for_label }}">Batch <span class="text-danger">*</span></label>
-                                        {{ form.batch|add_class:"form-control" }}
-                                        {% if form.batch.errors %}<div class="text-danger small">{{ form.batch.errors }}</div>{% endif %}
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label for="{{ form.batch.id_for_label }}">Batch <span class="text-danger">*</span></label>
+                                            {{ form.batch|add_class:"form-control" }}
+                                            {% if form.batch.errors %}<div class="text-danger small">{{ form.batch.errors }}</div>{% endif %}
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label for="{{ form.batch_monitoring_number.id_for_label }}">Batch Monitoring Number <span class="text-danger">*</span></label>
+                                            {{ form.batch_monitoring_number|add_class:"form-control" }}
+                                            {% if form.batch_monitoring_number.errors %}<div class="text-danger small">{{ form.batch_monitoring_number.errors }}</div>{% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label for="{{ form.age.id_for_label }}">Age</label>
+                                            {{ form.age|add_class:"form-control" }}
+                                            {% if form.age.errors %}<div class="text-danger small">{{ form.age.errors }}</div>{% endif %}
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="{{ form.sex.id_for_label }}">Sex</label>
+                                            {{ form.sex|add_class:"form-control" }}
+                                            {% if form.sex.errors %}<div class="text-danger small">{{ form.sex.errors }}</div>{% endif %}
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="{{ form.phone_number.id_for_label }}">Phone Number</label>
+                                            {{ form.phone_number|add_class:"form-control"|attr:"placeholder:+63 912 345 6789" }}
+                                            {% if form.phone_number.errors %}<div class="text-danger small">{{ form.phone_number.errors }}</div>{% endif %}
+                                        </div>
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="{{ form.batch_monitoring_number.id_for_label }}">Batch Monitoring Number <span class="text-danger">*</span></label>
-                                        {{ form.batch_monitoring_number|add_class:"form-control" }}
-                                        {% if form.batch_monitoring_number.errors %}<div class="text-danger small">{{ form.batch_monitoring_number.errors }}</div>{% endif %}
+                                        <label for="{{ form.email.id_for_label }}">Email Address</label>
+                                        {{ form.email|add_class:"form-control"|attr:"placeholder:member@example.com" }}
+                                        {% if form.email.help_text %}<small class="form-text text-muted">{{ form.email.help_text }}</small>{% endif %}
+                                        {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
                                     </div>
 
                                     {% if form.user_account %}
                                     <div class="form-group">
-                                        <label for="userAccountSelect">User Account</label>
+                                        <label for="userAccountSelect">User Account <span class="optional-badge">Optional</span></label>
                                         <select id="userAccountSelect" name="user_account" class="form-control" style="width:100%">
                                             {% if form.instance and form.instance.user_account %}
                                                 <option value="{{ form.instance.user_account.id }}" selected>{{ form.instance.user_account.full_name|default:form.instance.user_account.username }}</option>
                                             {% endif %}
                                         </select>
+                                        <small class="form-text text-muted">If linked, user account's phone and email will override the above fields</small>
                                         {% if form.user_account.errors %}<div class="text-danger small">{{ form.user_account.errors }}</div>{% endif %}
                                     </div>
                                     {% endif %}
@@ -105,18 +132,14 @@ label[for$="-DELETE"], input[name$="-DELETE"] {
                                                 </div>
                                                 <div class="form-group col-md-6">
                                                     <label for="{{ vehicle_form.engine_number.id_for_label }}">Engine Number</label>
-                                                    {% with field=vehicle_form.engine_number %}
-                                                        <input type="text" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control" pattern="[0-9]*" inputmode="numeric" title="Please enter only numbers" {% if field.value %}value="{{ field.value }}"{% endif %}>
-                                                    {% endwith %}
+                                                    {{ vehicle_form.engine_number|add_class:"form-control"|attr:"maxlength:70"|attr:"placeholder:e.g., ABC2393249RDUI" }}
                                                     {% if vehicle_form.engine_number.errors %}<div class="text-danger small">{{ vehicle_form.engine_number.errors }}</div>{% endif %}
                                                 </div>
                                             </div>
                                             <div class="form-row">
                                                 <div class="form-group col-md-6">
                                                     <label for="{{ vehicle_form.chassis_number.id_for_label }}">Chassis Number</label>
-                                                    {% with field=vehicle_form.chassis_number %}
-                                                        <input type="text" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control" pattern="[0-9]*" inputmode="numeric" title="Please enter only numbers" {% if field.value %}value="{{ field.value }}"{% endif %}>
-                                                    {% endwith %}
+                                                    {{ vehicle_form.chassis_number|add_class:"form-control"|attr:"maxlength:70"|attr:"placeholder:e.g., ABC2393249RDUI" }}
                                                     {% if vehicle_form.chassis_number.errors %}<div class="text-danger small">{{ vehicle_form.chassis_number.errors }}</div>{% endif %}
                                                 </div>
                                                 <div class="form-group col-md-6">
@@ -149,18 +172,19 @@ label[for$="-DELETE"], input[name$="-DELETE"] {
                                 <!-- Step 3: Document Information (Optional) -->
                                 <div class="form-step" data-step="3">
                                     <div class="form-step-header">
-                                        <h5 class="form-step-title">Document Information (TIN) <span class="optional-badge">Optional</span></h5>
+                                        <h5 class="form-step-title">Document Information (MV File) <span class="optional-badge">Optional</span></h5>
                                         <p class="form-step-desc">Upload document files if available</p>
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="id_tin">TIN Number</label>
-                                        <input type="text" name="tin" id="id_tin" class="form-control" placeholder="Enter TIN number">
+                                        <label for="id_mv_file_no">MV File No.</label>
+                                        <input type="text" name="mv_file_no" id="id_mv_file_no" class="form-control" maxlength="70" placeholder="e.g., MV2024-ABC123">
+                                        <small class="form-text text-muted">Motor Vehicle File Number (alphanumeric, up to 70 characters)</small>
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="id_renewal_date">Renewal Date</label>
-                                        <input type="date" name="renewal_date" id="id_renewal_date" class="form-control">
+                                        <label for="id_renewal_date">Renewal Date (D/M/Y)</label>
+                                        <input type="date" name="renewal_date" id="id_renewal_date" class="form-control" placeholder="DD/MM/YYYY">
                                     </div>
 
                                     <div class="form-group">

@@ -76,7 +76,7 @@ class CustomUserRegistrationForm(UserCreationForm):
 class MemberForm(forms.ModelForm):
     class Meta:
         model = Member
-        fields = ['full_name', 'batch', 'batch_monitoring_number', 'is_dormant', 'age', 'sex', 'user_account']
+        fields = ['full_name', 'batch', 'batch_monitoring_number', 'is_dormant', 'age', 'sex', 'phone_number', 'email', 'user_account']
         widgets = {
             'full_name': forms.TextInput(attrs={'class': 'form-control'}),
             'batch': forms.Select(attrs={'class': 'form-control'}),
@@ -84,7 +84,13 @@ class MemberForm(forms.ModelForm):
             'is_dormant': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'age': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '150'}),
             'sex': forms.Select(attrs={'class': 'form-control'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., +63 912 345 6789'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'e.g., member@example.com'}),
             'user_account': forms.Select(attrs={'class': 'form-control'}),
+        }
+        help_texts = {
+            'phone_number': 'Direct contact number (overridden by linked user account)',
+            'email': 'Direct email address (overridden by linked user account)',
         }
 
 class VehicleForm(forms.ModelForm):
@@ -97,13 +103,17 @@ class VehicleForm(forms.ModelForm):
         ]
         widgets = {
             'plate_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'engine_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'chassis_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'engine_number': forms.TextInput(attrs={'class': 'form-control', 'maxlength': '70', 'placeholder': 'e.g., ABC2393249RDUI'}),
+            'chassis_number': forms.TextInput(attrs={'class': 'form-control', 'maxlength': '70', 'placeholder': 'e.g., ABC2393249RDUI'}),
             'make_brand': forms.TextInput(attrs={'class': 'form-control'}),
             'year_model': forms.NumberInput(attrs={'class': 'form-control'}),
             'series': forms.TextInput(attrs={'class': 'form-control'}),
             'color': forms.TextInput(attrs={'class': 'form-control'}),
             'member': forms.Select(attrs={'class': 'form-control'}),
+        }
+        help_texts = {
+            'engine_number': 'Alphanumeric engine number (up to 70 characters)',
+            'chassis_number': 'Alphanumeric chassis number (up to 70 characters)',
         }
 
 class BatchForm(forms.ModelForm):
@@ -118,10 +128,16 @@ class BatchForm(forms.ModelForm):
 class DocumentForm(forms.ModelForm):
     class Meta:
         model = Document
-        fields = ['tin', 'vehicle']
+        fields = ['mv_file_no', 'vehicle']
         widgets = {
-            'tin': forms.TextInput(attrs={'class': 'form-control'}),
+            'mv_file_no': forms.TextInput(attrs={'class': 'form-control', 'maxlength': '70', 'placeholder': 'e.g., MV2024-ABC123'}),
             'vehicle': forms.Select(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'mv_file_no': 'MV File No.',
+        }
+        help_texts = {
+            'mv_file_no': 'Motor Vehicle File Number (alphanumeric, up to 70 characters)',
         }
 
 class DocumentEntryForm(forms.ModelForm):
@@ -130,9 +146,12 @@ class DocumentEntryForm(forms.ModelForm):
         fields = ['document', 'renewal_date', 'official_receipt', 'certificate_of_registration']
         widgets = {
             'document': forms.Select(attrs={'class': 'form-control'}),
-            'renewal_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'renewal_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'placeholder': 'DD/MM/YYYY'}),
             'official_receipt': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'certificate_of_registration': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'renewal_date': 'Renewal Date (D/M/Y)',
         }
 
 
