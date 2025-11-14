@@ -62,3 +62,4 @@ whitenoise==6.11.0
 qrcode[pil]==8.2
 django-qr-code==4.2.0
 pyzbar==0.1.9
+dj-database-url==2.2.0
