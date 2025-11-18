@@ -1,0 +1,314 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <title>{% block title %}POTMPC - Payment Management{% endblock %}</title>
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
+
+    <!-- Bootstrap + Fonts -->
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900">
+    <link rel="stylesheet" href="{% static 'css/ready.css' %}">
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    <link rel="stylesheet" href="{% static 'css/toast.css' %}">
+    <link rel="stylesheet" href="{% static 'css/user_custom.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_all.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_responsive.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_forms.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin_payments.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notifications.css' %}">
+
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    {% block extra_css %}{% endblock %}
+
+    <!-- jQuery must come BEFORE Select2 JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <style>
+        /* Full-width layout without sidebar */
+        body {
+            background: #f4f6f9;
+        }
+        
+        .main-content-no-sidebar {
+            width: 100%;
+            min-height: 100vh;
+            padding-top: 70px; /* Account for fixed navbar */
+            background: #f4f6f9;
+        }
+        
+        .full-width-content {
+            max-width: 100%;
+            padding: 2rem 3rem;
+            margin: 0 auto;
+        }
+        
+        .full-width-content .payments-container {
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Navbar adjustments for no-sidebar layout */
+        .main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: linear-gradient(135deg, #1F3E27 0%, #2E5C3A 100%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        }
+        
+        .logo-header {
+            padding: 0 20px !important;
+        }
+        
+        .logo-header .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+        
+        .logo-header .logo-text {
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        /* Hide sidebar toggle button */
+        .navbar-toggler {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    {% if messages %}
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          const messages = [
+            {% for message in messages %}
+            {
+              text: "{{ message|escapejs }}",
+              type: "{{ message.tags }}"
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+          ];
+          
+          messages.forEach(function(msg, index) {
+            setTimeout(function() {
+              showToast(msg.text, msg.type);
+            }, index * 300);
+          });
+        });
+      </script>
+    {% endif %}
+
+    <!-- HEADER / NAVBAR ONLY -->
+    <div class="main-header">
+        <div class="logo-header d-flex align-items-center" style="padding: 0 20px;">
+            <a href="{% url 'home' %}" class="logo" style="display: flex; align-items: center; gap: 12px;">
+                <img src="{% static 'img/home.png' %}" alt="Logo" style="height:40px; width:auto;">
+                <span class="logo-text">POTMPC ADMIN</span>
+            </a>
+        </div>
+        <!-- Nav Right - User Avatar Dropdown -->
+        <nav class="navbar navbar-header navbar-expand-lg">
+            <div class="container-fluid">
+                <ul class="navbar-nav topbar-nav ml-md-auto align-items-center">
+                    <!-- Notification Bell -->
+                    <li class="nav-item notification-bell-container" style="margin-right: 20px;">
+                        <button class="notification-bell-btn" id="notificationBellBtn" aria-label="Notifications" title="Notifications">
+                            <i class="las la-bell"></i>
+                            {% if unread_notifications_count > 0 %}
+                            <span class="notification-badge">{{ unread_notifications_count }}</span>
+                            {% endif %}
+                        </button>
+                        
+                        <!-- Dropdown -->
+                        <div class="notification-dropdown" id="notificationDropdown">
+                            <div class="notification-dropdown-header">
+                                <h4>Notifications</h4>
+                                <div class="notification-actions">
+                                    <form method="post" action="{% url 'notifications_mark_all_read' %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="mark-all-read-btn" title="Mark all as read">
+                                            <i class="las la-check-double"></i>
+                                        </button>
+                                    </form>
+                                    <a href="{% url 'notifications_center' %}" title="View all">
+                                        <i class="las la-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div class="notification-list">
+                                {% if recent_notifications %}
+                                    {% for notification in recent_notifications %}
+                                    <a href="{{ notification.action_url|default:'#' }}" 
+                                       class="notification-item {% if not notification.is_read %}unread{% endif %} priority-{{ notification.priority }}"
+                                       data-notification-id="{{ notification.id }}">
+                                        <div class="notification-icon">
+                                            {% if notification.priority == 'urgent' %}
+                                                <i class="las la-exclamation-circle"></i>
+                                            {% elif notification.priority == 'high' %}
+                                                <i class="las la-exclamation"></i>
+                                            {% else %}
+                                                <i class="las la-info-circle"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="notification-content">
+                                            <div class="notification-title">{{ notification.title }}</div>
+                                            <div class="notification-message">{{ notification.message|truncatewords:15 }}</div>
+                                            <div class="notification-time">{{ notification.created_at|timesince }} ago</div>
+                                        </div>
+                                        {% if not notification.is_read %}
+                                        <div class="notification-unread-dot"></div>
+                                        {% endif %}
+                                    </a>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="notification-empty">
+                                        <i class="las la-bell-slash"></i>
+                                        <p>No notifications</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="notification-dropdown-footer">
+                                <a href="{% url 'notifications_center' %}">View All Notifications</a>
+                            </div>
+                        </div>
+                    </li>
+                    
+                    <li class="nav-item dropdown">
+                        <a href="#" class="dropdown-toggle profile-pic" id="userAvatarDropdown" data-toggle="dropdown" aria-expanded="false" style="text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                            <!-- User Name -->
+                            <div class="user-name-display" style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 4px;">
+                                <span style="color: white; font-weight: 600; font-size: 0.95rem; line-height: 1.2;">{{ user.username }}</span>
+                                <span style="color: rgba(255,255,255,0.8); font-size: 0.75rem; line-height: 1.2;">Administrator</span>
+                            </div>
+                            <!-- Avatar -->
+                            <div class="avatar-wrapper" style="width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s; display: flex; align-items: center; justify-content: center;">
+                                {% if user.is_authenticated and user.profile_image %}
+                                    <img src="{{ user.profile_image.url }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                {% else %}
+                                    <img src="{% static 'img/boss.jpg' %}" alt="Default Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                {% endif %}
+                            </div>
+                        </a>
+                        <ul class="dropdown-menu dropdown-user animated fadeIn" aria-labelledby="userAvatarDropdown">
+                            <!-- User Card at Top -->
+                            <li class="dropdown-user-card" style="padding: 15px; border-bottom: 1px solid rgba(31,62,39,0.1); margin-bottom: 5px;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; border: 2px solid #C99E35; flex-shrink: 0;">
+                                        {% if user.is_authenticated and user.profile_image %}
+                                            <img src="{{ user.profile_image.url }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                        {% else %}
+                                            <img src="{% static 'img/boss.jpg' %}" alt="Default Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                        {% endif %}
+                                    </div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-weight: 700; color: #1F3E27; font-size: 0.95rem; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ user.username }}</div>
+                                        <div style="font-size: 0.8rem; color: #5C3A21; line-height: 1.3;">Administrator</div>
+                                    </div>
+                                </div>
+                            </li>
+                            <!-- Menu Items -->
+                            <li>
+                                <a class="dropdown-item" href="{% url 'admin_profile_edit' %}">
+                                    <i class="la la-user" style="margin-right: 8px;"></i> Edit Admin Profile
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'home' %}">
+                                    <i class="la la-dashboard" style="margin-right: 8px;"></i> Back to Dashboard
+                                </a>
+                            </li>
+                            <li class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                    <i class="la la-sign-out" style="margin-right: 8px;"></i> Logout
+                                </a>
+                                <form id="logout-form" action="{% url 'logout' %}" method="post" style="display:none;">
+                                    {% csrf_token %}
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </div>
+
+    <!-- MAIN CONTENT AREA (Full Width, No Sidebar) -->
+    <main class="main-content-no-sidebar">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- JS Core -->
+    <script src="{% static 'js/core/popper.min.js' %}"></script>
+    <script src="{% static 'js/core/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/plugin/jquery-ui-1.12.1.custom/jquery-ui.min.js' %}"></script>
+    <script src="{% static 'js/plugin/chartist/chartist.min.js' %}"></script>
+    <script src="{% static 'js/plugin/chartist/plugin/chartist-plugin-tooltip.min.js' %}"></script>
+    <script src="{% static 'js/plugin/bootstrap-notify/bootstrap-notify.min.js' %}"></script>
+    <script src="{% static 'js/plugin/bootstrap-toggle/bootstrap-toggle.min.js' %}"></script>
+    <script src="{% static 'js/plugin/jquery-mapael/jquery.mapael.min.js' %}"></script>
+    <script src="{% static 'js/plugin/jquery-mapael/maps/world_countries.min.js' %}"></script>
+    <script src="{% static 'js/plugin/chart-circle/circles.min.js' %}"></script>
+    <script src="{% static 'js/plugin/jquery-scrollbar/jquery.scrollbar.min.js' %}"></script>
+    <script src="{% static 'js/ready.min.js' %}"></script>
+    <script src="{% static 'js/notifications.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+
+    <script>
+    // Toast Notification System
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification toast-' + type;
+        
+        // Determine icon based on type
+        let icon = 'la-info-circle';
+        if (type === 'success') icon = 'la-check-circle';
+        else if (type === 'error' || type === 'danger') icon = 'la-exclamation-circle';
+        else if (type === 'warning') icon = 'la-exclamation-triangle';
+        
+        toast.innerHTML = `
+            <i class="las ${icon} toast-icon"></i>
+            <span class="toast-message">${message}</span>
+            <button class="toast-close" onclick="closeToast(this)">
+                <i class="las la-times"></i>
+            </button>
+        `;
+        
+        container.appendChild(toast);
+        
+        // Trigger animation
+        setTimeout(() => toast.classList.add('show'), 10);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            closeToast(toast.querySelector('.toast-close'));
+        }, 5000);
+    }
+
+    function closeToast(button) {
+        const toast = button.closest('.toast-notification');
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }
+    </script>
+</body>
+</html>

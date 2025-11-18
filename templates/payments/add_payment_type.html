@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_no_sidebar.html' %}
 {% load static %}
 {% load widget_tweaks %}
 
@@ -7,10 +7,10 @@
 <link rel="stylesheet" href="{% static 'css/admin_forms.css' %}">
 {% endblock %}
 
-{% block title %}Add Payment Type{% endblock %}
+{% block title %}Add Payment Type - {{ year.year }}{% endblock %}
 
 {% block content %}
-<div class="content admin-dashboard">
+<div class="content admin-dashboard full-width-content">
   <div class="payments-container">
     <div class="row justify-content-center">
       <div class="col-lg-8 col-md-10">
@@ -51,6 +51,25 @@
                 {% endif %}
                 <small class="form-text text-muted">Select if this payment is "From Members" or "Other Payments"</small>
               </div>
+
+              <div class="form-group" id="amount-field-group" style="display: none;">
+                <label for="{{ form.amount.id_for_label }}">Monthly Amount <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text">₱</span>
+                  </div>
+                  {{ form.amount|add_class:"form-control"|attr:"placeholder:0.00"|attr:"step:0.01" }}
+                </div>
+                {% if form.amount.errors %}
+                  <div class="text-danger small mt-2">{{ form.amount.errors }}</div>
+                {% endif %}
+                <small class="form-text text-muted">
+                  <i class="las la-info-circle"></i> 
+                  Enter the monthly amount for this payment type. The yearly total will be calculated as: amount × 12 months.
+                  <br>
+                  <strong>Example:</strong> ₱200/month = ₱2,400 yearly total
+                </small>
+              </div>
               
               <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(31,62,39,0.1);">
                 <a href="{% url 'payment_year_detail' year.id %}" class="btn btn-secondary">
@@ -67,4 +86,53 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+  // Show/hide amount field based on payment type selection
+  function toggleAmountField() {
+    const paymentType = $('#id_payment_type').val();
+    const amountFieldGroup = $('#amount-field-group');
+    const amountInput = $('#id_amount');
+    
+    if (paymentType === 'from_members') {
+      amountFieldGroup.slideDown(300);
+      amountInput.prop('required', true);
+    } else {
+      amountFieldGroup.slideUp(300);
+      amountInput.prop('required', false);
+      amountInput.val(''); // Clear value when hidden
+    }
+  }
+  
+  // Initial check on page load
+  toggleAmountField();
+  
+  // Listen for changes
+  $('#id_payment_type').on('change', toggleAmountField);
+  
+  // Form validation
+  $('form').on('submit', function(e) {
+    const paymentType = $('#id_payment_type').val();
+    const amount = $('#id_amount').val();
+    
+    if (paymentType === 'from_members' && !amount) {
+      e.preventDefault();
+      $('#id_amount').addClass('is-invalid');
+      if (!$('#amount-error').length) {
+        $('#id_amount').after('<div id="amount-error" class="text-danger small mt-2">Amount is required for "From Members" payment types.</div>');
+      }
+      return false;
+    }
+  });
+  
+  // Remove error styling on input
+  $('#id_amount').on('input', function() {
+    $(this).removeClass('is-invalid');
+    $('#amount-error').remove();
+  });
+});
+</script>
 {% endblock %}

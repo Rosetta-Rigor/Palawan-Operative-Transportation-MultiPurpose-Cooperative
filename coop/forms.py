@@ -191,15 +191,36 @@ class PaymentYearForm(forms.ModelForm):
 class PaymentTypeForm(forms.ModelForm):
     class Meta:
         model = PaymentType
-        fields = ['name', 'payment_type']
+        fields = ['name', 'payment_type', 'amount']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter payment type name'}),
-            'payment_type': forms.Select(attrs={'class': 'form-control'}),
+            'payment_type': forms.Select(attrs={'class': 'form-control', 'id': 'id_payment_type'}),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.01',
+                'min': '0',
+                'id': 'id_amount'
+            })
         }
         labels = {
             'name': 'Payment Type Name',
             'payment_type': 'Type of Payment',
+            'amount': 'Monthly Amount',
         }
+        help_texts = {
+            'amount': 'Monthly amount for "From Members" payment types (e.g., 200.00). This field is required for From Members payments.'
+        }
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        payment_type = cleaned_data.get('payment_type')
+        amount = cleaned_data.get('amount')
+        
+        if payment_type == 'from_members' and not amount:
+            raise forms.ValidationError("Amount is required for 'From Members' payment types")
+        
+        return cleaned_data
 
 
 class PaymentEntryForm(forms.ModelForm):

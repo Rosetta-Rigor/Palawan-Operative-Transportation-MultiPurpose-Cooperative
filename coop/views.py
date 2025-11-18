@@ -2258,31 +2258,74 @@ def from_members_payment_view(request, year_id):
     member_id = request.GET.get('member_id', '').strip()
     page_number = request.GET.get('page', 1)
 
-    # Fetch members with related data
-    members = Member.objects.select_related('user_account', 'batch').prefetch_related('payment_entries').order_by('full_name')
+    members = Member.objects.select_related('user_account', 'batch').order_by('full_name')
 
-    # Filter by specific member if selected from search
     if member_id:
         members = members.filter(id=member_id)
-    # Otherwise filter members based on text search query
     elif q:
-        members = members.filter(Q(full_name__icontains=q) | Q(batch__number__icontains=q)).distinct()
+        members = members.filter(Q(full_name__icontains=q)).distinct()
 
-    # Annotate members with monthly totals for the selected year
+    # Get all "from_members" payment types for this year
+    payment_types = PaymentType.objects.filter(
+        year=year, 
+        payment_type='from_members'
+    ).order_by('name')
+
+    # Annotate members with payment data for EACH payment type
+    members_data = []
     for member in members:
-        # Calculate totals for each month, defaulting to None if no payments exist (will show as "-")
-        member.monthly_totals = [
-            member.payment_entries.filter(payment_type__year=year, month=month).aggregate(total=Sum('amount_paid'))['total']
-            for month in range(1, 13)
-        ]
+        member_record = {
+            'id': member.id,
+            'full_name': member.full_name,
+            'batch': member.batch.number if member.batch else 'N/A',
+            'payment_types_data': []
+        }
+        
+        for payment_type in payment_types:
+            # Calculate yearly total
+            yearly_total = payment_type.amount * 12 if payment_type.amount else 0
+            
+            # Calculate total paid by this member for this payment type
+            total_paid = PaymentEntry.objects.filter(
+                member=member,
+                payment_type=payment_type
+            ).aggregate(total=Sum('amount_paid'))['total'] or 0
+            
+            # Calculate balance
+            balance = max(yearly_total - total_paid, 0)
+            
+            # Get monthly breakdown
+            monthly_totals = []
+            for month_num in range(1, 13):
+                month_total = PaymentEntry.objects.filter(
+                    member=member,
+                    payment_type=payment_type,
+                    month=month_num
+                ).aggregate(total=Sum('amount_paid'))['total'] or 0
+                monthly_totals.append(month_total if month_total > 0 else None)
+            
+            member_record['payment_types_data'].append({
+                'payment_type': payment_type,
+                'yearly_total': yearly_total,
+                'total_paid': total_paid,
+                'balance': balance,
+                'percentage_paid': (total_paid / yearly_total * 100) if yearly_total > 0 else 0,
+                'is_fully_paid': balance == 0,
+                'monthly_totals': monthly_totals,
+                'status': 'paid' if balance == 0 else ('partial' if total_paid > 0 else 'unpaid')
+            })
+        
+        members_data.append(member_record)
 
-    paginator = Paginator(members, 7)  # Paginate 7 members per page
+    # Pagination
+    paginator = Paginator(members_data, 7)
     page_obj = paginator.get_page(page_number)
 
     context = {
         'year': year,
         'members': page_obj,
-        'months': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+        'payment_types': payment_types,
+        'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
         'paginator': paginator,
         'page_obj': page_obj,
         'q': q,
@@ -2547,48 +2590,60 @@ def member_payment_list(request, year_id, member_id):
     year = get_object_or_404(PaymentYear, pk=year_id)
     member = get_object_or_404(Member, pk=member_id)
     
-    # Separate payment types by category
-    from_members_types = PaymentType.objects.filter(year=year, payment_type='from_members')
-    other_types = PaymentType.objects.filter(year=year, payment_type='other')
-
-    # Prepare data for the template
-    months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    # Get "from_members" payment types with balance calculations
+    from_members_types = PaymentType.objects.filter(
+        year=year, 
+        payment_type='from_members'
+    ).order_by('name')
     
-    # Process "From Members" payment types
     from_members_data = []
     for payment_type in from_members_types:
-        monthly_totals = []
-        for month in range(1, 13):  # January to December
-            # CHECK IF CAR WASH TYPE
-            if payment_type.is_car_wash:
-                # For car wash: COUNT entries instead of sum
-                count = member.payment_entries.filter(
-                    payment_type=payment_type,
-                    month=month,
-                    is_car_wash_record=True,
-                    is_penalty=False
-                ).count()
-                monthly_totals.append(count if count > 0 else None)
-            else:
-                # For regular payments: SUM amounts
-                entries = member.payment_entries.filter(
-                    payment_type=payment_type,
-                    month=month
-                )
-                total = entries.aggregate(total=Sum('amount_paid'))['total']
-                monthly_totals.append(total if total is not None else None)
+        yearly_total = payment_type.amount * 12 if payment_type.amount else 0
+        
+        # Get all entries for this member/type
+        entries = PaymentEntry.objects.filter(
+            payment_type=payment_type,
+            member=member
+        ).order_by('month')
+        
+        # Calculate totals
+        total_paid = entries.aggregate(total=Sum('amount_paid'))['total'] or 0
+        balance = max(yearly_total - total_paid, 0)
+        
+        # Build monthly breakdown with entry details
+        monthly_breakdown = []
+        for month_num in range(1, 13):
+            month_entries = entries.filter(month=month_num)
+            month_total = month_entries.aggregate(total=Sum('amount_paid'))['total'] or 0
+            
+            monthly_breakdown.append({
+                'month_num': month_num,
+                'month_name': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month_num - 1],
+                'entries': list(month_entries.select_related('recorded_by')),
+                'total': month_total
+            })
         
         from_members_data.append({
             'payment_type': payment_type,
-            'monthly_totals': monthly_totals,
-            'is_car_wash': payment_type.is_car_wash,  # Flag for template
+            'yearly_total': yearly_total,
+            'total_paid': total_paid,
+            'balance': balance,
+            'percentage_paid': (total_paid / yearly_total * 100) if yearly_total > 0 else 0,
+            'is_fully_paid': balance == 0,
+            'status': 'Fully Paid' if balance == 0 else ('Partially Paid' if total_paid > 0 else 'Not Paid'),
+            'monthly_breakdown': monthly_breakdown
         })
     
-    # Process "Other" payment types
+    # Other payment types (unchanged logic)
+    other_types = PaymentType.objects.filter(
+        year=year, 
+        payment_type='other'
+    ).order_by('name')
+    
     other_data = []
     for payment_type in other_types:
         monthly_totals = []
-        for month in range(1, 13):  # January to December
+        for month in range(1, 13):
             entries = member.payment_entries.filter(
                 payment_type=payment_type,
                 month=month
@@ -2600,16 +2655,12 @@ def member_payment_list(request, year_id, member_id):
             'monthly_totals': monthly_totals,
         })
 
-    # Initialize the PaymentEntryForm
-    form = PaymentEntryForm(initial={'member': member})
-
     context = {
         'year': year,
         'member': member,
         'from_members_data': from_members_data,
         'other_data': other_data,
-        'months': months,
-        'form': form,
+        'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     }
     return render(request, 'payments/member_payment_list.html', context)
 

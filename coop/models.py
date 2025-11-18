@@ -286,6 +286,15 @@ class PaymentType(models.Model):
     payment_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     members = models.ManyToManyField(Member, related_name='payment_types', blank=True)
     
+    # From Members specific field
+    amount = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Monthly amount for 'From Members' payment types (e.g., 200.00)"
+    )
+    
     # Car Wash specific fields
     is_car_wash = models.BooleanField(default=False, help_text="Is this a car wash payment type?")
     car_wash_amount = models.DecimalField(
@@ -298,6 +307,25 @@ class PaymentType(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.year.year})"
+    
+    def yearly_total(self):
+        """Calculate yearly total for from_members types"""
+        if self.payment_type == 'from_members' and self.amount:
+            return self.amount * 12
+        return None
+    
+    def member_balance(self, member):
+        """Calculate remaining balance for a member"""
+        from django.db.models import Sum
+        if self.payment_type != 'from_members' or not self.amount:
+            return None
+        
+        yearly_total = self.yearly_total()
+        paid_amount = self.entries.filter(member=member).aggregate(
+            total=Sum('amount_paid')
+        )['total'] or 0
+        
+        return max(yearly_total - paid_amount, 0)
 
 
 class PaymentEntry(models.Model):

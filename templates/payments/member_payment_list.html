@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_no_sidebar.html' %}
 {% load static %}
 
 {% block title %}Payments for {{ member.full_name }}{% endblock %}
@@ -52,13 +52,16 @@
             {% for month in months %}
               <th class="text-right">{{ month }}</th>
             {% endfor %}
+            <th class="text-right">Total Paid</th>
+            <th class="text-right">Balance</th>
+            <th class="text-center">Status</th>
           </tr>
         </thead>
         <tbody>
           {% if from_members_data %}
             <!-- From Members Section -->
             <tr class="payment-section-header from-members">
-              <td colspan="13">
+              <td colspan="16">
                 <i class="las la-users"></i> FROM MEMBERS
               </td>
             </tr>
@@ -66,25 +69,32 @@
               <tr>
                 <td>
                   <strong>{{ data.payment_type.name }}</strong>
-                  {% if data.is_car_wash %}
-                    <span class="carwash-info-badge" style="margin-left: 8px;">Count</span>
-                  {% endif %}
+                  <br><small style="color: #6c757d;">Expected: ₱{{ data.yearly_total|floatformat:2 }}</small>
                 </td>
-                {% for total in data.monthly_totals %}
+                {% for month_data in data.monthly_breakdown %}
                   <td class="amount-cell">
-                    {% if data.is_car_wash %}
-                      <!-- Display COUNT for car wash -->
-                      {% if total %}
-                        <span class="count-badge">{{ total }}</span>
-                      {% else %}
-                        -
-                      {% endif %}
+                    {% if month_data.total > 0 %}
+                      ₱{{ month_data.total|floatformat:2 }}
                     {% else %}
-                      <!-- Display AMOUNT for regular payments -->
-                      {{ total|default:"-" }}
+                      -
                     {% endif %}
                   </td>
                 {% endfor %}
+                <td class="amount-cell" style="font-weight: 700; background: rgba(31, 62, 39, 0.05); border-left: 2px solid rgba(31, 62, 39, 0.2);">
+                  ₱{{ data.total_paid|floatformat:2 }}
+                </td>
+                <td class="amount-cell" style="font-weight: 700; font-size: 1.1rem; {% if data.is_fully_paid %}color: #28a745; background: rgba(40, 167, 69, 0.1);{% elif data.total_paid > 0 %}color: #ffc107; background: rgba(255, 193, 7, 0.1);{% else %}color: #dc3545; background: rgba(220, 53, 69, 0.1);{% endif %}">
+                  ₱{{ data.balance|floatformat:2 }}
+                </td>
+                <td class="text-center">
+                  {% if data.is_fully_paid %}
+                    <span class="badge badge-success">Paid</span>
+                  {% elif data.total_paid > 0 %}
+                    <span class="badge badge-warning">{{ data.percentage_paid|floatformat:0 }}%</span>
+                  {% else %}
+                    <span class="badge badge-danger">Unpaid</span>
+                  {% endif %}
+                </td>
               </tr>
             {% endfor %}
           {% endif %}
@@ -97,7 +107,7 @@
                   <!-- Other Payments Section Header (shown only once) -->
                   {% if forloop.parentloop.first and forloop.first %}
                     <tr class="payment-section-header other-payments">
-                      <td colspan="13">
+                      <td colspan="16">
                         <i class="las la-file-alt"></i> OTHER PAYMENTS
                       </td>
                     </tr>
@@ -114,6 +124,9 @@
                   {% for total in data.monthly_totals %}
                     <td class="amount-cell">{{ total|default:"-" }}</td>
                   {% endfor %}
+                  <td class="amount-cell" colspan="3" style="text-align: center; color: #6c757d;">
+                    <em>One-time payments</em>
+                  </td>
                 </tr>
               {% endif %}
             {% endfor %}
@@ -121,7 +134,7 @@
 
           {% if not from_members_data and not other_data %}
             <tr>
-              <td colspan="13" class="text-center">
+              <td colspan="16" class="text-center">
                 <div class="payment-empty-state">
                   <i class="las la-inbox"></i>
                   <p>No payment records found</p>
