@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_no_sidebar.html' %}
 {% load static %}
 
 {% block extra_css %}
@@ -11,6 +11,7 @@
 <div class="content admin-dashboard">
   <div class="payments-container">
     <div class="payment-year-card">
+          <br><br><br>
       <div class="payment-year-header">
         <h2 class="payment-year-title">
           <i class="las la-file-invoice-dollar"></i> Payments for {{ year.year }}
@@ -21,6 +22,9 @@
 
     <div class="payment-actions-bar">
       <div class="payment-actions-left">
+        <a href="{% url 'payment_year_list' %}" class="payment-action-btn btn-filter">
+          <i class="las la-arrow-left"></i> Back to Years
+        </a>
         <a href="{% url 'from_members_payment_view' year.id %}" class="payment-action-btn btn-filter">
           <i class="las la-users"></i> From Members
         </a>
@@ -47,9 +51,6 @@
         </div>
         <a href="{% url 'add_payment_type' year.id %}" class="payment-action-btn btn-add">
           <i class="las la-plus"></i> Add Payment Type
-        </a>
-        <a href="{% url 'payment_year_list' %}" class="payment-action-btn btn-filter">
-          <i class="las la-arrow-left"></i> Back to Years
         </a>
       </div>
     </div>

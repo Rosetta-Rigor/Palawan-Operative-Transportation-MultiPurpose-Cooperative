@@ -3495,8 +3495,10 @@ def _create_payment_table(data):
 @login_required
 def export_member_pdf(request, year_id, member_id):
     """
-    Export individual member payment report for a year.
+    Export individual member payment report for a year with balance information.
     """
+    from datetime import datetime as dt
+    
     year = get_object_or_404(PaymentYear, pk=year_id)
     member = get_object_or_404(Member, pk=member_id)
     
@@ -3527,29 +3529,90 @@ def export_member_pdf(request, year_id, member_id):
     elements.append(Paragraph(f"<b>Member:</b> {member.full_name}", ParagraphStyle('MemberName', parent=styles['Normal'], fontSize=14, spaceAfter=6, alignment=TA_CENTER)))
     if member.batch:
         elements.append(Paragraph(f"<b>Batch:</b> {member.batch.number}", ParagraphStyle('Batch', parent=styles['Normal'], fontSize=12, spaceAfter=20, alignment=TA_CENTER)))
-    elements.append(Paragraph(f"Generated on: {datetime.datetime.now().strftime('%B %d, %Y at %I:%M %p')}", ParagraphStyle('Date', parent=styles['Normal'], fontSize=10, spaceAfter=20, alignment=TA_CENTER, textColor=colors.HexColor('#5C3A21'))))
+    elements.append(Paragraph(f"Generated on: {dt.now().strftime('%B %d, %Y at %I:%M %p')}", ParagraphStyle('Date', parent=styles['Normal'], fontSize=10, spaceAfter=20, alignment=TA_CENTER, textColor=colors.HexColor('#5C3A21'))))
     elements.append(Spacer(1, 0.2*inch))
     
     # Get payment data
     months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     
-    # From Members payments
+    # From Members payments with Balance columns
     from_members_types = PaymentType.objects.filter(year=year, payment_type='from_members').order_by('name')
     if from_members_types.exists():
         elements.append(Paragraph("<b>FROM MEMBERS</b>", ParagraphStyle('SectionHeader', parent=styles['Heading3'], textColor=colors.HexColor('#1F3E27'), spaceAfter=10)))
         
-        fm_data = [['Payment Type'] + months]
+        # Updated header with Total Paid and Balance columns
+        fm_data = [['Payment Type'] + months + ['Total Paid', 'Balance', 'Status']]
+        
         for payment_type in from_members_types:
             row = [payment_type.name]
+            total_paid = 0
+            
+            # Monthly breakdown
             for month_num in range(1, 13):
-                total = payment_type.entries.filter(month=month_num, member=member).aggregate(total=Sum('amount_paid'))['total']
-                row.append(f"₱{total:,.2f}" if total else "-")
+                month_total = payment_type.entries.filter(month=month_num, member=member).aggregate(total=Sum('amount_paid'))['total'] or 0
+                total_paid += month_total
+                row.append(f"₱{month_total:,.2f}" if month_total > 0 else "-")
+            
+            # Calculate yearly total and balance
+            yearly_total = payment_type.amount * 12 if payment_type.amount else 0
+            balance = max(yearly_total - total_paid, 0)
+            
+            # Determine status
+            if balance == 0 and yearly_total > 0:
+                status = "Paid"
+            elif total_paid > 0:
+                percentage = (total_paid / yearly_total * 100) if yearly_total > 0 else 0
+                status = f"{percentage:.0f}%"
+            else:
+                status = "Unpaid"
+            
+            # Add totals
+            row.append(f"₱{total_paid:,.2f}")
+            row.append(f"₱{balance:,.2f}")
+            row.append(status)
+            
             fm_data.append(row)
         
-        elements.append(_create_payment_table(fm_data))
+        # Create table with enhanced styling
+        table = Table(fm_data, repeatRows=1)
+        table.setStyle(TableStyle([
+            # Header styling
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F3E27')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ('TOPPADDING', (0, 0), (-1, 0), 8),
+            
+            # Body styling
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#2F2F2F')),
+            ('ALIGN', (1, 1), (-4, -1), 'RIGHT'),  # Monthly amounts
+            ('ALIGN', (-3, 1), (-1, -1), 'RIGHT'),  # Total, Balance, Status
+            ('ALIGN', (0, 1), (0, -1), 'LEFT'),  # Payment type names
+            ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 1), (-1, -1), 'Courier'),
+            ('FONTSIZE', (0, 1), (-1, -1), 7),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F6F4ED')]),
+            
+            # Highlight Total Paid and Balance columns
+            ('BACKGROUND', (-3, 1), (-3, -1), colors.HexColor('#E8F5E9')),
+            ('BACKGROUND', (-2, 1), (-2, -1), colors.HexColor('#FFF9C4')),
+            
+            # Grid
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#D4D0C7')),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 4),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+            ('TOPPADDING', (0, 1), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
+        ]))
+        
+        elements.append(table)
         elements.append(Spacer(1, 0.3*inch))
     
-    # Other payments
+    # Other payments (unchanged - one-time payments don't need balance tracking)
     other_types = PaymentType.objects.filter(year=year, payment_type='other').order_by('name')
     if other_types.exists():
         elements.append(Paragraph("<b>OTHER PAYMENTS</b>", ParagraphStyle('SectionHeader', parent=styles['Heading3'], textColor=colors.HexColor('#C99E35'), spaceAfter=10)))
@@ -3584,6 +3647,8 @@ def email_member_report(request, year_id, member_id):
     """
     Email payment report PDF to member with validations.
     """
+    from datetime import datetime as dt
+    
     try:
         year = get_object_or_404(PaymentYear, pk=year_id)
         member = get_object_or_404(Member, pk=member_id)
@@ -3638,26 +3703,86 @@ def email_member_report(request, year_id, member_id):
         elements.append(Paragraph(f"<b>Member:</b> {member.full_name}", ParagraphStyle('MemberName', parent=styles['Normal'], fontSize=14, spaceAfter=6, alignment=TA_CENTER)))
         if member.batch:
             elements.append(Paragraph(f"<b>Batch:</b> {member.batch.number}", ParagraphStyle('Batch', parent=styles['Normal'], fontSize=12, spaceAfter=20, alignment=TA_CENTER)))
-        elements.append(Paragraph(f"Generated on: {datetime.datetime.now().strftime('%B %d, %Y at %I:%M %p')}", ParagraphStyle('Date', parent=styles['Normal'], fontSize=10, spaceAfter=20, alignment=TA_CENTER, textColor=colors.HexColor('#5C3A21'))))
+        elements.append(Paragraph(f"Generated on: {dt.now().strftime('%B %d, %Y at %I:%M %p')}", ParagraphStyle('Date', parent=styles['Normal'], fontSize=10, spaceAfter=20, alignment=TA_CENTER, textColor=colors.HexColor('#5C3A21'))))
         elements.append(Spacer(1, 0.2*inch))
         
         # Get payment data
         months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         
-        # From Members payments
+        # From Members payments with Balance columns
         from_members_types = PaymentType.objects.filter(year=year, payment_type='from_members').order_by('name')
         if from_members_types.exists():
             elements.append(Paragraph("<b>FROM MEMBERS</b>", ParagraphStyle('SectionHeader', parent=styles['Heading3'], textColor=colors.HexColor('#1F3E27'), spaceAfter=10)))
             
-            fm_data = [['Payment Type'] + months]
+            # Updated header with Total Paid and Balance columns
+            fm_data = [['Payment Type'] + months + ['Total Paid', 'Balance', 'Status']]
             for payment_type in from_members_types:
                 row = [payment_type.name]
+                total_paid = 0
+                
+                # Monthly breakdown
                 for month_num in range(1, 13):
-                    total = payment_type.entries.filter(month=month_num, member=member).aggregate(total=Sum('amount_paid'))['total']
-                    row.append(f"₱{total:,.2f}" if total else "-")
+                    month_total = payment_type.entries.filter(month=month_num, member=member).aggregate(total=Sum('amount_paid'))['total'] or 0
+                    total_paid += month_total
+                    row.append(f"₱{month_total:,.2f}" if month_total > 0 else "-")
+                
+                # Calculate yearly total and balance
+                yearly_total = payment_type.amount * 12 if payment_type.amount else 0
+                balance = max(yearly_total - total_paid, 0)
+                
+                # Determine status
+                if balance == 0 and yearly_total > 0:
+                    status = "Paid"
+                elif total_paid > 0:
+                    percentage = (total_paid / yearly_total * 100) if yearly_total > 0 else 0
+                    status = f"{percentage:.0f}%"
+                else:
+                    status = "Unpaid"
+                
+                # Add totals
+                row.append(f"₱{total_paid:,.2f}")
+                row.append(f"₱{balance:,.2f}")
+                row.append(status)
+                
                 fm_data.append(row)
             
-            elements.append(_create_payment_table(fm_data))
+            # Create enhanced table with balance columns highlighted
+            table = Table(fm_data, repeatRows=1)
+            table.setStyle(TableStyle([
+                # Header styling
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1F3E27')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                ('TOPPADDING', (0, 0), (-1, 0), 8),
+                
+                # Body styling
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#2F2F2F')),
+                ('ALIGN', (1, 1), (-4, -1), 'RIGHT'),
+                ('ALIGN', (-3, 1), (-1, -1), 'RIGHT'),
+                ('ALIGN', (0, 1), (0, -1), 'LEFT'),
+                ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+                ('FONTNAME', (1, 1), (-1, -1), 'Courier'),
+                ('FONTSIZE', (0, 1), (-1, -1), 7),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F6F4ED')]),
+                
+                # Highlight Total Paid and Balance columns
+                ('BACKGROUND', (-3, 1), (-3, -1), colors.HexColor('#E8F5E9')),
+                ('BACKGROUND', (-2, 1), (-2, -1), colors.HexColor('#FFF9C4')),
+                
+                # Grid
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#D4D0C7')),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 4),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+                ('TOPPADDING', (0, 1), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 5),
+            ]))
+            
+            elements.append(table)
             elements.append(Spacer(1, 0.3*inch))
         
         # Other payments

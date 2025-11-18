@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_no_sidebar.html' %}
 {% load static %}
 
 {% block title %}Other Payments{% endblock %}
@@ -8,9 +8,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="content admin-dashboard">
+<div class="content admin-dashboard full-width-content">
   <div class="payments-container">
-    <div class="payment-year-card" style="margin-bottom: 2rem;">
+    <div class="payment-year-card">
       <div class="payment-year-header">
         <h3 class="payment-year-title">Other Payments - {{ year.year }}</h3>
         <p class="payment-year-subtitle">All other payment entries for the year</p>

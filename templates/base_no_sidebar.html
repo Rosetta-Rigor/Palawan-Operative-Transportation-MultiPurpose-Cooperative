@@ -27,67 +27,6 @@
     <!-- jQuery must come BEFORE Select2 JS -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    
-    <style>
-        /* Full-width layout without sidebar */
-        body {
-            background: #f4f6f9;
-        }
-        
-        .main-content-no-sidebar {
-            width: 100%;
-            min-height: 100vh;
-            padding-top: 70px; /* Account for fixed navbar */
-            background: #f4f6f9;
-        }
-        
-        .full-width-content {
-            max-width: 100%;
-            padding: 2rem 3rem;
-            margin: 0 auto;
-        }
-        
-        .full-width-content .payments-container {
-            width: 100%;
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-        
-        /* Navbar adjustments for no-sidebar layout */
-        .main-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            background: linear-gradient(135deg, #1F3E27 0%, #2E5C3A 100%);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-        }
-        
-        .logo-header {
-            padding: 0 20px !important;
-        }
-        
-        .logo-header .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-        }
-        
-        .logo-header .logo-text {
-            color: white;
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-        
-        /* Hide sidebar toggle button */
-        .navbar-toggler {
-            display: none !important;
-        }
-    </style>
 </head>
 <body>
     <!-- Toast Notification Container -->
@@ -116,9 +55,9 @@
 
     <!-- HEADER / NAVBAR ONLY -->
     <div class="main-header">
-        <div class="logo-header d-flex align-items-center" style="padding: 0 20px;">
-            <a href="{% url 'home' %}" class="logo" style="display: flex; align-items: center; gap: 12px;">
-                <img src="{% static 'img/home.png' %}" alt="Logo" style="height:40px; width:auto;">
+        <div class="logo-header d-flex align-items-center">
+            <a href="{% url 'home' %}" class="logo">
+                <img src="{% static 'img/home.png' %}" alt="Logo">
                 <span class="logo-text">POTMPC ADMIN</span>
             </a>
         </div>
@@ -127,7 +66,7 @@
             <div class="container-fluid">
                 <ul class="navbar-nav topbar-nav ml-md-auto align-items-center">
                     <!-- Notification Bell -->
-                    <li class="nav-item notification-bell-container" style="margin-right: 20px;">
+                    <li class="nav-item notification-bell-container">
                         <button class="notification-bell-btn" id="notificationBellBtn" aria-label="Notifications" title="Notifications">
                             <i class="las la-bell"></i>
                             {% if unread_notifications_count > 0 %}
@@ -192,25 +131,25 @@
                     </li>
                     
                     <li class="nav-item dropdown">
-                        <a href="#" class="dropdown-toggle profile-pic" id="userAvatarDropdown" data-toggle="dropdown" aria-expanded="false" style="text-decoration: none; display: flex; align-items: center; gap: 12px;">
+                        <a href="#" class="dropdown-toggle profile-pic" id="userAvatarDropdown" data-toggle="dropdown" aria-expanded="false">
                             <!-- User Name -->
-                            <div class="user-name-display" style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 4px;">
-                                <span style="color: white; font-weight: 600; font-size: 0.95rem; line-height: 1.2;">{{ user.username }}</span>
-                                <span style="color: rgba(255,255,255,0.8); font-size: 0.75rem; line-height: 1.2;">Administrator</span>
+                            <div class="user-name-display">
+                                <span class="user-name-primary">{{ user.username }}</span>
+                                <span class="user-name-secondary">Administrator</span>
                             </div>
                             <!-- Avatar -->
-                            <div class="avatar-wrapper" style="width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s; display: flex; align-items: center; justify-content: center;">
+                            <div class="avatar-wrapper">
                                 {% if user.is_authenticated and user.profile_image %}
-                                    <img src="{{ user.profile_image.url }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                    <img src="{{ user.profile_image.url }}" alt="Profile">
                                 {% else %}
-                                    <img src="{% static 'img/boss.jpg' %}" alt="Default Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                    <img src="{% static 'img/boss.jpg' %}" alt="Default Profile">
                                 {% endif %}
                             </div>
                         </a>
                         <ul class="dropdown-menu dropdown-user animated fadeIn" aria-labelledby="userAvatarDropdown">
                             <!-- User Card at Top -->
-                            <li class="dropdown-user-card" style="padding: 15px; border-bottom: 1px solid rgba(31,62,39,0.1); margin-bottom: 5px;">
-                                <div style="display: flex; align-items: center; gap: 12px;">
+                            <li class="dropdown-user-card">
+                                <div class="dropdown-user-info">
                                     <div style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; border: 2px solid #C99E35; flex-shrink: 0;">
                                         {% if user.is_authenticated and user.profile_image %}
                                             <img src="{{ user.profile_image.url }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; display: block;">

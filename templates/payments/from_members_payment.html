@@ -5,229 +5,78 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin_payments.css' %}">
-<style>
-  /* Payment type section styling */
-  .payment-type-section {
-    margin-bottom: 3rem;
-    border: 1px solid rgba(31, 62, 39, 0.1);
-    border-radius: 12px;
-    overflow: hidden;
-    background: white;
-  }
-
-  .payment-type-header {
-    background: linear-gradient(135deg, #1F3E27 0%, #2E5C3A 100%);
-    color: white;
-    padding: 1.5rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .payment-type-header h4 {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-  }
-
-  .payment-type-amount {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-weight: 500;
-  }
-
-  .payment-type-yearly {
-    font-size: 0.9rem;
-    opacity: 0.9;
-  }
-
-  /* Table styling */
-  .payment-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .payment-table thead th {
-    background: #f8f9fa;
-    padding: 1rem 0.75rem;
-    font-weight: 600;
-    text-align: left;
-    border-bottom: 2px solid #dee2e6;
-    font-size: 0.875rem;
-    white-space: nowrap;
-  }
-
-  .payment-table tbody td {
-    padding: 0.875rem 0.75rem;
-    border-bottom: 1px solid #e9ecef;
-    font-size: 0.875rem;
-  }
-
-  .payment-table tbody tr:hover {
-    background: #f8f9fa;
-    cursor: pointer;
-  }
-
-  .amount-cell {
-    text-align: right;
-    font-family: 'Courier New', monospace;
-  }
-
-  .amount-cell.has-payment {
-    background: rgba(31, 62, 39, 0.05);
-    font-weight: 600;
-  }
-
-  .total-cell {
-    font-weight: 700;
-    font-size: 1.05rem;
-    background: rgba(31, 62, 39, 0.05);
-    border-left: 2px solid rgba(31, 62, 39, 0.2);
-  }
-
-  .balance-cell {
-    font-weight: 700;
-    font-size: 1.1rem;
-  }
-
-  .balance-cell.paid {
-    color: #28a745;
-    background: rgba(40, 167, 69, 0.1);
-  }
-
-  .balance-cell.partial {
-    color: #ffc107;
-    background: rgba(255, 193, 7, 0.1);
-  }
-
-  .balance-cell.unpaid {
-    color: #dc3545;
-    background: rgba(220, 53, 69, 0.1);
-  }
-
-  .badge {
-    padding: 0.35rem 0.65rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 12px;
-  }
-
-  .badge-success {
-    background: #28a745;
-    color: white;
-  }
-
-  .badge-warning {
-    background: #ffc107;
-    color: #000;
-  }
-
-  .badge-danger {
-    background: #dc3545;
-    color: white;
-  }
-
-  /* Empty state */
-  .payment-empty-state {
-    padding: 3rem;
-    text-align: center;
-    color: #6c757d;
-  }
-
-  .payment-empty-state i {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
-  }
-</style>
 {% endblock %}
 
 {% block content %}
 <div class="content admin-dashboard full-width-content">
   <div class="payments-container">
-    <div class="payment-year-card" style="margin-bottom: 2rem;">
+    <div class="payment-year-card">
+      <br><br><br>
       <div class="payment-year-header">
         <h3 class="payment-year-title">From Members Payments - {{ year.year }}</h3>
         <p class="payment-year-subtitle">Track member payment balances across all payment types</p>
       </div>
     </div>
 
-    <div class="payment-actions-bar" style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+    <div class="payment-actions-bar">
       <div class="payment-actions-left">
-        <a href="{% url 'payment_year_detail' year.id %}" class="btn btn-secondary">
+        <a href="{% url 'payment_year_detail' year.id %}" class="payment-action-btn btn-filter">
           <i class="las la-arrow-left"></i> Back to Year Detail
         </a>
       </div>
       <div class="payment-actions-right">
-        <a href="{% url 'add_payment_entry' year.id %}" class="btn btn-success">
+        <a href="{% url 'add_payment_entry' year.id %}" class="payment-action-btn btn-add">
           <i class="las la-plus"></i> Add Payment
         </a>
       </div>
     </div>
 
     <!-- Member Search Filter -->
-    <div class="payment-member-search" style="margin-bottom: 2rem;">
-      <label for="member-search" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+    <div class="payment-member-search">
+      <label for="member-search">
         <i class="las la-search"></i> Search Member
       </label>
-      <select id="member-search" name="member_id" class="form-control" style="max-width: 400px;">
+      <select id="member-search" name="member_id" class="form-control">
         <option value="">All Members</option>
       </select>
     </div>
 
-    <!-- Payment Type Sections -->
-    {% for payment_type in payment_types %}
-    <div class="payment-type-section">
-      <div class="payment-type-header">
-        <h4>{{ payment_type.name }}</h4>
-        {% if payment_type.amount %}
-        <span class="payment-type-amount">₱{{ payment_type.amount|floatformat:2 }} / month</span>
-        <span class="payment-type-yearly">Yearly Total: ₱{% widthratio payment_type.amount 1 12 %}</span>
-        {% endif %}
+    <!-- Payment List Table -->
+    <div class="payment-table-container">
+      <div class="payment-table-header">
+        <h4><i class="las la-file-invoice-dollar"></i> Member Payment Summary</h4>
       </div>
-      
-      <div class="payment-table-container">
+      <div class="table-responsive">
         <table class="payment-table">
           <thead>
             <tr>
               <th>#</th>
               <th>Member Name</th>
               <th>Batch</th>
-              <th class="text-right">Total Paid</th>
-              <th class="text-right">Balance</th>
-              <th class="text-center">Status</th>
+              {% for payment_type in payment_types %}
+                <th class="text-right">{{ payment_type.name }}</th>
+              {% endfor %}
             </tr>
           </thead>
           <tbody>
             {% for member in members %}
-              {% for pt_data in member.payment_types_data %}
-                {% if pt_data.payment_type.id == payment_type.id %}
               <tr class="clickable-row" data-url="{% url 'member_payment_list' year.id member.id %}">
-                <td>{{ forloop.parentloop.counter }}</td>
+                <td>{{ forloop.counter }}</td>
                 <td><strong>{{ member.full_name }}</strong></td>
                 <td>{{ member.batch }}</td>
-                <td class="amount-cell total-cell">₱{{ pt_data.total_paid|floatformat:2 }}</td>
-                <td class="amount-cell balance-cell {{ pt_data.status }}">
-                  ₱{{ pt_data.balance|floatformat:2 }}
-                </td>
-                <td class="text-center">
-                  {% if pt_data.is_fully_paid %}
-                    <span class="badge badge-success">Paid</span>
-                  {% elif pt_data.total_paid > 0 %}
-                    <span class="badge badge-warning">{{ pt_data.percentage_paid|floatformat:0 }}%</span>
-                  {% else %}
-                    <span class="badge badge-danger">Unpaid</span>
-                  {% endif %}
-                </td>
+                {% for pt_data in member.payment_types_data %}
+                  <td class="amount-cell text-right">
+                    {% if pt_data.total_paid > 0 %}
+                      ₱{{ pt_data.total_paid|floatformat:2 }}
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                  </td>
+                {% endfor %}
               </tr>
-                {% endif %}
-              {% endfor %}
             {% empty %}
               <tr>
-                <td colspan="6" class="text-center">
+                <td colspan="{{ payment_types|length|add:3 }}" class="text-center">
                   <div class="payment-empty-state">
                     <i class="las la-inbox"></i>
                     <p>No member payment records yet</p>
@@ -239,12 +88,13 @@
         </table>
       </div>
     </div>
-    {% empty %}
+    
+    {% if not payment_types %}
     <div class="alert alert-info">
       <i class="las la-info-circle"></i>
       No "From Members" payment types configured for {{ year.year }}. Please add payment types first.
     </div>
-    {% endfor %}
+    {% endif %}
 
     {% include 'includes/pagination.html' %}
   </div>
