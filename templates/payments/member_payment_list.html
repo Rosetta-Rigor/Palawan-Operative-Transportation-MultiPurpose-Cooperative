@@ -27,9 +27,9 @@
         </a>
       </div>
       <div class="payment-actions-right">
-        <a href="{% url 'export_member_pdf' year.id member.id %}" class="payment-action-btn btn-export">
+        <button type="button" class="payment-action-btn btn-export" id="exportPdfBtn" data-toggle="modal" data-target="#exportModal">
           <i class="las la-file-pdf"></i> Export PDF
-        </a>
+        </button>
         {% if member.user_account and member.user_account.email %}
         <button type="button" class="payment-action-btn btn-export" id="emailReportBtn" data-year-id="{{ year.id }}" data-member-id="{{ member.id }}">
           <i class="las la-envelope"></i> Email Report
@@ -38,6 +38,66 @@
         <a href="{% url 'add_payment_entry_member' year.id member.id %}" class="payment-action-btn primary">
           <i class="las la-plus"></i> Add Payment Entry
         </a>
+      </div>
+    </div>
+
+    <!-- Export Period Modal -->
+    <div class="modal fade" id="exportModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true" style="z-index: 9999;">
+      <div class="modal-dialog" role="document" style="margin-top: 100px;">
+        <div class="modal-content">
+          <div class="modal-header" style="background: linear-gradient(135deg, #1F3E27 0%, #2D5A3D 100%); color: white;">
+            <h5 class="modal-title" id="exportModalLabel"><i class="las la-calendar"></i> Select Period for Export</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white;">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form id="exportForm" method="GET" action="{% url 'export_member_pdf' year.id member.id %}">
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="start_month">Start Month</label>
+                  <select name="start_month" id="start_month" class="form-control">
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12" selected>December</option>
+                  </select>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="end_month">End Month</label>
+                  <select name="end_month" id="end_month" class="form-control">
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12" selected>December</option>
+                  </select>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-success" id="confirmExportBtn">
+              <i class="las la-download"></i> Generate Statement
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -154,6 +214,32 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
+  // Set default to January - current month
+  const currentMonth = new Date().getMonth() + 1;
+  $('#start_month').val(1);
+  $('#end_month').val(currentMonth);
+  
+  // Validate month selection
+  function validateMonthRange() {
+    const start = parseInt($('#start_month').val());
+    const end = parseInt($('#end_month').val());
+    
+    if (start > end) {
+      alert('Start month cannot be after end month. Please select a valid range.');
+      return false;
+    }
+    return true;
+  }
+  
+  // Handle export confirmation
+  $('#confirmExportBtn').on('click', function() {
+    if (validateMonthRange()) {
+      $('#exportForm').submit();
+      $('#exportModal').modal('hide');
+    }
+  });
+  
+  // Email report functionality
   $('#emailReportBtn').on('click', function() {
     const btn = $(this);
     const yearId = btn.data('year-id');
