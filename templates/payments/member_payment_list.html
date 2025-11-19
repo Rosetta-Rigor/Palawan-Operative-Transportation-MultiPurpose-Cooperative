@@ -130,32 +130,53 @@
               <tr>
                 <td>
                   <strong>{{ data.payment_type.name }}</strong>
-                  <br><small style="color: #6c757d;">Expected: ₱{{ data.yearly_total|floatformat:2 }}</small>
+                  {% if data.is_car_wash %}
+                    <br><small style="color: #6c757d;">Car Wash Records</small>
+                  {% else %}
+                    <br><small style="color: #6c757d;">Expected: ₱{{ data.yearly_total|floatformat:2 }}</small>
+                  {% endif %}
                 </td>
                 {% for month_data in data.monthly_breakdown %}
                   <td class="amount-cell">
                     {% if month_data.total > 0 %}
-                      ₱{{ month_data.total|floatformat:2 }}
+                      {% if data.is_car_wash %}
+                        {{ month_data.total }}
+                      {% else %}
+                        ₱{{ month_data.total|floatformat:2 }}
+                      {% endif %}
                     {% else %}
                       -
                     {% endif %}
                   </td>
                 {% endfor %}
                 <td class="amount-cell" style="font-weight: 700; background: rgba(31, 62, 39, 0.05); border-left: 2px solid rgba(31, 62, 39, 0.2);">
-                  ₱{{ data.total_paid|floatformat:2 }}
-                </td>
-                <td class="amount-cell" style="font-weight: 700; font-size: 1.1rem; {% if data.is_fully_paid %}color: #28a745; background: rgba(40, 167, 69, 0.1);{% elif data.total_paid > 0 %}color: #ffc107; background: rgba(255, 193, 7, 0.1);{% else %}color: #dc3545; background: rgba(220, 53, 69, 0.1);{% endif %}">
-                  ₱{{ data.balance|floatformat:2 }}
-                </td>
-                <td class="text-center">
-                  {% if data.is_fully_paid %}
-                    <span class="badge badge-success">Paid</span>
-                  {% elif data.total_paid > 0 %}
-                    <span class="badge badge-warning">{{ data.percentage_paid|floatformat:0 }}%</span>
+                  {% if data.is_car_wash %}
+                    {{ data.total_count }}
                   {% else %}
-                    <span class="badge badge-danger">Unpaid</span>
+                    ₱{{ data.total_paid|floatformat:2 }}
                   {% endif %}
                 </td>
+                {% if data.is_car_wash %}
+                  <td class="amount-cell" style="font-weight: 700; font-size: 1.1rem;">
+                    -
+                  </td>
+                  <td class="text-center">
+                    <span class="badge badge-info">{{ data.total_count }} logged</span>
+                  </td>
+                {% else %}
+                  <td class="amount-cell" style="font-weight: 700; font-size: 1.1rem; {% if data.is_fully_paid %}color: #28a745; background: rgba(40, 167, 69, 0.1);{% elif data.total_paid > 0 %}color: #ffc107; background: rgba(255, 193, 7, 0.1);{% else %}color: #dc3545; background: rgba(220, 53, 69, 0.1);{% endif %}">
+                    ₱{{ data.balance|floatformat:2 }}
+                  </td>
+                  <td class="text-center">
+                    {% if data.is_fully_paid %}
+                      <span class="badge badge-success">Paid</span>
+                    {% elif data.total_paid > 0 %}
+                      <span class="badge badge-warning">{{ data.percentage_paid|floatformat:0 }}%</span>
+                    {% else %}
+                      <span class="badge badge-danger">Unpaid</span>
+                    {% endif %}
+                  </td>
+                {% endif %}
               </tr>
             {% endfor %}
           {% endif %}

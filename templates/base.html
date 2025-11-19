@@ -256,6 +256,15 @@
                     </a>
                 </div>
 
+                {% if user.is_superuser %}
+                <div class="nav-item {% if current == 'managers_list' %}active{% endif %}">
+                    <a class="nav-link" href="{% url 'managers_list' %}">
+                        <i class="la la-user-shield"></i>
+                        <p>Managers</p>
+                    </a>
+                </div>
+                {% endif %}
+
                 <div class="nav-item {% if current == 'payment_year_list' or current == 'payment_year_detail' %}active{% endif %}">
                     <a class="nav-link" href="{% url 'payment_year_list' %}">
                         <i class="la la-money"></i>

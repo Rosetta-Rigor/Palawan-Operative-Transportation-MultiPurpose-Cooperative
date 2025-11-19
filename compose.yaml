@@ -1,23 +1,44 @@
-services:
-  db:
-    image: postgres:14
-    env_file:
-      - .env
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+version: "3.9"
 
-  server:
+services:
+  web:
     build:
       context: .
-    depends_on:
-      db:
-        condition: service_healthy
-    env_file:
-      - .env
+      dockerfile: Dockerfile
+    container_name: coopims_web
+    command: gunicorn coopims.wsgi:application --bind 0.0.0.0:8000
     ports:
       - "8000:8000"
+    environment:
+      # Django settings
+      DEBUG: "0"
+      DJANGO_ALLOWED_HOSTS: "*"
+
+      # Database connection
+      DB_NAME: coopimsdb
+      DB_USER: coopimsuser
+      DB_PASSWORD: coopimspass
+      DB_HOST: db
+      DB_PORT: 5432
+
+    depends_on:
+      - db
+
+    volumes:
+      - .:/app
+
+  db:
+    image: postgres:16
+    container_name: coopims_db
+    restart: always
+    environment:
+      POSTGRES_DB: coopimsdb
+      POSTGRES_USER: coopimsuser
+      POSTGRES_PASSWORD: coopimspass
+    ports:
+      - "5433:5432" # exposed for inspection on host machine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

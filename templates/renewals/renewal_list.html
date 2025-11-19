@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_no_sidebar.html' %}
 {% load static %}
 
 {% block extra_css %}
@@ -9,12 +9,13 @@
 
 {% block content %}
 <div class="renewal-details-container">
+    <br><br><br>
     <!-- Page Header Card -->
     <div class="page-header-card">
         <div class="form-header-gradient">
             <h1 class="form-header-title">
                 <i class="la la-calendar-check"></i>
-                Renewals Management
+                RENEWALS MANAGEMENT
             </h1>
             <p class="form-header-sub">Track and manage all document renewals</p>
             
@@ -64,66 +65,12 @@
         </button>
     </div>
 
-    <!-- Bulk Actions Section -->
-    <div class="renewal-hub-search-section" style="margin-bottom: 24px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
-            <div>
-                <h4 style="margin: 0 0 8px 0; color: var(--brand-600); font-weight: 700; font-size: 1.1rem;">
-                    <i class="la la-paper-plane"></i> Bulk Reminder Actions
-                </h4>
-                <p style="margin: 0; color: var(--muted-2); font-size: 0.9rem;">
-                    Send renewal reminders to multiple members at once based on time frame or batch
-                </p>
-            </div>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                <form method="post" action="{% url 'send_bulk_renewal_reminders' %}" style="display: inline-block;">
-                    {% csrf_token %}
-                    <input type="hidden" name="filter_type" value="this_week">
-                    <button type="submit" class="btn-action btn-send-reminder" style="padding: 10px 20px;">
-                        <i class="la la-bell"></i> Send This Week
-                    </button>
-                </form>
-                
-                <form method="post" action="{% url 'send_bulk_renewal_reminders' %}" style="display: inline-block;">
-                    {% csrf_token %}
-                    <input type="hidden" name="filter_type" value="this_month">
-                    <button type="submit" class="btn-action btn-send-reminder" style="padding: 10px 20px; background: linear-gradient(135deg, #F59E0B, #D97706);">
-                        <i class="la la-bell"></i> Send This Month
-                    </button>
-                </form>
-                
-                <form method="post" action="{% url 'send_bulk_renewal_reminders' %}" style="display: inline-block;">
-                    {% csrf_token %}
-                    <input type="hidden" name="filter_type" value="next_60">
-                    <button type="submit" class="btn-action btn-send-reminder" style="padding: 10px 20px; background: linear-gradient(135deg, #3B82F6, #2563EB);">
-                        <i class="la la-bell"></i> Send Next 60 Days
-                    </button>
-                </form>
-
-                <!-- Batch-based bulk send with dropdown -->
-                <form method="post" action="{% url 'send_bulk_renewal_reminders' %}" style="display: inline-flex; align-items: center; gap: 8px;">
-                    {% csrf_token %}
-                    <input type="hidden" name="filter_type" value="all">
-                    <select name="batch_id" class="filter-select" style="padding: 10px 14px; min-width: 150px;" required>
-                        <option value="">Select Batch</option>
-                        {% for batch in batches %}
-                            <option value="{{ batch.id }}">Batch {{ batch.number }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit" class="btn-action btn-view-member" style="padding: 10px 20px;">
-                        <i class="la la-bell"></i> Send to Batch
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <!-- Search & Advanced Filters -->
     <div class="renewal-hub-search-section">
         <form method="get" class="search-form">
             <input type="text" 
                    name="q" 
-                   placeholder="Search by member, plate, or TIN" 
+                   placeholder="Search by member, plate, or MV File No." 
                    value="{{ request.GET.q }}" 
                    class="search-input">
             
@@ -147,6 +94,10 @@
             
             <button type="submit" class="btn-action btn-send-reminder">
                 <i class="la la-search"></i> Search
+            </button>
+            
+            <button type="button" class="btn-action" style="background: linear-gradient(135deg, #3B82F6, #2563EB); color: white;" data-toggle="modal" data-target="#bulkReminderModal">
+                <i class="la la-paper-plane"></i> Bulk Send
             </button>
             
             {% if request.GET.q or request.GET.batch or request.GET.status %}
@@ -191,7 +142,7 @@
                         <th style="text-align: left;">Member</th>
                         <th>Batch</th>
                         <th>Plate Number</th>
-                        <th>TIN</th>
+                        <th>MV File No.</th>
                         <th>Expiry Date</th>
                         <th>Days Left</th>
                         <th>Status</th>
@@ -206,12 +157,15 @@
                                style="color: var(--brand-600); font-weight: 700; text-decoration: none;">
                                 {{ renewal.member.full_name }}
                             </a>
+                            {% if renewal.email_sent %}
+                                <i class="la la-envelope" style="color: #2D8A63; margin-left: 8px;" title="Reminder sent on {{ renewal.email_sent_date|date:'M d, Y' }}"></i>
+                            {% endif %}
                         </td>
                         <td>{{ renewal.member.batch.number|default:"N/A" }}</td>
                         <td>
                             <strong>{{ renewal.plate }}</strong>
                         </td>
-                        <td>{{ renewal.tin|default:"N/A" }}</td>
+                        <td>{{ renewal.mv_file_no }}</td>
                         <td>{{ renewal.expiry_date|date:"M d, Y" }}</td>
                         <td>
                             {% if renewal.days_left < 0 %}
@@ -268,6 +222,120 @@
             </div>
         {% endif %}
     </div>
+
+    <!-- Email Logs Section -->
+    <div class="section-header" style="margin-top: 48px;">
+        <h2>
+            <i class="la la-history"></i>
+            Recent Email Activity
+        </h2>
+        <span class="badge badge-lg badge-secondary">Last 24 Hours</span>
+    </div>
+
+    <div class="renewal-hub-table-wrapper">
+        {% if recently_sent_emails %}
+            <table class="renewal-hub-table">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Member</th>
+                        <th>Plate Number</th>
+                        <th>Sent At</th>
+                        <th>Sent By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for email in recently_sent_emails %}
+                    <tr>
+                        <td style="text-align: left;">
+                            <i class="la la-envelope" style="color: #2D8A63; margin-right: 8px;"></i>
+                            {{ email.member_name }}
+                        </td>
+                        <td>{{ email.plate_number }}</td>
+                        <td>{{ email.sent_at|date:"M d, Y g:i A" }}</td>
+                        <td>{{ email.sent_by }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <i class="la la-envelope-open"></i>
+                <h3>No Recent Email Activity</h3>
+                <p>Email reminders sent in the last 24 hours will appear here.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bulk Reminder Modal -->
+<div class="modal fade" id="bulkReminderModal" tabindex="-1" role="dialog" aria-labelledby="bulkReminderModalLabel" aria-hidden="true" style="z-index: 9999;">
+    <div class="modal-dialog" role="document" style="margin-top: 80px; max-width: 600px;">
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="background: linear-gradient(135deg, var(--brand-600), var(--brand-500)); color: white; padding: 20px 24px;">
+                <h5 class="modal-title" id="bulkReminderModalLabel" style="font-weight: 700; font-size: 1.1rem;">
+                    <i class="la la-paper-plane"></i> Send Bulk Reminders
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.9;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <p style="color: var(--muted-2); margin-bottom: 20px; font-size: 0.9rem;">
+                    Send reminders by time frame or batch
+                </p>
+                
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+                    <form method="post" action="{% url 'send_bulk_renewal_reminders' %}" class="bulk-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="filter_type" value="this_week">
+                        <button type="submit" class="btn-action" style="width: 100%; padding: 12px 8px; justify-content: center; font-size: 0.85rem; background: linear-gradient(135deg, #10B981, #059669); color: white; flex-direction: column; gap: 4px;">
+                            <i class="la la-calendar" style="font-size: 1.5rem;"></i>
+                            <span>This Week</span>
+                        </button>
+                    </form>
+                    
+                    <form method="post" action="{% url 'send_bulk_renewal_reminders' %}" class="bulk-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="filter_type" value="this_month">
+                        <button type="submit" class="btn-action" style="width: 100%; padding: 12px 8px; justify-content: center; font-size: 0.85rem; background: linear-gradient(135deg, #F59E0B, #D97706); color: white; flex-direction: column; gap: 4px;">
+                            <i class="la la-calendar-check" style="font-size: 1.5rem;"></i>
+                            <span>This Month</span>
+                        </button>
+                    </form>
+                    
+                    <form method="post" action="{% url 'send_bulk_renewal_reminders' %}" class="bulk-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="filter_type" value="next_60">
+                        <button type="submit" class="btn-action" style="width: 100%; padding: 12px 8px; justify-content: center; font-size: 0.85rem; background: linear-gradient(135deg, #3B82F6, #2563EB); color: white; flex-direction: column; gap: 4px;">
+                            <i class="la la-calendar-plus" style="font-size: 1.5rem;"></i>
+                            <span>Next 60</span>
+                        </button>
+                    </form>
+                </div>
+                
+                <div style="border-top: 1px solid rgba(31,62,39,0.1); padding-top: 20px;">
+                    <form method="post" action="{% url 'send_bulk_renewal_reminders' %}" class="bulk-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="filter_type" value="all">
+                        <label style="font-weight: 600; color: var(--brand-600); margin-bottom: 8px; font-size: 0.9rem; display: block;">
+                            <i class="la la-users"></i> Or send to specific batch:
+                        </label>
+                        <div style="display: flex; gap: 8px;">
+                            <select name="batch_id" class="filter-select" style="padding: 10px 12px; flex: 1;" required>
+                                <option value="">Select Batch</option>
+                                {% for batch in batches %}
+                                    <option value="{{ batch.id }}">Batch {{ batch.number }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn-action" style="padding: 10px 20px; background: var(--brand-600); color: white;">
+                                <i class="la la-send"></i> Send
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -284,7 +352,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 5000);
     
     // Add confirmation for bulk reminder sends
-    const bulkForms = document.querySelectorAll('form[action*="bulk-send"]');
+    const bulkForms = document.querySelectorAll('.bulk-form');
     bulkForms.forEach(function(form) {
         form.addEventListener('submit', function(e) {
             const filterType = form.querySelector('input[name="filter_type"]').value;
@@ -308,6 +376,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!confirm(confirmMessage)) {
                 e.preventDefault();
                 return false;
+            } else {
+                // Close modal on confirm
+                $('#bulkReminderModal').modal('hide');
             }
         });
     });

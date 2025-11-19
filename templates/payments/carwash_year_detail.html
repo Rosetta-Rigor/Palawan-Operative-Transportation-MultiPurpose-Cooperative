@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_no_sidebar.html' %}
 {% load static %}
 {% load tz %}
 
@@ -16,6 +16,7 @@
     
     <!-- Page Header -->
     <div class="payment-year-card">
+      <br><br><br>
       <div class="payment-year-header">
         <h2 class="payment-year-title">
           <i class="las la-car-wash"></i> Car Wash Records - {{ year.year }}
@@ -26,10 +27,11 @@
 
     <div class="payment-actions-bar">
       <div class="payment-actions-left">
-        <a href="{% url 'carwash_public_records' year.id %}" class="payment-action-btn btn-filter">
-          <i class="las la-user-friends"></i> Public Records {% if public_customer_records %}({{ public_customer_records.count }}){% endif %}
+        <a href="{% url 'payment_year_list' %}" class="payment-action-btn btn-filter">
+          <i class="las la-arrow-left"></i> Back to Years
         </a>
       </div>
+
       <div class="payment-actions-right">
         <a href="{% url 'add_carwash_type' year.id %}" class="payment-action-btn btn-filter">
           <i class="las la-spray-can"></i> Add Service Type
@@ -37,8 +39,8 @@
         <a href="{% url 'manage_carwash_compliance' year.id %}" class="payment-action-btn btn-filter">
           <i class="las la-cog"></i> Settings
         </a>
-        <a href="{% url 'payment_year_list' %}" class="payment-action-btn btn-filter">
-          <i class="las la-arrow-left"></i> Back to Years
+        <a href="{% url 'carwash_public_records' year.id %}" class="payment-action-btn btn-filter">
+          <i class="las la-user-friends"></i> Public Records {% if public_customer_records %}({{ public_customer_records.count }}){% endif %}
         </a>
       </div>
     </div>

@@ -1,0 +1,66 @@
+{% if managers %}
+  {% for manager in managers %}
+  <tr>
+    <td>
+      <strong>{{ manager.username }}</strong>
+      {% if not manager.is_active %}
+        <span class="badge badge-secondary ml-2">Inactive</span>
+      {% endif %}
+    </td>
+    <td>{{ manager.full_name }}</td>
+    <td>
+      {% if manager.email %}
+        <a href="mailto:{{ manager.email }}" style="color: var(--brand-600);">
+          <i class="la la-envelope"></i> {{ manager.email }}
+        </a>
+      {% else %}
+        <span class="text-muted">N/A</span>
+      {% endif %}
+    </td>
+    <td>
+      {% if manager.phone_number %}
+        {{ manager.phone_number }}
+      {% else %}
+        <span class="text-muted">N/A</span>
+      {% endif %}
+    </td>
+    <td>
+      {% if manager.is_active %}
+        <span class="badge badge-success">Active</span>
+      {% else %}
+        <span class="badge badge-secondary">Inactive</span>
+      {% endif %}
+    </td>
+    <td>{{ manager.date_joined|date:"M d, Y" }}</td>
+    <td class="text-center">
+      <div class="btn-group" role="group">
+        <a href="{% url 'edit_manager' manager.id %}" class="btn btn-sm btn-info" title="Edit Manager">
+          <i class="la la-edit"></i>
+        </a>
+        {% if manager.is_active %}
+          <form method="post" action="{% url 'deactivate_manager' manager.id %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-warning" title="Deactivate" onclick="return confirm('Deactivate this manager account?')">
+              <i class="la la-ban"></i>
+            </button>
+          </form>
+        {% else %}
+          <form method="post" action="{% url 'activate_manager' manager.id %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-success" title="Activate" onclick="return confirm('Activate this manager account?')">
+              <i class="la la-check-circle"></i>
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </td>
+  </tr>
+  {% endfor %}
+{% else %}
+  <tr>
+    <td colspan="7" class="text-center py-5">
+      <i class="la la-users" style="font-size: 3rem; color: var(--muted-2); opacity: 0.3;"></i>
+      <p class="text-muted mt-2">No manager accounts found</p>
+    </td>
+  </tr>
+{% endif %}

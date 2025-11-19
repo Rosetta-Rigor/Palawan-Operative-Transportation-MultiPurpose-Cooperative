@@ -53,7 +53,12 @@
               <th>Member Name</th>
               <th>Batch</th>
               {% for payment_type in payment_types %}
-                <th class="text-right">{{ payment_type.name }}</th>
+                <th class="text-right">
+                  {{ payment_type.name }}
+                  {% if payment_type.is_car_wash %}
+                    <br><small class="text-muted" style="font-weight: normal; font-size: 0.75rem;">Car Wash</small>
+                  {% endif %}
+                </th>
               {% endfor %}
             </tr>
           </thead>
@@ -65,10 +70,18 @@
                 <td>{{ member.batch }}</td>
                 {% for pt_data in member.payment_types_data %}
                   <td class="amount-cell text-right">
-                    {% if pt_data.total_paid > 0 %}
-                      ₱{{ pt_data.total_paid|floatformat:2 }}
+                    {% if pt_data.is_car_wash %}
+                      {% if pt_data.total_count > 0 %}
+                        {{ pt_data.total_count }}
+                      {% else %}
+                        <span class="text-muted">-</span>
+                      {% endif %}
                     {% else %}
-                      <span class="text-muted">-</span>
+                      {% if pt_data.total_paid > 0 %}
+                        ₱{{ pt_data.total_paid|floatformat:2 }}
+                      {% else %}
+                        <span class="text-muted">-</span>
+                      {% endif %}
                     {% endif %}
                   </td>
                 {% endfor %}

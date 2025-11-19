@@ -1321,6 +1321,180 @@ def activate_account(request, user_id):
     
     return redirect('accounts_list')
 
+# ==== Manager Account Management ====
+
+@staff_member_required
+def managers_list(request):
+    """
+    List all manager accounts with search and filtering.
+    Only superusers can access this view.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, "Only superusers can manage manager accounts.")
+        return redirect('home')
+    
+    q = (request.GET.get("q") or "").strip()
+    status = (request.GET.get("status") or "all").strip().lower()
+    
+    managers_qs = User.objects.filter(role='manager').order_by('-date_joined')
+    
+    # Status filter
+    if status == 'active':
+        managers_qs = managers_qs.filter(is_active=True)
+    elif status == 'inactive':
+        managers_qs = managers_qs.filter(is_active=False)
+    
+    # Search filter
+    if q:
+        managers_qs = managers_qs.filter(
+            Q(username__icontains=q) |
+            Q(full_name__icontains=q) |
+            Q(email__icontains=q) |
+            Q(phone_number__icontains=q)
+        ).distinct()
+    
+    paginator = Paginator(managers_qs, 10)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'managers': list(page_obj.object_list),
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'is_paginated': page_obj.has_other_pages(),
+        'q': q,
+        'status': status,
+    }
+    
+    # AJAX request
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string('includes/manager_table_rows.html', {'managers': context['managers']})
+        pagination_html = render_to_string('includes/pagination.html', context)
+        return JsonResponse({'html': html, 'pagination_html': pagination_html})
+    
+    return render(request, 'managers.html', context)
+
+
+@staff_member_required
+@require_POST
+def create_manager(request):
+    """
+    Create a new manager account.
+    Only superusers can create managers.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, "Only superusers can create manager accounts.")
+        return redirect('home')
+    
+    username = request.POST.get('username', '').strip()
+    full_name = request.POST.get('full_name', '').strip()
+    email = request.POST.get('email', '').strip()
+    phone_number = request.POST.get('phone_number', '').strip()
+    password = request.POST.get('password', '')
+    
+    # Validation
+    if not all([username, full_name, email, password]):
+        messages.error(request, "Username, full name, email, and password are required.")
+        return redirect('managers_list')
+    
+    # Check if username exists
+    if User.objects.filter(username=username).exists():
+        messages.error(request, f"Username '{username}' already exists.")
+        return redirect('managers_list')
+    
+    # Check if email exists
+    if User.objects.filter(email=email).exists():
+        messages.error(request, f"Email '{email}' is already registered.")
+        return redirect('managers_list')
+    
+    try:
+        # Create manager account
+        manager = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            full_name=full_name,
+            phone_number=phone_number if phone_number else None,
+            role='manager',
+            is_active=True,
+            is_staff=True,  # Managers need staff status to access admin views
+            dormant=1
+        )
+        
+        messages.success(request, f"Manager account '{username}' created successfully!")
+        
+    except Exception as e:
+        messages.error(request, f"Error creating manager account: {str(e)}")
+    
+    return redirect('managers_list')
+
+
+@staff_member_required
+def edit_manager(request, manager_id):
+    """
+    Edit a manager account.
+    Only superusers can edit managers.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, "Only superusers can edit manager accounts.")
+        return redirect('home')
+    
+    manager = get_object_or_404(User, pk=manager_id, role='manager')
+    
+    if request.method == "POST":
+        manager.full_name = request.POST.get("full_name", manager.full_name)
+        manager.email = request.POST.get("email", manager.email)
+        manager.phone_number = request.POST.get("phone_number", manager.phone_number)
+        
+        # Change password if provided
+        new_password = request.POST.get("new_password", "").strip()
+        if new_password:
+            manager.set_password(new_password)
+        
+        manager.save()
+        messages.success(request, f"Manager account '{manager.username}' updated successfully.")
+        return redirect('managers_list')
+    
+    return render(request, "manager_edit.html", {"manager": manager})
+
+
+@staff_member_required
+@require_POST
+def deactivate_manager(request, manager_id):
+    """
+    Deactivate a manager account.
+    Only superusers can deactivate managers.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, "Only superusers can manage manager accounts.")
+        return redirect('home')
+    
+    manager = get_object_or_404(User, pk=manager_id, role='manager')
+    manager.is_active = False
+    manager.save()
+    
+    messages.success(request, f"Manager account '{manager.username}' has been deactivated.")
+    return redirect('managers_list')
+
+
+@staff_member_required
+@require_POST
+def activate_manager(request, manager_id):
+    """
+    Activate a manager account.
+    Only superusers can activate managers.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, "Only superusers can manage manager accounts.")
+        return redirect('home')
+    
+    manager = get_object_or_404(User, pk=manager_id, role='manager')
+    manager.is_active = True
+    manager.save()
+    
+    messages.success(request, f"Manager account '{manager.username}' has been activated.")
+    return redirect('managers_list')
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -2265,11 +2439,22 @@ def from_members_payment_view(request, year_id):
     elif q:
         members = members.filter(Q(full_name__icontains=q)).distinct()
 
-    # Get all "from_members" payment types for this year
-    payment_types = PaymentType.objects.filter(
+    # Get "from_members" payment types (non-car wash) - these take priority
+    from_members_types = PaymentType.objects.filter(
         year=year, 
-        payment_type='from_members'
+        payment_type='from_members',
+        is_car_wash=False
     ).order_by('name')
+    
+    # Get car wash payment types that have logged records
+    carwash_types_with_records = PaymentType.objects.filter(
+        year=year,
+        is_car_wash=True,
+        entries__isnull=False
+    ).distinct().order_by('name')
+    
+    # Combine: from_members first, then car wash types with records
+    payment_types = list(from_members_types) + list(carwash_types_with_records)
 
     # Annotate members with payment data for EACH payment type
     members_data = []
@@ -2282,38 +2467,66 @@ def from_members_payment_view(request, year_id):
         }
         
         for payment_type in payment_types:
-            # Calculate yearly total
-            yearly_total = payment_type.amount * 12 if payment_type.amount else 0
-            
-            # Calculate total paid by this member for this payment type
-            total_paid = PaymentEntry.objects.filter(
-                member=member,
-                payment_type=payment_type
-            ).aggregate(total=Sum('amount_paid'))['total'] or 0
-            
-            # Calculate balance
-            balance = max(yearly_total - total_paid, 0)
-            
-            # Get monthly breakdown
-            monthly_totals = []
-            for month_num in range(1, 13):
-                month_total = PaymentEntry.objects.filter(
+            # Check if this is a car wash type
+            if payment_type.is_car_wash:
+                # For car wash: count entries instead of sum amounts
+                total_count = PaymentEntry.objects.filter(
                     member=member,
                     payment_type=payment_type,
-                    month=month_num
+                    is_car_wash_record=True
+                ).count()
+                
+                # Get monthly counts
+                monthly_totals = []
+                for month_num in range(1, 13):
+                    month_count = PaymentEntry.objects.filter(
+                        member=member,
+                        payment_type=payment_type,
+                        month=month_num,
+                        is_car_wash_record=True
+                    ).count()
+                    monthly_totals.append(month_count if month_count > 0 else None)
+                
+                member_record['payment_types_data'].append({
+                    'payment_type': payment_type,
+                    'is_car_wash': True,
+                    'total_count': total_count,
+                    'monthly_totals': monthly_totals,
+                })
+            else:
+                # Regular payment type: calculate amounts
+                yearly_total = payment_type.amount * 12 if payment_type.amount else 0
+                
+                # Calculate total paid by this member for this payment type
+                total_paid = PaymentEntry.objects.filter(
+                    member=member,
+                    payment_type=payment_type
                 ).aggregate(total=Sum('amount_paid'))['total'] or 0
-                monthly_totals.append(month_total if month_total > 0 else None)
-            
-            member_record['payment_types_data'].append({
-                'payment_type': payment_type,
-                'yearly_total': yearly_total,
-                'total_paid': total_paid,
-                'balance': balance,
-                'percentage_paid': (total_paid / yearly_total * 100) if yearly_total > 0 else 0,
-                'is_fully_paid': balance == 0,
-                'monthly_totals': monthly_totals,
-                'status': 'paid' if balance == 0 else ('partial' if total_paid > 0 else 'unpaid')
-            })
+                
+                # Calculate balance
+                balance = max(yearly_total - total_paid, 0)
+                
+                # Get monthly breakdown
+                monthly_totals = []
+                for month_num in range(1, 13):
+                    month_total = PaymentEntry.objects.filter(
+                        member=member,
+                        payment_type=payment_type,
+                        month=month_num
+                    ).aggregate(total=Sum('amount_paid'))['total'] or 0
+                    monthly_totals.append(month_total if month_total > 0 else None)
+                
+                member_record['payment_types_data'].append({
+                    'payment_type': payment_type,
+                    'is_car_wash': False,
+                    'yearly_total': yearly_total,
+                    'total_paid': total_paid,
+                    'balance': balance,
+                    'percentage_paid': (total_paid / yearly_total * 100) if yearly_total > 0 else 0,
+                    'is_fully_paid': balance == 0,
+                    'monthly_totals': monthly_totals,
+                    'status': 'paid' if balance == 0 else ('partial' if total_paid > 0 else 'unpaid')
+                })
         
         members_data.append(member_record)
 
@@ -2354,8 +2567,12 @@ def other_payments_view(request, year_id):
 def payment_year_detail(request, year_id):
     year = get_object_or_404(PaymentYear, pk=year_id)
     
-    # Separate payment types by category
-    from_members_types = PaymentType.objects.filter(year=year, payment_type='from_members')
+    # Separate payment types by category - exclude car wash types
+    from_members_types = PaymentType.objects.filter(
+        year=year, 
+        payment_type='from_members',
+        is_car_wash=False
+    )
     other_types = PaymentType.objects.filter(year=year, payment_type='other')
     
     months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -2365,28 +2582,16 @@ def payment_year_detail(request, year_id):
     for payment_type in from_members_types:
         monthly_totals = []
         for month in range(1, 13):  # January to December
-            # CHECK IF CAR WASH TYPE
-            if payment_type.is_car_wash:
-                # Count all car wash entries for this month (all members)
-                count = PaymentEntry.objects.filter(
-                    payment_type=payment_type,
-                    month=month,
-                    is_car_wash_record=True,
-                    is_penalty=False
-                ).count()
-                monthly_totals.append(count if count > 0 else None)
-            else:
-                # Sum amounts for regular payments
-                total = PaymentEntry.objects.filter(
-                    payment_type=payment_type,
-                    month=month
-                ).aggregate(total=Sum('amount_paid'))['total']
-                monthly_totals.append(total if total is not None else None)
+            # Sum amounts for regular payments
+            total = PaymentEntry.objects.filter(
+                payment_type=payment_type,
+                month=month
+            ).aggregate(total=Sum('amount_paid'))['total']
+            monthly_totals.append(total if total is not None else None)
         
         from_members_data.append({
             'payment_type': payment_type,
             'monthly_totals': monthly_totals,
-            'is_car_wash': payment_type.is_car_wash,  # Flag for template
         })
     
     # Process "Other" payment types - aggregate all entries
@@ -2598,41 +2803,75 @@ def member_payment_list(request, year_id, member_id):
     
     from_members_data = []
     for payment_type in from_members_types:
-        yearly_total = payment_type.amount * 12 if payment_type.amount else 0
-        
-        # Get all entries for this member/type
-        entries = PaymentEntry.objects.filter(
-            payment_type=payment_type,
-            member=member
-        ).order_by('month')
-        
-        # Calculate totals
-        total_paid = entries.aggregate(total=Sum('amount_paid'))['total'] or 0
-        balance = max(yearly_total - total_paid, 0)
-        
-        # Build monthly breakdown with entry details
-        monthly_breakdown = []
-        for month_num in range(1, 13):
-            month_entries = entries.filter(month=month_num)
-            month_total = month_entries.aggregate(total=Sum('amount_paid'))['total'] or 0
+        # Check if this is a car wash type
+        if payment_type.is_car_wash:
+            # Get all car wash entries for this member/type
+            entries = PaymentEntry.objects.filter(
+                payment_type=payment_type,
+                member=member,
+                is_car_wash_record=True
+            ).order_by('month')
             
-            monthly_breakdown.append({
-                'month_num': month_num,
-                'month_name': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month_num - 1],
-                'entries': list(month_entries.select_related('recorded_by')),
-                'total': month_total
+            # Count total car wash records
+            total_count = entries.count()
+            
+            # Build monthly breakdown with counts
+            monthly_breakdown = []
+            for month_num in range(1, 13):
+                month_entries = entries.filter(month=month_num)
+                month_count = month_entries.count()
+                
+                monthly_breakdown.append({
+                    'month_num': month_num,
+                    'month_name': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month_num - 1],
+                    'entries': list(month_entries.select_related('recorded_by')),
+                    'total': month_count
+                })
+            
+            from_members_data.append({
+                'payment_type': payment_type,
+                'is_car_wash': True,
+                'total_count': total_count,
+                'monthly_breakdown': monthly_breakdown
             })
-        
-        from_members_data.append({
-            'payment_type': payment_type,
-            'yearly_total': yearly_total,
-            'total_paid': total_paid,
-            'balance': balance,
-            'percentage_paid': (total_paid / yearly_total * 100) if yearly_total > 0 else 0,
-            'is_fully_paid': balance == 0,
-            'status': 'Fully Paid' if balance == 0 else ('Partially Paid' if total_paid > 0 else 'Not Paid'),
-            'monthly_breakdown': monthly_breakdown
-        })
+        else:
+            # Regular payment type
+            yearly_total = payment_type.amount * 12 if payment_type.amount else 0
+            
+            # Get all entries for this member/type
+            entries = PaymentEntry.objects.filter(
+                payment_type=payment_type,
+                member=member
+            ).order_by('month')
+            
+            # Calculate totals
+            total_paid = entries.aggregate(total=Sum('amount_paid'))['total'] or 0
+            balance = max(yearly_total - total_paid, 0)
+            
+            # Build monthly breakdown with entry details
+            monthly_breakdown = []
+            for month_num in range(1, 13):
+                month_entries = entries.filter(month=month_num)
+                month_total = month_entries.aggregate(total=Sum('amount_paid'))['total'] or 0
+                
+                monthly_breakdown.append({
+                    'month_num': month_num,
+                    'month_name': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month_num - 1],
+                    'entries': list(month_entries.select_related('recorded_by')),
+                    'total': month_total
+                })
+            
+            from_members_data.append({
+                'payment_type': payment_type,
+                'is_car_wash': False,
+                'yearly_total': yearly_total,
+                'total_paid': total_paid,
+                'balance': balance,
+                'percentage_paid': (total_paid / yearly_total * 100) if yearly_total > 0 else 0,
+                'is_fully_paid': balance == 0,
+                'status': 'Fully Paid' if balance == 0 else ('Partially Paid' if total_paid > 0 else 'Not Paid'),
+                'monthly_breakdown': monthly_breakdown
+            })
     
     # Other payment types (unchanged logic)
     other_types = PaymentType.objects.filter(
@@ -2964,6 +3203,8 @@ def renewals_hub(request):
                     'status': status,
                     'status_class': status_class,
                     'document_entry': latest_entry,
+                    'email_sent': False,  # Placeholder for email tracking
+                    'email_sent_date': None,  # Placeholder for date tracking
                 }
                 
                 all_renewals.append(renewal_info)
@@ -2974,6 +3215,38 @@ def renewals_hub(request):
     # Get all batches for filter dropdown
     batches = Batch.objects.all().order_by('number')
     
+    # Get recently sent email reminders from session (last 24 hours)
+    recently_sent = request.session.get('renewal_emails_sent', {})
+    current_time = timezone.now().timestamp()
+    
+    # Clean up old entries (older than 24 hours)
+    recently_sent = {k: v for k, v in recently_sent.items() 
+                     if current_time - v['timestamp'] < 86400}
+    request.session['renewal_emails_sent'] = recently_sent
+    
+    # Mark renewals that have had emails sent
+    for renewal in all_renewals:
+        key = f"{renewal['member'].id}_{renewal['vehicle'].id}"
+        if key in recently_sent:
+            renewal['email_sent'] = True
+            renewal['email_sent_date'] = timezone.datetime.fromtimestamp(
+                recently_sent[key]['timestamp']
+            ).date()
+    
+    # Prepare email logs for display (last 24 hours)
+    recently_sent_emails = []
+    for key, data in recently_sent.items():
+        sent_datetime = timezone.datetime.fromtimestamp(data['timestamp'])
+        recently_sent_emails.append({
+            'member_name': data.get('member', 'Unknown'),
+            'plate_number': data.get('plate', 'N/A'),
+            'sent_at': sent_datetime,
+            'sent_by': request.user.username
+        })
+    
+    # Sort by most recent first
+    recently_sent_emails.sort(key=lambda x: x['sent_at'], reverse=True)
+    
     context = {
         'renewals': all_renewals,
         'urgent_count': urgent_count,
@@ -2983,6 +3256,7 @@ def renewals_hub(request):
         'batches': batches,
         'filter_type': filter_type,
         'today': today,
+        'recently_sent_emails': recently_sent_emails,
     }
     
     return render(request, 'renewals/renewal_list.html', context)
@@ -3030,6 +3304,10 @@ def send_bulk_renewal_reminders(request):
     reminders_sent = 0
     reminders_failed = 0
     
+    # Initialize session tracking
+    if 'renewal_emails_sent' not in request.session:
+        request.session['renewal_emails_sent'] = {}
+    
     for member in members_query:
         for vehicle in member.vehicles.all():
             # Get latest approved document entry
@@ -3060,10 +3338,20 @@ def send_bulk_renewal_reminders(request):
                             success, message = send_renewal_reminder_email(member, vehicle, latest_entry, request)
                             if success:
                                 reminders_sent += 1
+                                # Track in session
+                                key = f"{member.id}_{vehicle.id}"
+                                request.session['renewal_emails_sent'][key] = {
+                                    'timestamp': timezone.now().timestamp(),
+                                    'member': member.full_name,
+                                    'plate': vehicle.plate_number
+                                }
                             else:
                                 reminders_failed += 1
                         except Exception as e:
                             reminders_failed += 1
+    
+    # Save session
+    request.session.modified = True
     
     # Display summary message
     if reminders_sent > 0:
@@ -3106,6 +3394,18 @@ def send_renewal_reminder(request, member_id, vehicle_id):
         
         if success:
             messages.success(request, f"✅ {message}")
+            
+            # Track sent email in session
+            if 'renewal_emails_sent' not in request.session:
+                request.session['renewal_emails_sent'] = {}
+            
+            key = f"{member.id}_{vehicle.id}"
+            request.session['renewal_emails_sent'][key] = {
+                'timestamp': timezone.now().timestamp(),
+                'member': member.full_name,
+                'plate': vehicle.plate_number
+            }
+            request.session.modified = True
             
             # Create in-app notification
             from .notifications import create_notification

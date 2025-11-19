@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_all.css' %}">
+{% endblock %}
+{% block title %}Manager Accounts - POTMPC Admin{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="members-header card-header-gradient mb-4 d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="members-header-title">MANAGER ACCOUNTS</h1>
+      <p class="members-header-sub">Manage staff accounts with manager privileges</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button type="button" class="btn btn-success" data-toggle="modal" data-target="#createManagerModal">
+        <i class="la la-plus"></i> Create Manager
+      </button>
+      <a href="{% url 'accounts_list' %}" class="btn btn-primary">
+        <i class="la la-users"></i> View Member Accounts
+      </a>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-8">
+      <form id="manager-search-form" action="{% url 'managers_list' %}">
+        <div class="search-card p-3 d-flex align-items-center">
+          <input type="text" id="manager-search" name="q" class="form-control form-control-lg search-input" placeholder="Search username, name, email..." autocomplete="off" value="{{ q|default:'' }}">
+          <button type="button" class="btn btn-light ml-2" id="manager-search-clear" title="Clear"><i class="la la-times"></i></button>
+          <button type="submit" class="btn btn-primary ml-2"><i class="la la-search"></i></button>
+
+          <!-- status filter -->
+          <select id="manager-status" name="status" class="form-control ml-3" style="width:180px;">
+            <option value="all" {% if status == 'all' %}selected{% endif %}>All Managers</option>
+            <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
+            <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card admin-card material-table">
+    <div class="card-body p-0">
+      <table class="table table-striped table-hover mb-0 no-row-hover">
+        <thead class="table-head">
+          <tr>
+            <th>Username</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Phone Number</th>
+            <th>Status</th>
+            <th>Created Date</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="manager-table-body" class="material-rows">
+          {% include 'includes/manager_table_rows.html' %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="pagination-container" class="mt-3">
+    {% include 'includes/pagination.html' %}
+  </div>
+</div>
+
+<!-- Create Manager Modal -->
+<div class="modal fade" id="createManagerModal" tabindex="-1" role="dialog" aria-labelledby="createManagerModalLabel" aria-hidden="true" style="z-index: 9999;">
+  <div class="modal-dialog" role="document" style="margin-top: 80px; max-width: 600px;">
+    <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+      <div class="modal-header" style="background: linear-gradient(135deg, var(--brand-600), var(--brand-500)); color: white; padding: 20px 24px;">
+        <h5 class="modal-title" id="createManagerModalLabel" style="font-weight: 700; font-size: 1.1rem;">
+          <i class="la la-user-shield"></i> Create Manager Account
+        </h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.9;">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form method="post" action="{% url 'create_manager' %}" id="createManagerForm">
+        {% csrf_token %}
+        <div class="modal-body" style="padding: 24px;">
+          <div class="form-group">
+            <label for="username" style="font-weight: 600; color: var(--brand-600);">Username <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="username" name="username" required placeholder="e.g., jsmith">
+            <small class="form-text text-muted">Unique username for login</small>
+          </div>
+
+          <div class="form-group">
+            <label for="full_name" style="font-weight: 600; color: var(--brand-600);">Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="full_name" name="full_name" required placeholder="e.g., John Smith">
+          </div>
+
+          <div class="form-group">
+            <label for="email" style="font-weight: 600; color: var(--brand-600);">Email Address <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" id="email" name="email" required placeholder="e.g., john.smith@potmpc.com">
+            <small class="form-text text-muted">Used for notifications and password reset</small>
+          </div>
+
+          <div class="form-group">
+            <label for="phone_number" style="font-weight: 600; color: var(--brand-600);">Phone Number</label>
+            <input type="text" class="form-control" id="phone_number" name="phone_number" placeholder="e.g., +639123456789">
+          </div>
+
+          <div class="form-group">
+            <label for="password" style="font-weight: 600; color: var(--brand-600);">Password <span class="text-danger">*</span></label>
+            <input type="password" class="form-control" id="password" name="password" required placeholder="Minimum 8 characters">
+            <small class="form-text text-muted">Manager can change this after first login</small>
+          </div>
+
+          <div class="form-group">
+            <label for="password_confirm" style="font-weight: 600; color: var(--brand-600);">Confirm Password <span class="text-danger">*</span></label>
+            <input type="password" class="form-control" id="password_confirm" name="password_confirm" required placeholder="Re-enter password">
+          </div>
+        </div>
+        <div class="modal-footer" style="background: rgba(246,244,237,0.3);">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">
+            <i class="la la-times"></i> Cancel
+          </button>
+          <button type="submit" class="btn btn-success">
+            <i class="la la-check"></i> Create Manager
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(function(){
+  function debounce(fn, delay){ var t; return function(){ var ctx=this,args=arguments; clearTimeout(t); t=setTimeout(function(){ fn.apply(ctx,args); }, delay); }; }
+
+  function appendStatusToLinks(status) {
+    if (!status) return;
+    $('#pagination-container .pagination a.page-link').each(function(){
+      var $a = $(this);
+      var href = $a.attr('href') || '';
+      if (!href) return;
+      if (href.indexOf('status=') !== -1) return;
+      var sep = href.indexOf('?') === -1 ? '?' : '&';
+      $a.attr('href', href + sep + 'status=' + encodeURIComponent(status));
+    });
+  }
+
+  function fetchManagers(params){
+    params = params || {};
+    if (!('status' in params)) params.status = $('#manager-status').val() || 'all';
+    $.ajax({
+      url: "{% url 'managers_list' %}",
+      data: params,
+      dataType: 'json',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      success: function(data){
+        if (data.html !== undefined) $('#manager-table-body').html(data.html);
+        if (data.pagination_html !== undefined) {
+          $('#pagination-container').html(data.pagination_html);
+          appendStatusToLinks(params.status);
+        }
+        try {
+          var url = new URL(window.location.href);
+          url.searchParams.set('status', params.status || 'all');
+          if (params.q) url.searchParams.set('q', params.q);
+          else url.searchParams.delete('q');
+          url.searchParams.delete('page');
+          window.history.replaceState({}, '', url.toString());
+        } catch (err) {}
+      }
+    });
+  }
+
+  var debounced = debounce(function(){ fetchManagers({ q: $('#manager-search').val(), status: $('#manager-status').val() }); }, 300);
+  $('#manager-search').on('input', debounced);
+
+  $('#manager-search-clear').on('click', function(){
+    $('#manager-search').val('');
+    fetchManagers({ q: '', status: $('#manager-status').val() });
+  });
+
+  $('#manager-status').on('change', function(){
+    fetchManagers({ q: $('#manager-search').val(), status: $(this).val(), page: 1 });
+  });
+
+  $(document).off('click.managerPagination');
+  $(document).on('click.managerPagination', '#pagination-container .pagination a.page-link', function(){ /* allow default navigation */ });
+
+  appendStatusToLinks($('#manager-status').val());
+
+  // Form validation
+  $('#createManagerForm').on('submit', function(e){
+    var password = $('#password').val();
+    var confirm = $('#password_confirm').val();
+    
+    if (password !== confirm) {
+      e.preventDefault();
+      alert('Passwords do not match!');
+      return false;
+    }
+    
+    if (password.length < 8) {
+      e.preventDefault();
+      alert('Password must be at least 8 characters long!');
+      return false;
+    }
+  });
+});
+</script>
+{% endblock %}
