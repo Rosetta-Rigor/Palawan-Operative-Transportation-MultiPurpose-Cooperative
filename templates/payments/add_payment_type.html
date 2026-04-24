@@ -51,8 +51,23 @@
                 <small class="form-text text-muted">Select if this payment is "From Members" or "Other Payments"</small>
               </div>
 
+
+
+              <div class="form-group" id="frequency-field-group" style="display: none;">
+                <label for="{{ form.frequency.id_for_label }}">Payments per Year <span class="text-danger">*</span></label>
+                {{ form.frequency|add_class:"form-control"|attr:"placeholder:12"|attr:"min:1" }}
+                {% if form.frequency.errors %}
+                  <div class="text-danger small mt-2">{{ form.frequency.errors }}</div>
+                {% endif %}
+                <small class="form-text text-muted">
+                  <i class="las la-info-circle"></i>
+                  Enter how many times per year this payment is due (e.g., 12 for monthly, 3 for quarterly, 1 for yearly, etc.).<br>
+                  <span id="yearly-total-info"></span>
+                </small>
+              </div>
+
               <div class="form-group" id="amount-field-group" style="display: none;">
-                <label for="{{ form.amount.id_for_label }}">Monthly Amount <span class="text-danger">*</span></label>
+                <label for="{{ form.amount.id_for_label }}">Amount per Payment <span class="text-danger">*</span></label>
                 <div class="input-group">
                   <div class="input-group-prepend">
                     <span class="input-group-text">₱</span>
@@ -62,12 +77,6 @@
                 {% if form.amount.errors %}
                   <div class="text-danger small mt-2">{{ form.amount.errors }}</div>
                 {% endif %}
-                <small class="form-text text-muted">
-                  <i class="las la-info-circle"></i> 
-                  Enter the monthly amount for this payment type. The yearly total will be calculated as: amount × 12 months.
-                  <br>
-                  <strong>Example:</strong> ₱200/month = ₱2,400 yearly total
-                </small>
               </div>
               
               <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(31,62,39,0.1);">
@@ -90,26 +99,46 @@
 <script>
 $(document).ready(function() {
   // Show/hide amount field based on payment type selection
-  function toggleAmountField() {
-    const paymentType = $('#id_payment_type').val();
-    const amountFieldGroup = $('#amount-field-group');
-    const amountInput = $('#id_amount');
-    
-    if (paymentType === 'from_members') {
-      amountFieldGroup.slideDown(300);
-      amountInput.prop('required', true);
+
+  function updateYearlyTotalInfo() {
+    const amount = parseFloat($('#id_amount').val()) || 0;
+    const freq = parseInt($('#id_frequency').val()) || 0;
+    if (amount > 0 && freq > 0) {
+      $('#yearly-total-info').html(`<b>Yearly total:</b> ₱${(amount * freq).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} (${freq}x per year)`);
     } else {
-      amountFieldGroup.slideUp(300);
-      amountInput.prop('required', false);
-      amountInput.val(''); // Clear value when hidden
+      $('#yearly-total-info').html('');
     }
   }
-  
+
+  function toggleAmountAndFrequencyFields() {
+    const paymentType = $('#id_payment_type').val();
+    const amountFieldGroup = $('#amount-field-group');
+    const frequencyFieldGroup = $('#frequency-field-group');
+    const amountInput = $('#id_amount');
+    const freqInput = $('#id_frequency');
+    if (paymentType === 'from_members') {
+      amountFieldGroup.slideDown(300);
+      frequencyFieldGroup.slideDown(300);
+      amountInput.prop('required', true);
+      freqInput.prop('required', true);
+    } else {
+      amountFieldGroup.slideUp(300);
+      frequencyFieldGroup.slideUp(300);
+      amountInput.prop('required', false);
+      freqInput.prop('required', false);
+      amountInput.val('');
+      freqInput.val('');
+      $('#yearly-total-info').html('');
+    }
+  }
+
   // Initial check on page load
-  toggleAmountField();
-  
+  toggleAmountAndFrequencyFields();
+  updateYearlyTotalInfo();
+
   // Listen for changes
-  $('#id_payment_type').on('change', toggleAmountField);
+  $('#id_payment_type').on('change', toggleAmountAndFrequencyFields);
+  $('#id_amount, #id_frequency').on('input', updateYearlyTotalInfo);
   
   // Form validation
   $('form').on('submit', function(e) {

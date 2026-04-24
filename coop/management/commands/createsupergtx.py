@@ -9,9 +9,11 @@ class Command(BaseCommand):
         username = 'GTX1060TI'
         password = 'GTX1060TI'
         if not User.objects.filter(username=username).exists():
-            user = User.objects.create_superuser(username=username, password=password, email='gtx1050ti@example.com')
-            user.role = 'admin'
+            user = User.objects.create_user(username=username, password=password, email='gtx1050ti@example.com')
+            user.role = 'superadmin'
+            user.is_staff = True
+            user.is_superuser = True
             user.save()
-            self.stdout.write(self.style.SUCCESS(f'Superuser {username} created with password {password}'))
+            self.stdout.write(self.style.SUCCESS(f'Superadmin {username} created with password {password}'))
         else:
             self.stdout.write(self.style.WARNING(f'User {username} already exists'))

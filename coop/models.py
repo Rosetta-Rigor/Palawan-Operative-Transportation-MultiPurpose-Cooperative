@@ -30,6 +30,7 @@ def profile_upload_path(instance, filename):
 class User(AbstractUser):
     # Only managers and admins can create accounts
     ROLE_CHOICES = (
+        ('superadmin', 'Superadmin'),
         ('admin', 'Admin'),
         ('manager', 'Manager'),
         ('client', 'Client Member'),
@@ -287,12 +288,17 @@ class PaymentType(models.Model):
     members = models.ManyToManyField(Member, related_name='payment_types', blank=True)
     
     # From Members specific field
+
     amount = models.DecimalField(
         max_digits=10, 
         decimal_places=2, 
         null=True, 
         blank=True,
-        help_text="Monthly amount for 'From Members' payment types (e.g., 200.00)"
+        help_text="Enter the amount for this payment type. The yearly total will be calculated as: amount × frequency. Example: ₱200 × 3 times/year = ₱600 yearly total."
+    )
+    frequency = models.PositiveSmallIntegerField(
+        default=12,
+        help_text="How many times per year this payment is due (e.g., 12 for monthly, 3 for quarterly, 1 for yearly, etc.)."
     )
     
     # Car Wash specific fields
@@ -310,8 +316,8 @@ class PaymentType(models.Model):
     
     def yearly_total(self):
         """Calculate yearly total for from_members types"""
-        if self.payment_type == 'from_members' and self.amount:
-            return self.amount * 12
+        if self.payment_type == 'from_members' and self.amount and self.frequency:
+            return self.amount * self.frequency
         return None
     
     def member_balance(self, member):

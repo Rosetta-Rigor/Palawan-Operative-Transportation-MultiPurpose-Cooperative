@@ -191,7 +191,7 @@ class PaymentYearForm(forms.ModelForm):
 class PaymentTypeForm(forms.ModelForm):
     class Meta:
         model = PaymentType
-        fields = ['name', 'payment_type', 'amount']
+        fields = ['name', 'payment_type', 'amount', 'frequency']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter payment type name'}),
             'payment_type': forms.Select(attrs={'class': 'form-control', 'id': 'id_payment_type'}),
@@ -201,15 +201,23 @@ class PaymentTypeForm(forms.ModelForm):
                 'step': '0.01',
                 'min': '0',
                 'id': 'id_amount'
+            }),
+            'frequency': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '12',
+                'min': '1',
+                'id': 'id_frequency'
             })
         }
         labels = {
             'name': 'Payment Type Name',
             'payment_type': 'Type of Payment',
-            'amount': 'Monthly Amount',
+            'amount': 'Amount per Payment',
+            'frequency': 'Payments per Year',
         }
         help_texts = {
-            'amount': 'Monthly amount for "From Members" payment types (e.g., 200.00). This field is required for From Members payments.'
+            'amount': 'Amount for each payment (e.g., 200.00).',
+            'frequency': 'How many times per year this payment is due (e.g., 12 for monthly, 3 for quarterly, 1 for yearly, etc.).'
         }
     
     def clean(self):

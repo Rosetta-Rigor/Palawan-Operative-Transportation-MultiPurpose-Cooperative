@@ -2637,11 +2637,11 @@ def add_payment_type(request, year_id):
             if payment_type.payment_type == 'from_members':
                 members = Member.objects.all()
                 for member in members:
-                    for month in range(1, 13):  # January to December
+                    for i in range(1, payment_type.frequency + 1):
                         PaymentEntry.objects.create(
                             payment_type=payment_type,
                             member=member,
-                            month=month,
+                            month=i,  # Use i as the period index (could be month or nth payment)
                             amount_paid=0.00,  # Default to 0
                         )
 
